@@ -5,7 +5,6 @@ from flask import make_response, jsonify, json
 
 def set_response(status_code, messages, **kwargs):
     """ This function sets the response for the routes. """
-    path: str = ''
     response = make_response(jsonify(messages), status_code)
     response.headers['Content-Type'] = 'application/json'
     response.headers['Date'] = f"{datetime.now()}"
@@ -29,4 +28,4 @@ def set_response(status_code, messages, **kwargs):
     response.data = response_data
     response.status_code = status_code
     response.headers["Content-Length"] = str(len(response_data))
-    return
+    return response

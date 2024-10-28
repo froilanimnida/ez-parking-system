@@ -12,7 +12,7 @@ from app.models.user import UserOperations
 
 class AuthService:
     @classmethod
-    def create_new_user(cls, registration_data: dict):  # pylint: disable=C0116
+    def create_new_user(cls, registration_data: dict) -> str:  # pylint: disable=C0116
         return UserRegistrationService.register_user(registration_data)
     
     @classmethod
@@ -23,7 +23,7 @@ class AuthService:
 class UserRegistrationService:
     """ Class to handle user registration operations. """
     @classmethod
-    def register_user(cls, user_data: dict):
+    def register_user(cls, user_data: dict) -> str:
         email = user_data.get('email')
         if not email:
             raise MissingFieldsException('Please provide an email address.')
@@ -31,7 +31,7 @@ class UserRegistrationService:
         if not search(r'^[a-z0-9]+[._]?[a-z0-9]+@\w+[.]\w+$', email):
             raise InvalidEmailException('Please provide a valid email address.')
         
-        is_email_taken = UserOperations.is_email_taken(user_data.get('email'))
+        is_email_taken = UserOperations.is_email_taken(email)
         if is_email_taken:
             raise EmailAlreadyTaken('Email already taken.')
         
@@ -52,7 +52,7 @@ class UserRegistrationService:
         uuid = uuid4().bytes
         if not first_name or not last_name:
             raise MissingFieldsException('Please provide all the required fields.')
-        hashed_password = hashpw(user_data.get('password').encode(
+        hashed_password = hashpw(plain_text_password.encode(
                 'utf-8'), salt.encode('utf-8')).decode('utf-8')
         user_data = {
             'uuid': uuid,
@@ -84,14 +84,16 @@ class UserLoginService:
         plaintext_password = login_data.get('password')
         if not plaintext_password:
             raise MissingFieldsException('Please provide a password.')
-        if len(str(plaintext_password)):
-            raise PasswordTooShort('Password must be at least 8 characters long.')
         user = UserOperations.login_user(login_data)
         user_id, user_email, hashed_password, salt = user.get('id'), user.get('email'), user.get('hashed_password'), user.get('salt')
-        if not checkpw(plaintext_password.encode('utf-8'), hashed_password.encode('utf-8')):
+        print(user_id, user_email, hashed_password, salt)
+        
+        is_password_matched = checkpw(plaintext_password.encode('utf-8'),
+                                      hashed_password.encode('utf-8'))
+        if not is_password_matched:
             raise IncorrectPasswordException('Incorrect password.')
-        session_token = SessionTokenService.generate_session_token(email, user_id)
-        return session_token
+        authorization_token = SessionTokenService.generate_session_token(email, user_id)
+        return authorization_token
 
 
 class SessionTokenService:  # pylint: disable=R0903

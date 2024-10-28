@@ -1,12 +1,22 @@
 from flask import Flask
+from flask_cors import CORS
+from dotenv import load_dotenv
+from werkzeug import run_simple
 
-app = Flask(__name__)
+from app import create_app
 
+load_dotenv(dotenv_path='.env')
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
+app = create_app()
+CORS(app, supports_credentials=True, origins='*')
 
 
 if __name__ == '__main__':
-    app.run()
+    run_simple(
+        'localhost',
+        5000,
+        app,
+        threaded=True,
+        use_reloader=True,
+        use_debugger=True
+    )
