@@ -3,7 +3,9 @@ from logging import getLogger
 from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
 from app.exceptions.authorization_exception import (EmailNotFoundException, MissingFieldsException,
                                                     InvalidEmailException, InvalidPhoneNumberException,
-                                                    PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort, IncorrectPasswordException)
+                                                    PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort,
+                                                    IncorrectPasswordException, IncorrectOTPException,
+                                                    ExpiredOTPException)
 from app.utils.response_util import set_response
 
 logger = getLogger(__name__)
@@ -104,5 +106,25 @@ def handle_incorrect_password(error):
         return set_response(400, {
             'code': 'incorrect_password',
             'message': 'Incorrect password.'
+        })
+    raise error
+
+def handle_incorrect_otp(error):
+    """ This function handles incorrect OTP exceptions. """
+    if isinstance(error, IncorrectOTPException):
+        logger.error("Incorrect OTP: %s", error)
+        return set_response(400, {
+            'code': 'incorrect_otp',
+            'message': 'Incorrect OTP.'
+        })
+    raise error
+
+def handle_expired_otp(error):
+    """ This function handles expired OTP exceptions. """
+    if isinstance(error, ExpiredOTPException):
+        logger.error("Expired OTP: %s", error)
+        return set_response(400, {
+            'code': 'expired_otp',
+            'message': 'Expired OTP.'
         })
     raise error
