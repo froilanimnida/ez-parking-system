@@ -33,7 +33,7 @@ class AuthService:
 
     @classmethod
     def generate_otp(cls, user_data: dict) -> str:  # pylint: disable=C0116
-        return UserOTPService.generate_otp(user_id=user_data.get('user_id'))
+        return UserOTPService.generate_otp(user_id=user_data.get('user_id'), email=user_data.get('email'), first_name=user_data.get('first_name'), last_name=user_data.get('last_name'))
 
     @classmethod
     def verify_otp(cls, user_data: dict) -> str:  # pylint: disable=C0116

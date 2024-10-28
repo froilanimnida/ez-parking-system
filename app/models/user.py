@@ -1,7 +1,6 @@
 """ This module contains the User class and UserOperations class. """
 from uuid import UUID
-from sqlalchemy import (DATETIME, Column, Integer, String,
-                        BINARY, VARCHAR, Enum, select, update)
+from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm.session import Session
 
@@ -15,7 +14,7 @@ class User(Base):
     __tablename__: str = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(BINARY(length=16), unique=True, nullable=False)
-    username = Column(String(length=75), unique=True, nullable=False)
+    nickname = Column(VARCHAR(length=75), unique=True, nullable=True)
     first_name = Column(VARCHAR(length=100), nullable=False)
     last_name = Column(VARCHAR(length=100), nullable=False)
     email = Column(VARCHAR(length=75), unique=True, nullable=False)
@@ -23,8 +22,7 @@ class User(Base):
     salt = Column(VARCHAR(length=45), nullable=False)
     hashed_password = Column(VARCHAR(length=255), nullable=False)
     role = Column(Enum('user', 'parking_manager', 'admin'), nullable=False)
-    otp_secret = Column(VARCHAR(length=10),
-                        nullable=True)
+    otp_secret = Column(VARCHAR(length=10), nullable=True)
     otp_expiry = Column(DATETIME, nullable=True)
 
 
@@ -36,7 +34,6 @@ class UserOperations:
         try:
             new_user = User(
                 uuid=user_data.get('uuid'),
-                username=user_data.get('username'),
                 first_name=user_data.get('first_name'),
                 last_name=user_data.get('last_name'),
                 email=user_data.get('email'),
