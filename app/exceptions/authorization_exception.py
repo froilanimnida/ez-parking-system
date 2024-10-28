@@ -67,4 +67,22 @@ class InvalidPhoneNumberException(CustomException):
     def __init__(self, message="Phone number is invalid."):
         self.message = message
         super().__init__(message)
+
+
+class PasswordTooShort(CustomException):
+    """
+        This error is for error that the user tries to log in with a password that
+        is too short.
+    """
+    def __init__(self, message="Password is too short."):
+        self.message = message
+        super().__init__(message)
+        
+class IncorrectPasswordException(CustomException):
+    """
+        This error is for error that the user tries to log in with an incorrect password.
+    """
+    def __init__(self, message="Incorrect password."):
+        self.message = message
+        super().__init__(message)
         

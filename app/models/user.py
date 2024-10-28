@@ -2,7 +2,9 @@
 from sqlalchemy import Column, Integer, String, BINARY, VARCHAR, Enum, select, and_
 from uuid import UUID
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
-from app.utils.engne import get_session
+
+from app.exceptions.authorization_exception import IncorrectPasswordException
+from app.utils.engine import get_session
 from app.models.base import Base
 
 
@@ -56,6 +58,7 @@ class UserOperations:
         try:
             user = session.execute(
                 select(
+                    User.id,
                     User.email, User.hashed_password, User.salt
                        ).where(
                     and_(
@@ -64,7 +67,10 @@ class UserOperations:
                     )
                 )
             ).scalar()
+            if user is None:
+                raise IncorrectPasswordException('Incorrect password.')
             return {
+                'id': user.id,
                 'email': user.email,
                 'hashed_password': user.hashed_password,
                 'salt': user.salt
