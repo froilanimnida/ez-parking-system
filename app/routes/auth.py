@@ -26,7 +26,7 @@ auth.register_error_handler(IncorrectPasswordException, handle_incorrect_passwor
 auth.register_error_handler(PasswordTooShort, handle_password_too_short)
 auth.register_error_handler(Exception, handle_general_exception)
 
-@auth.route('/create-new-account', methods=['POST'])
+@auth.route('/v1/auth/create-new-account', methods=['POST'])
 def create_new_account():
     data = request.get_json()
     if not data:
@@ -35,7 +35,7 @@ def create_new_account():
     response = auth_service.create_new_user(data)
     return set_response(201, {'code': 'success', 'message': 'User created successfully.', 'uuid': response})
 
-@auth.route('/login', methods=['POST'])
+@auth.route('/v1/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
     if not data:

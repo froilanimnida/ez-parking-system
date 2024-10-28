@@ -42,9 +42,11 @@ class UserOperations:
                 role=user_data.get('role')
             )
             session.add(new_user)
+            print('before commit')
             session.commit()
             # return the uuid but in readable format
             uuid = UUID(bytes=new_user.uuid)
+            print('after commit')
             return str(uuid)
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
@@ -53,28 +55,19 @@ class UserOperations:
             session.close()
     
     @classmethod
-    def login_user(cls, login_data: dict) -> dict:  # pylint: disable=C0116
+    def login_user(cls, email: str) -> tuple:  # pylint: disable=C0116
         session = get_session()
         try:
             user = session.execute(
-                select(
-                    User.id,
-                    User.email, User.hashed_password, User.salt
-                       ).where(
-                    and_(
-                        User.username == login_data.get('email'),
-                        User.hashed_password == login_data.get('hashed_password'),
-                    )
-                )
+                select(User).where(User.email == email)
             ).scalar()
             if user is None:
                 raise IncorrectPasswordException('Incorrect password.')
-            return {
-                'id': user.id,
-                'email': user.email,
-                'hashed_password': user.hashed_password,
-                'salt': user.salt
-            }
+            return (
+                user.id,
+                user.email,
+                user.hashed_password
+            )
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
             raise e

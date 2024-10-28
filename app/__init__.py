@@ -10,6 +10,7 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = getenv('JWT_SECRET_KEY')
     app.config['SECRET_KEY'] = getenv('SECRET_KEY')
     app.config['JWT_ACCESS_COOKIE_NAME'] = 'Authorization'
+    app.config['JWT_SECRET_KEY'] = getenv('JWT_SECRET_KEY')
     JWTManager(app)
     app.config['MAIL_SERVER'] = getenv('MAIL_SERVER')
     app.config['MAIL_PORT'] = getenv('MAIL_PORT')

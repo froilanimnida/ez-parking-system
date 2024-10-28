@@ -84,15 +84,13 @@ class UserLoginService:
         plaintext_password = login_data.get('password')
         if not plaintext_password:
             raise MissingFieldsException('Please provide a password.')
-        user = UserOperations.login_user(login_data)
-        user_id, user_email, hashed_password, salt = user.get('id'), user.get('email'), user.get('hashed_password'), user.get('salt')
-        print(user_id, user_email, hashed_password, salt)
-        
+        user = UserOperations.login_user(email)
+        user_id, user_email, hashed_password = user
         is_password_matched = checkpw(plaintext_password.encode('utf-8'),
                                       hashed_password.encode('utf-8'))
         if not is_password_matched:
             raise IncorrectPasswordException('Incorrect password.')
-        authorization_token = SessionTokenService.generate_session_token(email, user_id)
+        authorization_token = SessionTokenService.generate_session_token(email, 1)
         return authorization_token
 
 
