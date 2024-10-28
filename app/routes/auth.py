@@ -3,7 +3,8 @@ from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, Operational
 from app.exceptions.authorization_exception import (EmailNotFoundException, InvalidEmailException,
                                                     InvalidPhoneNumberException, PhoneNumberAlreadyTaken,
                                                     EmailAlreadyTaken, MissingFieldsException,
-                                                    IncorrectPasswordException, PasswordTooShort, ExpiredOTPException)
+                                                    IncorrectPasswordException, PasswordTooShort, ExpiredOTPException,
+                                                    IncorrectOTPException)
 from app.utils.error_handlers import (handle_email_not_found, handle_email_already_taken, handle_invalid_email,
                                       handle_phone_number_already_taken, handle_invalid_phone_number,
                                       handle_database_errors, handle_general_exception, handle_missing_fields,
@@ -28,6 +29,7 @@ auth.register_error_handler(IncorrectPasswordException, handle_incorrect_passwor
 auth.register_error_handler(PasswordTooShort, handle_password_too_short)
 auth.register_error_handler(IncorrectPasswordException, handle_incorrect_otp)
 auth.register_error_handler(ExpiredOTPException, handle_expired_otp)
+auth.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
 auth.register_error_handler(Exception, handle_general_exception)
 
 @auth.route('/v1/auth/create-new-account', methods=['POST'])
