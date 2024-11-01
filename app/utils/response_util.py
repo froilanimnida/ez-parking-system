@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from flask import make_response, jsonify, json
 
+
 def set_response(status_code, messages, **kwargs):
     """ This function sets the response for the routes. """
     response = make_response(jsonify(messages), status_code)
@@ -11,18 +12,15 @@ def set_response(status_code, messages, **kwargs):
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS, GET, DELETE, PUT'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    cookie_options = {
-        'httponly': False,
-        'secure': False,
-        'samesite': 'None',
-        'path': '/'
-    }
     if 'authorization_token' in kwargs:
         response.set_cookie(
             key='Authorization',
             value=kwargs['authorization_token'],
             expires=datetime.now() + timedelta(days=365),
-            **cookie_options
+            path= '/',
+            httponly= False,
+            secure= False,
+            samesite= None,
         )
     response_data = json.dumps(messages)
     response.data = response_data
