@@ -58,7 +58,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             raise error
 
     @staticmethod
-    def get_slot_by_vehicle_type(vehicle_type_id: int, establishment_id: int):  # pylint: disable=C0116
+    def get_slots_by_vehicle_type(vehicle_type_id: int, establishment_id: int):  # pylint: disable=C0116
         session = get_session()
         try:
             slots = session.query(Slot).filter(
@@ -71,7 +71,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
 
 
     @staticmethod
-    def get_slot_by_establishment(establishment_id: int):  # pylint: disable=C0116
+    def get_slots_by_establishment(establishment_id: int):  # pylint: disable=C0116
         session = get_session()
         try:
             slots = session.query(Slot).filter(
@@ -82,7 +82,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             raise error
 
     @staticmethod
-    def get_slot_by_slot_code(slot_code: str): # pylint: disable=C0116
+    def get_slots_by_slot_code(slot_code: str): # pylint: disable=C0116
         session = get_session()
         try:
             slot = session.query(Slot).filter(
