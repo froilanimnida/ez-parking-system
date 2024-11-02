@@ -1,8 +1,7 @@
 """ Class represents parking establishment model in the database. """
 
 from sqlalchemy import (
-    VARCHAR, Boolean, Column, Integer, BINARY, TIME,
-    DateTime, DECIMAL
+    VARCHAR, Boolean, Column, Integer, BINARY, TIME, DateTime, DECIMAL
 )
 
 from app.models.base import Base

@@ -1,9 +1,15 @@
-from app.routes.auth import auth
-from app.extension import mail
+""" This module contains the factory function to create the Flask app instance. """
+
 from os import getenv, makedirs, path
 from logging import FileHandler, StreamHandler, basicConfig, getLogger, INFO
+
 from flask import Flask
 from flask_jwt_extended import JWTManager
+
+from app.routes.auth import auth
+from app.routes.slot import slot
+from app.extension import mail
+
 
 def create_app():
     """Factory function to create the Flask app instance."""
@@ -49,5 +55,7 @@ def create_app():
         ]
     )
     app.register_blueprint(auth)
+    app.register_blueprint(slot)
     getLogger()
+    
     return app

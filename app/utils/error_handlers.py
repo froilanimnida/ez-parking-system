@@ -1,14 +1,15 @@
 """ This module contains error handlers for the application. """
+
 from logging import getLogger
 from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
-from app.exceptions.authorization_exception import (EmailNotFoundException, MissingFieldsException,
-                                                    InvalidEmailException, InvalidPhoneNumberException,
-                                                    PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort,
-                                                    IncorrectPasswordException, IncorrectOTPException,
-                                                    ExpiredOTPException)
+
+from app.exceptions.authorization_exception import (
+    EmailNotFoundException, MissingFieldsException, InvalidEmailException, InvalidPhoneNumberException,
+    PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort, IncorrectPasswordException,
+    IncorrectOTPException, ExpiredOTPException
+)
 from app.exceptions.slot_lookup_exceptions import (
-    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment,
-    NoSlotsFoundInTheGivenVehicleType
+    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment, NoSlotsFoundInTheGivenVehicleType
 )
 from app.utils.response_util import set_response
 

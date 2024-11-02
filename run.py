@@ -1,3 +1,5 @@
+""" This is the entry point of the application. """
+
 from flask_cors import CORS
 from dotenv import load_dotenv
 from werkzeug import run_simple

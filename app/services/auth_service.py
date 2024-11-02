@@ -13,10 +13,11 @@ from bcrypt import hashpw, gensalt, checkpw
 from flask_jwt_extended import create_access_token
 from pyotp import TOTP
 
-from app.exceptions.authorization_exception import (EmailAlreadyTaken, ExpiredOTPException, IncorrectOTPException, MissingFieldsException,
-                                                    InvalidEmailException, InvalidPhoneNumberException,
-                                                    PasswordTooShort, IncorrectPasswordException,
-                                                    EmailNotFoundException)
+from app.exceptions.authorization_exception import (
+    EmailAlreadyTaken, ExpiredOTPException, IncorrectOTPException, MissingFieldsException,
+    InvalidEmailException, InvalidPhoneNumberException, PasswordTooShort,
+    IncorrectPasswordException, EmailNotFoundException
+)
 from app.models.user import UserOperations, OTPOperations
 from app.utils.email_utility import send_mail
 

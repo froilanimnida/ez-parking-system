@@ -1,15 +1,20 @@
 from flask import Blueprint, request
 from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
-from app.exceptions.authorization_exception import (EmailNotFoundException, InvalidEmailException,
-                                                    InvalidPhoneNumberException, PhoneNumberAlreadyTaken,
-                                                    EmailAlreadyTaken, MissingFieldsException,
-                                                    IncorrectPasswordException, PasswordTooShort, ExpiredOTPException,
-                                                    IncorrectOTPException)
-from app.utils.error_handlers import (handle_email_not_found, handle_email_already_taken, handle_invalid_email,
-                                      handle_phone_number_already_taken, handle_invalid_phone_number,
-                                      handle_database_errors, handle_general_exception, handle_missing_fields,
-                                      handle_incorrect_password, handle_password_too_short, handle_incorrect_otp,
-                                      handle_expired_otp)
+
+from app.exceptions.authorization_exception import (
+    EmailNotFoundException, InvalidEmailException,
+    InvalidPhoneNumberException, PhoneNumberAlreadyTaken,
+    EmailAlreadyTaken, MissingFieldsException,
+    IncorrectPasswordException, PasswordTooShort, ExpiredOTPException,
+    IncorrectOTPException
+)
+from app.utils.error_handlers import (
+    handle_email_not_found, handle_email_already_taken, handle_invalid_email,
+    handle_phone_number_already_taken, handle_invalid_phone_number,
+    handle_database_errors, handle_general_exception, handle_missing_fields,
+    handle_incorrect_password, handle_password_too_short, handle_incorrect_otp,
+    handle_expired_otp
+)
 from app.utils.response_util import set_response
 from app.services.auth_service import AuthService
 
