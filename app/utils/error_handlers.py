@@ -6,6 +6,10 @@ from app.exceptions.authorization_exception import (EmailNotFoundException, Miss
                                                     PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort,
                                                     IncorrectPasswordException, IncorrectOTPException,
                                                     ExpiredOTPException)
+from app.exceptions.slot_lookup_exceptions import (
+    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment,
+    NoSlotsFoundInTheGivenVehicleType
+)
 from app.utils.response_util import set_response
 
 logger = getLogger(__name__)
@@ -126,5 +130,35 @@ def handle_expired_otp(error):
         return set_response(400, {
             'code': 'expired_otp',
             'message': 'Expired OTP.'
+        })
+    raise error
+
+def handle_no_slots_found_in_the_given_slot_code(error):
+    """ This function handles no slots found in the given slot code exceptions. """
+    if isinstance(error, NoSlotsFoundInTheGivenSlotCode):
+        logger.error("No slots found in the given slot code: %s", error)
+        return set_response(404, {
+            'code': 'no_slots_found_in_the_given_slot_code',
+            'message': 'No slots found in the given slot code.'
+        })
+    raise error
+
+def handle_no_slots_found_in_the_given_establishment(error):
+    """ This function handles no slots found in the given establishment exceptions. """
+    if isinstance(error, NoSlotsFoundInTheGivenEstablishment):
+        logger.error("No slots found in the given establishment: %s", error)
+        return set_response(404, {
+            'code': 'no_slots_found_in_the_given_establishment',
+            'message': 'No slots found in the given establishment.'
+        })
+    raise error
+
+def handle_no_slots_found_in_the_given_vehicle_type(error):
+    """ This function handles no slots found in the given vehicle type exceptions. """
+    if isinstance(error, NoSlotsFoundInTheGivenVehicleType):
+        logger.error("No slots found in the given vehicle type: %s", error)
+        return set_response(404, {
+            'code': 'no_slots_found_in_the_given_vehicle_type',
+            'message': 'No slots found in the given vehicle type.'
         })
     raise error
