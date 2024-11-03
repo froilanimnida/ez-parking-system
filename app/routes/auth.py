@@ -1,7 +1,7 @@
 """ This module contains the routes for the authentication endpoints. """
 
 from flask import Blueprint, request
-from flask_jwt_extended import get_jwt_identity, decode_token, set_access_cookies, jwt_required
+from flask_jwt_extended import get_jwt_identity, set_access_cookies, jwt_required
 
 from app.services.token_service import TokenService
 from app.exceptions.authorization_exception import (

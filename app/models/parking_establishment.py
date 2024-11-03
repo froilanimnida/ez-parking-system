@@ -4,7 +4,7 @@ from sqlalchemy import (
     VARCHAR, Boolean, Column, Integer, BINARY, TIME, DateTime, DECIMAL,
     func
 )
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -102,3 +102,79 @@ class GetEstablishmentOperations:
             return establishments
         except OperationalError as err:
             raise err
+
+class CreateEstablishmentOperations:
+    """ Class for operations related to parking establishment (Creating). """
+    @staticmethod
+    def create_establishment(establishment_data: dict):
+        """ Create a new parking establishment. """
+        session = get_session()
+        try:
+            establishment = ParkingEstablishment(
+                uuid=establishment_data.get('uuid'),
+                name=establishment_data.get('name'),
+                address=establishment_data.get('address'),
+                contact_number=establishment_data.get('contact_number'),
+                opening_time=establishment_data.get('opening_time'),
+                closing_time=establishment_data.get('closing_time'),
+                is_24_hours=establishment_data.get('is_24_hours'),
+                created_at=establishment_data.get('created_at'),
+                updated_at=establishment_data.get('updated_at'),
+                hourly_rate=establishment_data.get('hourly_rate'),
+                longitude=establishment_data.get('longitude'),
+                latitude=establishment_data.get('latitude')
+            )
+            session.add(establishment)
+            session.commit()
+        except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
+            
+
+class UpdateEstablishmentOperations:
+    """ Class for operations related to parking establishment (Updating). """
+    @staticmethod
+    def update_establishment(establishment_id: int, establishment_data: dict):
+        """ Update a parking establishment. """
+        session = get_session()
+        try:
+            establishment = session.query(ParkingEstablishment).filter(
+                ParkingEstablishment.establishment_id == establishment_id
+            ).first()
+            establishment.name = establishment_data.get('name')
+            establishment.address = establishment_data.get('address')
+            establishment.contact_number = establishment_data.get('contact_number')
+            establishment.opening_time = establishment_data.get('opening_time')
+            establishment.closing_time = establishment_data.get('closing_time')
+            establishment.is_24_hours = establishment_data.get('is_24_hours')
+            establishment.updated_at = establishment_data.get('updated_at')
+            establishment.hourly_rate = establishment_data.get('hourly_rate')
+            establishment.longitude = establishment_data.get('longitude')
+            establishment.latitude = establishment_data.get('latitude')
+            session.commit()
+        except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
+            
+
+class DeleteEstablishmentOperations:
+    """ Class for operations related to parking establishment (Deleting). """
+    @staticmethod
+    def delete_establishment(establishment_id: int):
+        """ Delete a parking establishment. """
+        session = get_session()
+        try:
+            establishment = session.query(ParkingEstablishment).filter(
+                ParkingEstablishment.establishment_id == establishment_id
+            ).first()
+            session.delete(establishment)
+            session.commit()
+        except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
