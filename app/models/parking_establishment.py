@@ -5,6 +5,7 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.engine import get_session
@@ -28,6 +29,12 @@ class ParkingEstablishment(Base):
     hourly_rate = Column(DECIMAL(8, 2), nullable=False)
     longitude = Column(DECIMAL(10, 8), nullable=False)
     latitude = Column(DECIMAL(10, 8), nullable=False)
+
+    slot = relationship(
+        'Slot',
+        back_populates='parking_establishment',
+        cascade='all, delete-orphan'
+    )
 
 
 class GetEstablishmentOperations:

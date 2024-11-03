@@ -58,10 +58,10 @@ def create_app():
     )
     app.register_blueprint(auth)
     app.register_blueprint(slot)
-    auth.register_error_handler(DatabaseError, handle_database_errors)
-    auth.register_error_handler(OperationalError, handle_database_errors)
-    auth.register_error_handler(IntegrityError, handle_database_errors)
-    auth.register_error_handler(DataError, handle_database_errors)
+    app.register_error_handler(DatabaseError, handle_database_errors)
+    app.register_error_handler(OperationalError, handle_database_errors)
+    app.register_error_handler(IntegrityError, handle_database_errors)
+    app.register_error_handler(DataError, handle_database_errors)
     getLogger()
 
     return app

@@ -1,7 +1,6 @@
 """ All routes related to slot retrieval, creation, and deletion. """
 
 from flask import Blueprint, request
-from sqlalchemy.exc import OperationalError
 
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment,
@@ -10,16 +9,24 @@ from app.exceptions.slot_lookup_exceptions import (
 from app.services.slot_service import SlotService
 from app.utils.response_util import set_response
 from app.utils.error_handlers import (
-    handle_database_errors, handle_general_exception, handle_no_slots_found_in_the_given_slot_code,
+    handle_general_exception,
+    handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment, handle_no_slots_found_in_the_given_vehicle_type
 )
 
 slot = Blueprint('slot', __name__)
 
-slot.register_error_handler(Exception, handle_general_exception)
-slot.register_error_handler(NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code)
-slot.register_error_handler(NoSlotsFoundInTheGivenEstablishment, handle_no_slots_found_in_the_given_establishment)
-slot.register_error_handler(NoSlotsFoundInTheGivenVehicleType, handle_no_slots_found_in_the_given_vehicle_type)
+slot.register_error_handler(
+    Exception, handle_general_exception)
+slot.register_error_handler(
+    NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code
+)
+slot.register_error_handler(
+    NoSlotsFoundInTheGivenEstablishment, handle_no_slots_found_in_the_given_establishment
+)
+slot.register_error_handler(
+    NoSlotsFoundInTheGivenVehicleType, handle_no_slots_found_in_the_given_vehicle_type
+)
 
 
 @slot.route('/v1/get-all-slots', methods=['GET'])

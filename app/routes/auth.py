@@ -1,6 +1,9 @@
+""" This module contains the routes for the authentication endpoints. """
+
 from flask import Blueprint, request
+from flask_jwt_extended import get_jwt_identity, decode_token, set_access_cookies
 
-
+from app.services.token_service import TokenService
 from app.exceptions.authorization_exception import (
     EmailNotFoundException, InvalidEmailException,
     InvalidPhoneNumberException, PhoneNumberAlreadyTaken,
@@ -10,9 +13,10 @@ from app.exceptions.authorization_exception import (
 )
 from app.utils.error_handlers import (
     handle_email_not_found, handle_email_already_taken, handle_invalid_email,
-    handle_phone_number_already_taken, handle_invalid_phone_number, handle_general_exception, handle_missing_fields,
-    handle_incorrect_password, handle_password_too_short, handle_incorrect_otp,
-    handle_expired_otp
+    handle_phone_number_already_taken, handle_invalid_phone_number,
+    handle_general_exception, handle_missing_fields,
+    handle_incorrect_password, handle_password_too_short,
+    handle_incorrect_otp, handle_expired_otp
 )
 from app.utils.response_util import set_response
 from app.services.auth_service import AuthService
@@ -34,16 +38,21 @@ auth.register_error_handler(Exception, handle_general_exception)
 
 @auth.route('/v1/auth/create-new-account', methods=['POST'])
 def create_new_account():
+    """ Create a new user account. """
     data = request.get_json()
     if not data:
         raise MissingFieldsException('Please provide all the required fields')
     auth_service = AuthService()
-    response = auth_service.create_new_user(data)
-    return set_response(201, {'code': 'success', 'message': 'User created successfully.', 'uuid': response})
+    auth_service.create_new_user(data)
+    return set_response(201, {
+        'code': 'success',
+        'message': 'User created successfully.'
+        })
 
 
 @auth.route('/v1/auth/login', methods=['POST'])
 def login():
+    """ Login a user. """
     data = request.get_json()
     if not data:
         raise MissingFieldsException('Please provide all the required fields')
@@ -54,19 +63,55 @@ def login():
 
 @auth.route('/v1/auth/generate-otp', methods=['PATCH'])
 def generate_otp():
+    """ Generate an OTP. """
     data = request.get_json()
     if not data:
         raise MissingFieldsException('Please provide all the required fields')
     auth_service = AuthService()
-    auth_service.generate_otp(data)
+    email = data.get('email')
+    auth_service.generate_otp(email)
     return set_response(200, {'code': 'otp_sent', 'message': 'OTP sent successfully.'})
 
 
 @auth.route('/v1/auth/verify-otp', methods=['PATCH'])
 def verify_otp():
+    """ Verify the OTP. """
     data = request.get_json()
     if not data:
         raise MissingFieldsException('Please provide all the required fields')
     auth_service = AuthService()
-    auth_service.verify_otp(data)
-    return set_response(200, {'code': 'success', 'message': 'User verified successfully.'})
+    email = data.get('email')
+    otp = data.get('otp')
+    user_id = auth_service.verify_otp(email, otp)
+    try:
+        token_service = TokenService()
+        access_token, refresh_token = token_service.generate_jwt_csrf_token(email=email, user_id=user_id)
+        print(f"Decoded token: {decode_token(refresh_token)}")
+        print(f"Decoded token: {decode_token(access_token)}")
+        response = set_response(200, messages="OTP Verified")
+        set_access_cookies(response, access_token)
+
+        return response
+
+    except Exception as e:  # pylint: disable=W0718
+        print(f"Error: {e}")
+        return set_response(500, {
+            'code': 'error',
+            'message': str(e)
+        })
+
+@auth.route('/v1/auth/set-nickname', methods=['PATCH'])
+def set_nickname():
+    """ Set the nickname of the user. """
+    data = request.get_json()
+    if not data:
+        raise MissingFieldsException('Please provide all the required fields')
+    nickname = data.get('nickname')
+    if not nickname:
+        raise MissingFieldsException('Please provide a nickname.')
+    if  len(nickname) < 3:
+        pass # Raise custom exception here
+    data['email'] = get_jwt_identity()
+    auth_service = AuthService()
+    auth_service.set_nickname(email=data.get('email'), nickname=data.get('nickname'))
+    return set_response(200, {'code': 'success', 'message': 'Nickname set successfully.'})

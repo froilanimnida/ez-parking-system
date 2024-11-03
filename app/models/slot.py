@@ -36,13 +36,11 @@ class Slot(Base):
 
     vehicle_type = relationship(
         'VehicleType',
-        back_populates='slots',
-        cascade='all, delete-orphan'
+        back_populates='slot',
     )
     parking_establishment = relationship(
         'ParkingEstablishment',
-        back_populates='slots',
-        cascade='all, delete-orphan'
+        back_populates='slot',
     )
 
 
