@@ -4,7 +4,7 @@ from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select,
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm.session import Session
 
-from app.exceptions.authorization_exception import IncorrectPasswordException
+from app.exceptions.authorization_exception import EmailNotFoundException, IncorrectPasswordException
 from app.utils.engine import get_session
 from app.models.base import Base
 
@@ -95,13 +95,13 @@ class OTPOperations:
     def get_otp(cls, email: str) -> tuple:  # pylint: disable=C0116
         session: Session = get_session()
         try:
-            user = session.execute(select(User)
+            user = session.execute(select(User. otp_secret, User.otp_expiry)
                 .where(User.email == email)
             ).scalar()
-            return (
-                int(user.otp_secret),
-                user.otp_expiry
-            )
+            if user is None:
+                raise EmailNotFoundException('Email not found.')
+            otp_secret, otp_expiry = user
+            return otp_secret, otp_expiry
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
             raise e
@@ -109,7 +109,7 @@ class OTPOperations:
             session.close()
 
     @classmethod
-    def set_otp(cls, data: dict) -> str:  # pylint: disable=C0116
+    def set_otp(cls, data: dict):  # pylint: disable=C0116
         session: Session = get_session()
         try:
             session.execute(
@@ -119,15 +119,14 @@ class OTPOperations:
                 )
             )
             session.commit()
-            return 'success'
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
             raise e
         finally:
             session.close()
-            
+
     @classmethod
-    def delete_otp(cls, email: str) -> str:  # pylint: disable=C0116
+    def delete_otp(cls, email: str):  # pylint: disable=C0116
         session: Session = get_session()
         try:
             session.execute(
@@ -137,7 +136,6 @@ class OTPOperations:
                 )
             )
             session.commit()
-            return 'success'
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
             raise e
