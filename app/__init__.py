@@ -1,16 +1,22 @@
 """ This module contains the factory function to create the Flask app instance. """
 
+import datetime
 from os import getenv, makedirs, path
 from logging import FileHandler, StreamHandler, basicConfig, getLogger, INFO
 
+from marshmallow.exceptions import ValidationError
 from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
 from flask import Flask
 from flask_jwt_extended import JWTManager
+from flask_jwt_extended.exceptions import CSRFError
 
 from app.routes.auth import auth
 from app.routes.slot import slot
 from app.extension import mail
-from app.utils.error_handlers import handle_database_errors
+from app.utils.error_handlers import (
+    handle_database_errors, handle_validation_errors, handle_csrf_error, handle_no_authorization_error,
+    handle_user_lookup_error, handle_general_exception
+)
 
 
 def create_app():
@@ -21,6 +27,7 @@ def create_app():
 
     app.config['SECRET_KEY'] = getenv('SECRET_KEY')
     app.config['JWT_SECRET_KEY'] = getenv('JWT_SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(minutes=15)
     app.config['JWT_ALGORITHM'] = 'HS256'
     app.config['JWT_DECODE_ALGORITHMS'] = ['HS256']
     app.config['JWT_ACCESS_COOKIE_NAME'] = 'Authorization'
@@ -58,10 +65,13 @@ def create_app():
     )
     app.register_blueprint(auth)
     app.register_blueprint(slot)
+    app.register_error_handler(Exception, handle_general_exception)
     app.register_error_handler(DatabaseError, handle_database_errors)
     app.register_error_handler(OperationalError, handle_database_errors)
     app.register_error_handler(IntegrityError, handle_database_errors)
     app.register_error_handler(DataError, handle_database_errors)
+    app.register_error_handler(ValidationError, handle_validation_errors)
+    app.register_error_handler(CSRFError, handle_csrf_error)
     getLogger()
 
     return app

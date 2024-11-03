@@ -39,8 +39,8 @@ class AuthService:
         return UserOTPService.verify_otp(email=email, otp=otp)
 
     @classmethod
-    def set_nickname(cls, email, nickname):  # pylint: disable=C0116
-        return UserProfileService.set_nickname(email=email,  nickname=nickname)
+    def set_nickname(cls, user_id, nickname):  # pylint: disable=C0116
+        return UserProfileService.set_nickname(user_id=user_id,  nickname=nickname)
 
 
 
@@ -89,15 +89,13 @@ class UserLoginService:
         email = login_data.get('email')
         if not email:
             raise MissingFieldsException(
-                message='Please provide an email address.')
+                message='Please provide an email address.'
+            )
 
         is_email_taken = UserOperations.is_email_taken(email=email)
         if not is_email_taken:
             raise EmailNotFoundException(message='Email not found.')
 
-        if not re.search(pattern=r'^[a-z0-9]+[._]?[a-z0-9]+@\w+[.]\w+$', string=email):
-            raise InvalidEmailException(
-                'Please provide a valid email address.')
         user = UserOperations.login_user(email=email)
         user_email = user
         # Send otp to user to their email by calling the generate_otp method
@@ -145,6 +143,7 @@ class UserOTPService:
         """ Function to verify an OTP for a user. """
         retrieved_otp, expiry, user_id = OTPOperations.get_otp(email=email)
         if datetime.now() > expiry:
+            OTPOperations.delete_otp(email=email)
             raise ExpiredOTPException(message='OTP has expired.')
         if retrieved_otp != otp or not otp:
             raise IncorrectOTPException(message='Incorrect OTP.')
@@ -155,6 +154,6 @@ class UserOTPService:
 class UserProfileService:
     """ Class to handle user profile operations. """
     @classmethod
-    def set_nickname(cls, email: str, nickname: str):
+    def set_nickname(cls, user_id: int, nickname: str):
         """ Function to set a nickname for a user. """
-        UserOperations.set_nickname(email=email, nickname=nickname)
+        UserOperations.set_nickname(user_id=user_id, nickname=nickname)

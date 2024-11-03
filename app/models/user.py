@@ -71,7 +71,7 @@ class UserOperations:
         session: Session = get_session()
         try:
             user = session.execute(
-                statement=select(User).where(User.email == email)
+                select(User).where(User.email == email)
             ).scalar()
             return user is not None
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
@@ -81,11 +81,11 @@ class UserOperations:
             session.close()
 
     @classmethod
-    def set_nickname(cls, email: str, nickname: str):  # pylint: disable=C0116
+    def set_nickname(cls, user_id: int, nickname: str):  # pylint: disable=C0116
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.email == email).values(nickname=nickname)
+                update(User).where(User.id == user_id).values(nickname=nickname)
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
@@ -103,15 +103,14 @@ class OTPOperations:
         try:
             user = session.execute(select(
                     User.id,
-                    User. otp_secret,
+                    User.otp_secret,
                     User.otp_expiry
                 )
                 .where(User.email == email)
-            ).scalar()
+            ).first()
             if user is None:
                 raise EmailNotFoundException('Email not found.')
-            otp_secret, otp_expiry, user_id = user
-
+            user_id, otp_secret, otp_expiry  = user
             return otp_secret, otp_expiry, user_id
 
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:

@@ -33,9 +33,35 @@ class SignUpValidation(Schema):
     )
 
 
-class LoginWithEmail(Schema):
+class LoginWithEmailValidation(Schema):
     """ Class to handle email login validation. """
     email = fields.Email(
+        required=True,
+        validate=validate.Length(min=1, max=75)
+    )
+
+
+class OTPGenerationSchema(Schema):
+    """ Class to handle OTP validation. """
+    otp = fields.Str(
+        required=True,
+        validate=validate.Length(min=6, max=6)
+    )
+
+class OTPSubmissionFormValidation(Schema):
+    """ Class to handle OTP submission validation. """
+    otp = fields.Str(
+        required=True,
+        validate=validate.Length(min=6, max=6)
+    )
+    email = fields.Email(
+        required=True,
+        validate=validate.Length(min=1, max=75)
+    )
+
+class NicknameFormValidation(Schema):
+    """ Class to handle nickname validation. """
+    nickname = fields.Str(
         required=True,
         validate=validate.Length(min=1, max=75)
     )
