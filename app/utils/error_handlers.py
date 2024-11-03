@@ -1,8 +1,14 @@
 """ This module contains error handlers for the application. """
 
 from logging import getLogger
-from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
 
+from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
+from marshmallow.exceptions import ValidationError
+from flask_jwt_extended.exceptions import (
+    CSRFError, NoAuthorizationError, JWTDecodeError, WrongTokenError, RevokedTokenError,
+    UserClaimsVerificationError, UserLookupError, InvalidHeaderError,InvalidQueryParamError,
+    FreshTokenRequired
+)
 from app.exceptions.authorization_exception import (
     EmailNotFoundException, MissingFieldsException, InvalidEmailException, InvalidPhoneNumberException,
     PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort, IncorrectPasswordException,
@@ -161,5 +167,115 @@ def handle_no_slots_found_in_the_given_vehicle_type(error):
         return set_response(404, {
             'code': 'no_slots_found_in_the_given_vehicle_type',
             'message': 'No slots found in the given vehicle type.'
+        })
+    raise error
+
+def handle_validation_errors(error):
+    """ This function handles validation errors. """
+    if isinstance(error, ValidationError):
+        logger.error("Validation error: %s", error)
+        return set_response(400, {
+            'code': 'validation_error',
+            'message': 'Validation error. Please provide valid data'
+        })
+    raise error
+
+def handle_csrf_error(error):
+    """ This function handles CSRF errors. """
+    if isinstance(error, CSRFError):
+        logger.error("CSRF error: %s", error)
+        return set_response(400, {
+            'code': 'csrf_error',
+            'message': 'CSRF error.'
+        })
+    raise error
+
+def handle_no_authorization_error(error):
+    """ This function handles no authorization errors. """
+    if isinstance(error, NoAuthorizationError):
+        logger.error("No authorization error: %s", error)
+        return set_response(401, {
+            'code': 'no_authorization_error',
+            'message': 'No authorization error.'
+        })
+    raise error
+
+def handle_jwt_decode_error(error):
+    """ This function handles JWT decode errors. """
+    if isinstance(error, JWTDecodeError):
+        logger.error("JWT decode error: %s", error)
+        return set_response(400, {
+            'code': 'jwt_decode_error',
+            'message': 'JWT decode error.'
+        })
+    raise error
+
+def handle_wrong_token_error(error):
+    """ This function handles wrong token errors. """
+    if isinstance(error, WrongTokenError):
+        logger.error("Wrong token error: %s", error)
+        return set_response(400, {
+            'code': 'wrong_token_error',
+            'message': 'Wrong token error.'
+        })
+    raise error
+
+def handle_revoked_token_error(error):
+    """ This function handles revoked token errors. """
+    if isinstance(error, RevokedTokenError):
+        logger.error("Revoked token error: %s", error)
+        return set_response(400, {
+            'code': 'revoked_token_error',
+            'message': 'Revoked token error.'
+        })
+    raise error
+
+def handle_user_claims_verification_error(error):
+    """ This function handles user claims verification errors. """
+    if isinstance(error, UserClaimsVerificationError):
+        logger.error("User claims verification error: %s", error)
+        return set_response(400, {
+            'code': 'user_claims_verification_error',
+            'message': 'User claims verification error.'
+        })
+    raise error
+
+def handle_user_lookup_error(error):
+    """ This function handles user lookup errors. """
+    if isinstance(error, UserLookupError):
+        logger.error("User lookup error: %s", error)
+        return set_response(400, {
+            'code': 'user_lookup_error',
+            'message': 'User lookup error.'
+        })
+    raise error
+
+def handle_invalid_header_error(error):
+    """ This function handles invalid header errors. """
+    if isinstance(error, InvalidHeaderError):
+        logger.error("Invalid header error: %s", error)
+        return set_response(400, {
+            'code': 'invalid_header_error',
+            'message': 'Invalid header error.'
+        })
+    raise error
+
+def handle_invalid_query_param_error(error):
+    """ This function handles invalid query param errors. """
+    if isinstance(error, InvalidQueryParamError):
+        logger.error("Invalid query param error: %s", error)
+        return set_response(400, {
+            'code': 'invalid_query_param_error',
+            'message': 'Invalid query param error.'
+        })
+    raise error
+
+def handle_fresh_token_required(error):
+    """ This function handles fresh token required errors. """
+    if isinstance(error, FreshTokenRequired):
+        logger.error("Fresh token required error: %s", error)
+        return set_response(400, {
+            'code': 'fresh_token_required_error',
+            'message': 'Fresh token required error.'
         })
     raise error
