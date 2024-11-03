@@ -20,7 +20,6 @@ slot.register_error_handler(Exception, handle_general_exception)
 slot.register_error_handler(NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code)
 slot.register_error_handler(NoSlotsFoundInTheGivenEstablishment, handle_no_slots_found_in_the_given_establishment)
 slot.register_error_handler(NoSlotsFoundInTheGivenVehicleType, handle_no_slots_found_in_the_given_vehicle_type)
-slot.register_error_handler(OperationalError, handle_database_errors)
 
 
 @slot.route('/v1/get-all-slots', methods=['GET'])
