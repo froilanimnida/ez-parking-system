@@ -2,10 +2,10 @@
             This exception files contains exceptions that are
             related to the authorization of the user.
     """
-from app.exceptions.custom_exception import CustomException
+from app.exceptions.ez_parking_base_exception import EzParkingBaseException
 
 
-class EmailNotFoundException(CustomException):
+class EmailNotFoundException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with an email that
         doesn't exist on the database.
@@ -16,7 +16,7 @@ class EmailNotFoundException(CustomException):
         super().__init__(message)
 
 
-class InvalidEmailException(CustomException):
+class InvalidEmailException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with an email that
         is invalid.
@@ -27,7 +27,7 @@ class InvalidEmailException(CustomException):
         super().__init__(message)
 
 
-class MissingFieldsException(CustomException):
+class MissingFieldsException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in without the required fields.
     """
@@ -37,7 +37,7 @@ class MissingFieldsException(CustomException):
         super().__init__(message)
 
 
-class EmailAlreadyTaken(CustomException):
+class EmailAlreadyTaken(EzParkingBaseException):
     """
         This is for error that will be raised when the user creates an account
         with an email that is already taken. A bit redundant, but it will be
@@ -51,7 +51,7 @@ class EmailAlreadyTaken(CustomException):
         super().__init__(message)
 
 
-class PhoneNumberAlreadyTaken(CustomException):
+class PhoneNumberAlreadyTaken(EzParkingBaseException):
     """
         This is for error that will be raised when the user creates an account
         with a phone number that is already taken. A bit redundant, but it will be
@@ -65,7 +65,7 @@ class PhoneNumberAlreadyTaken(CustomException):
         super().__init__(message)
 
 
-class InvalidPhoneNumberException(CustomException):
+class InvalidPhoneNumberException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with a phone number that
         is invalid.
@@ -76,7 +76,7 @@ class InvalidPhoneNumberException(CustomException):
         super().__init__(message)
 
 
-class PasswordTooShort(CustomException):
+class PasswordTooShort(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with a password that
         is too short.
@@ -87,7 +87,7 @@ class PasswordTooShort(CustomException):
         super().__init__(message)
 
 
-class IncorrectPasswordException(CustomException):
+class IncorrectPasswordException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with an incorrect password.
     """
@@ -97,20 +97,20 @@ class IncorrectPasswordException(CustomException):
         super().__init__(message)
 
 
-class IncorrectOTPException(CustomException):
+class IncorrectOTPException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with an incorrect OTP.
     """
-    
+
     def __init__(self, message="Incorrect OTP."):
         self.message = message
         super().__init__(message)
 
-class ExpiredOTPException(CustomException):
+class ExpiredOTPException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in with an expired OTP.
     """
-    
+
     def __init__(self, message="Expired OTP."):
         self.message = message
         super().__init__(message)

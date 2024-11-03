@@ -1,3 +1,5 @@
+""" This is the entry point of the application. """
+
 from flask_cors import CORS
 from dotenv import load_dotenv
 from werkzeug import run_simple
@@ -11,11 +13,18 @@ CORS(app, supports_credentials=True, origins='*')
 
 
 if __name__ == '__main__':
-    run_simple(
-        'localhost',
-        5000,
-        app,
+    app.run(
+        host='localhost',
+        port=5000,
+        debug=True,
         threaded=True,
-        use_reloader=True,
-        use_debugger=True
+        load_dotenv=True,
     )
+    # run_simple(
+    #     'localhost',
+    #     5000,
+    #     app,
+    #     threaded=True,
+    #     use_reloader=True,
+    #     use_debugger=True
+    # )

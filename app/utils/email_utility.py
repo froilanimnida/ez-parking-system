@@ -1,4 +1,5 @@
 """ This module contains the email utility functions. """
+
 from flask_mail import Message
 from app.extension import mail
 

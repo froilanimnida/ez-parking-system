@@ -3,6 +3,7 @@
 from sqlalchemy import (
     Column, Integer, VARCHAR, Enum, DECIMAL, DateTime
 )
+from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 
@@ -21,3 +22,9 @@ class VehicleType(Base):
     rate_multiplier = Column(DECIMAL(3, 2), nullable=False)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
+
+    slot = relationship(
+        'Slot',
+        back_populates='vehicle_type',
+        cascade='all, delete-orphan'
+    )

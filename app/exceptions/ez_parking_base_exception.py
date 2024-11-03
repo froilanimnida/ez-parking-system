@@ -8,7 +8,7 @@
     """
 
 
-class CustomException(Exception):
+class EzParkingBaseException(Exception):
     """
     CustomException class to handle custom exceptions.
     """
