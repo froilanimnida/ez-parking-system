@@ -130,7 +130,7 @@ class UserOTPService:
             otp=six_digits_otp,
             user_name=email
         )
-        data: dict[str, str | datetime] = {
+        data = {
             'email': email,
             'otp_secret': six_digits_otp,
             'otp_expiry': otp_expiry
