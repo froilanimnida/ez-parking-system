@@ -8,7 +8,6 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, DataError, OperationalError, DatabaseError
 
 from app.exceptions.authorization_exception import EmailNotFoundException
@@ -91,11 +90,13 @@ class TestUserCreation:
         "otp_expiry",
         "creation_date",
     ])
-    def test_raise_integrity_error_required_field(self, mock_session, valid_user_data, missing_field):  # pylint: disable=C0103
+    def test_raise_integrity_error_required_field(
+        self, mock_session, valid_user_data, missing_field
+    ):  # pylint: disable=C0103
         """Test creating a new user with a missing required field."""
         # Arrange
         valid_user_data[missing_field] = None
-        error_message = f'null value in column "{missing_field}" of relation "user" violates not-null constraint'
+        error_message = f'null value in column "{missing_field}" of relation "user" violates not-null constraint'  #pylint: disable=C0103
         mock_session.commit.side_effect = IntegrityError(
             statement="INSERT INTO user ...",
             params={},
