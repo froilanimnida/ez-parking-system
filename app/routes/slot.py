@@ -11,7 +11,8 @@ from app.utils.response_util import set_response
 from app.utils.error_handlers import (
     handle_general_exception,
     handle_no_slots_found_in_the_given_slot_code,
-    handle_no_slots_found_in_the_given_establishment, handle_no_slots_found_in_the_given_vehicle_type
+    handle_no_slots_found_in_the_given_establishment,
+    handle_no_slots_found_in_the_given_vehicle_type
 )
 
 slot = Blueprint('slot', __name__)

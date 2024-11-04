@@ -96,7 +96,10 @@ class TestUserCreation:
         """Test creating a new user with a missing required field."""
         # Arrange
         valid_user_data[missing_field] = None
-        error_message = f'null value in column "{missing_field}" of relation "user" violates not-null constraint'  #pylint: disable=C0103
+        error_message = (
+            f'null value in column "{missing_field}" of relation "user" '
+            f'violates not-null constraint'
+        )
         mock_session.commit.side_effect = IntegrityError(
             statement="INSERT INTO user ...",
             params={},

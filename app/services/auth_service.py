@@ -43,7 +43,7 @@ class AuthService:
 
 
 
-class UserRegistrationService:
+class UserRegistrationService:  # pylint: disable=R0903
     """ Class to handle user registration operations. """
     @classmethod
     def register_user(cls, user_data: dict):  # pylint: disable=C0116
@@ -82,7 +82,7 @@ class UserRegistrationService:
         return UserOperations.create_new_user(user_data=user_data)
 
 
-class UserLoginService:
+class UserLoginService:  # pylint: disable=R0903
     """ Class to handle user login operations. """
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
@@ -151,7 +151,7 @@ class UserOTPService:
         return user_id
 
 
-class UserProfileService:
+class UserProfileService:  # pylint: disable=R0903
     """ Class to handle user profile operations. """
     @classmethod
     def set_nickname(cls, email: str, nickname: str):
