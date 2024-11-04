@@ -4,7 +4,7 @@
 # pylint: disable=W0621
 
 from datetime import datetime
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -13,30 +13,7 @@ from sqlalchemy.exc import IntegrityError, DataError, OperationalError, Database
 
 from app.exceptions.authorization_exception import EmailNotFoundException
 from app.models.user import User, UserOperations
-
-@pytest.fixture
-def mock_session():
-    """Mock the session object."""
-    with patch('app.models.user.get_session') as mock:
-        session = Mock()
-        mock.return_value = session
-        yield session
-
-
-@pytest.fixture
-def valid_user_data():
-    """ Represents a valid user data. """
-    return {
-        'uuid': uuid4().bytes,
-        "first_name": "Test",
-        "last_name": "User",
-        "phone_number": "+1234567890",
-        "email": "test@example.com",
-        'creation_date': datetime.now(),
-        'role': 'user',
-        'otp_secret': None,
-        'otp_expiry': None,
-    }
+from tests.models.user_conftest import mock_session, valid_user_data  # pylint: disable=unused-import
 
 
 # noinspection PyTypeHints,SqlNoDataSourceInspection

@@ -4,8 +4,7 @@
 # pylint: disable=W0621
 
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
-from uuid import uuid4
+from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import Update
@@ -13,31 +12,7 @@ from sqlalchemy.exc import IntegrityError, DataError, OperationalError, Database
 
 from app.exceptions.authorization_exception import EmailNotFoundException
 from app.models.user import User, OTPOperations
-
-@pytest.fixture
-def mock_session():
-    """Mock the session object."""
-    with patch('app.models.user.get_session') as mock:
-        session = Mock()
-        mock.return_value = session
-        yield session
-
-
-@pytest.fixture
-def valid_user_data():
-    """ Represents a valid user data. """
-    return {
-        'uuid': uuid4().bytes,
-        "first_name": "Test",
-        "last_name": "User",
-        "phone_number": "+1234567890",
-        "email": "test@example.com",
-        'creation_date': datetime.now(),
-        'role': 'user',
-        'otp_secret': None,
-        'otp_expiry': None,
-    }
-
+from tests.models.user_conftest import mock_session, valid_user_data  # pylint: disable=unused-import
 
 class TestGetOTPOperations:
     """Test for OTP operations."""
@@ -79,7 +54,7 @@ class TestGetOTPOperations:
     def test_get_otp_handles_integrity_error(self, mock_session):
         """Test get_otp method handles IntegrityError and rolls back session."""
         mock_session.execute.side_effect = IntegrityError(
-            statement="SELECT ...", params={}, orig=None
+            statement="SELECT ...", params={}, orig=None # type: ignore
         )
 
         with pytest.raises(IntegrityError):
