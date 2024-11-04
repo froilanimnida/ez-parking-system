@@ -6,7 +6,6 @@
 from marshmallow import Schema, fields, validate
 
 
-
 class SignUpValidation(Schema):
     """ Class to handle user registration validation. """
     first_name = fields.Str(
