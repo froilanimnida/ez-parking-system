@@ -127,7 +127,9 @@ class TestUserCreation:
 
     def test_create_new_user_operational_error(self, mock_session, valid_user_data):
         """Test creating a new user when database connection fails."""
-        mock_session.add.side_effect = OperationalError("statement", "params", "orig") # type: ignore
+        mock_session.add.side_effect = OperationalError(
+            "statement", "params", "orig"  # type: ignore
+        )
 
         with pytest.raises(OperationalError):
             UserOperations.create_new_user(valid_user_data)
@@ -139,7 +141,9 @@ class TestUserCreation:
     def test_handle_database_error(self, mock_session, valid_user_data):
         """Test handling DatabaseError when creating a new user."""
         mock_session.add = Mock()
-        mock_session.commit.side_effect = DatabaseError("statement", "params", "orig") # type: ignore
+        mock_session.commit.side_effect = DatabaseError(
+            "statement", "params", "orig"  # type: ignore
+        )
 
         with pytest.raises(DatabaseError):
             UserOperations.create_new_user(valid_user_data)
@@ -238,7 +242,9 @@ class TestUserCreation:
 
     def test_create_new_user_session_closed_on_exception(self, mock_session, valid_user_data):
         """Test that the session is closed even if an exception is raised during user creation."""
-        mock_session.add.side_effect = DatabaseError("statement", "params", "orig")  # type: ignore
+        mock_session.add.side_effect = DatabaseError(
+            "statement", "params", "orig"  # type: ignore
+        )
 
         with pytest.raises(DatabaseError):
             UserOperations.create_new_user(valid_user_data)
@@ -262,7 +268,9 @@ class TestUserCreation:
 
 class TestLoginOperation:
     """Test for user login operation."""
-    def test_login_user_raises_email_not_found_exception_when_user_not_found(self, mock_session):
+    def test_login_user_raises_email_not_found_exception_when_user_not_found(
+        self, mock_session
+    ):
         """Test that login_user raises IncorrectPasswordException when user is not found."""
         mock_session.execute.return_value.scalar.return_value = None
         email = "nonexistent@example.com"
@@ -292,7 +300,9 @@ class TestLoginOperation:
 
     def test_login_user_operational_error(self, mock_session):
         """Test handling OperationalError when logging in a user."""
-        mock_session.execute.side_effect = OperationalError("statement", "params", "orig") # type: ignore
+        mock_session.execute.side_effect = OperationalError(
+            "statement", "params", "orig" # type: ignore
+        )
 
         with pytest.raises(OperationalError):
             UserOperations.login_user("test@example.com")
@@ -302,7 +312,9 @@ class TestLoginOperation:
 
     def test_login_user_handles_database_error(self, mock_session):
         """Test that login_user handles DatabaseError and rolls back the session."""
-        mock_session.execute.side_effect = DatabaseError("statement", "params", "orig")  # type: ignore
+        mock_session.execute.side_effect = DatabaseError(
+            "statement", "params", "orig"  # type: ignore
+        )
 
         with pytest.raises(DatabaseError):
             UserOperations.login_user("test@example.com")
@@ -360,7 +372,9 @@ class TestIsEmailTaken:
     def test_is_email_taken_closes_session_on_exception(self, mock_session):
         """Test that is_email_taken closes the session even if an exception is raised."""
         # Arrange
-        mock_session.execute.side_effect = DatabaseError("statement", "params", "orig")  # type: ignore
+        mock_session.execute.side_effect = DatabaseError(
+            "statement", "params", "orig"  # type: ignore
+        )
         email = "test@example.com"
 
         # Act
@@ -374,7 +388,9 @@ class TestIsEmailTaken:
     def test_is_email_taken_handles_data_error(self, mock_session):
         """Test that is_email_taken handles DataError and rolls back the session."""
         # Arrange
-        mock_session.execute.side_effect = DataError("statement", "params", "orig")  # type: ignore
+        mock_session.execute.side_effect = DataError(
+            "statement", "params", "orig"  # type: ignore
+        )
         email = "test@example.com"
 
         # Act & Assert
@@ -387,7 +403,9 @@ class TestIsEmailTaken:
     def test_is_email_taken_handles_integrity_error(self, mock_session):
         """Test that is_email_taken handles IntegrityError and rolls back the session."""
         # Arrange
-        mock_session.execute.side_effect = IntegrityError("statement", "params", "orig") # type: ignore
+        mock_session.execute.side_effect = IntegrityError(
+            "statement", "params", "orig" # type: ignore
+        )
         email = "test@example.com"
 
         # Act & Assert
