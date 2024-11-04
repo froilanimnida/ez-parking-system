@@ -11,7 +11,7 @@ from app.models.base import Base
 from app.utils.engine import get_session
 
 
-class ParkingEstablishment(Base):
+class ParkingEstablishment(Base):  # pylint: disable=R0903
     """ Class represents parking establishment model in the database. """
 
     __tablename__ = 'parking_establishment'
@@ -80,9 +80,16 @@ class GetEstablishmentOperations:
                 .order_by(
                     (
                         radius_km * func.acos(
-                            func.cos(func.radians(latitude)) * func.cos(func.radians(ParkingEstablishment.latitude)) *
-                            func.cos(func.radians(ParkingEstablishment.longitude) - func.radians(longitude)) +
-                            func.sin(func.radians(latitude)) * func.sin(func.radians(ParkingEstablishment.latitude))
+                            func.cos(func.radians(latitude)) *
+                            func.cos(func.radians(
+                                ParkingEstablishment.latitude)
+                            ) *
+                            func.cos(
+                                func.radians(ParkingEstablishment.longitude)
+                                - func.radians(longitude)
+                            ) +
+                            func.sin(func.radians(latitude)) *
+                            func.sin(func.radians(ParkingEstablishment.latitude))
                         )
                     ).asc()
                 )
@@ -97,7 +104,7 @@ class GetEstablishmentOperations:
         session = get_session()
         try:
             establishments = session.query(ParkingEstablishment).filter(
-                ParkingEstablishment.is_24_hours == True
+                ParkingEstablishment.is_24_hours
             ).all()
             return establishments
         except OperationalError as err:

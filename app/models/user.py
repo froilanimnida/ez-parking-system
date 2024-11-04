@@ -3,14 +3,13 @@ from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select,
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm.session import Session
 
-from app.exceptions.authorization_exception import (
-    EmailNotFoundException, IncorrectPasswordException
-)
+from app.exceptions.authorization_exception import EmailNotFoundException
+
 from app.utils.engine import get_session
 from app.models.base import Base
 
 
-class User(Base):
+class User(Base):  # pylint: disable=R0903
     """ Class to represent the user table in the database. """
     __tablename__: str = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
