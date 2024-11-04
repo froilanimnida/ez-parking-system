@@ -1,21 +1,22 @@
 """ This module contains the routes for the authentication endpoints. """
 
 from flask import Blueprint, request
-from flask_jwt_extended import get_jwt_identity, decode_token, set_access_cookies, jwt_required
+from flask_jwt_extended import get_jwt_identity, set_access_cookies, jwt_required
 
 from app.services.token_service import TokenService
 from app.exceptions.authorization_exception import (
-    EmailNotFoundException, InvalidEmailException, InvalidPhoneNumberException, PhoneNumberAlreadyTaken,
-    EmailAlreadyTaken, MissingFieldsException, IncorrectPasswordException, PasswordTooShort, ExpiredOTPException,
-    IncorrectOTPException
+    EmailNotFoundException, InvalidEmailException, InvalidPhoneNumberException,
+    PhoneNumberAlreadyTaken, EmailAlreadyTaken, MissingFieldsException,
+    ExpiredOTPException, IncorrectOTPException
 )
 from app.utils.error_handlers import (
-    handle_email_not_found, handle_email_already_taken, handle_invalid_email, handle_phone_number_already_taken,
-    handle_invalid_phone_number, handle_missing_fields, handle_incorrect_password,
-    handle_password_too_short, handle_incorrect_otp, handle_expired_otp
+    handle_email_not_found, handle_email_already_taken, handle_invalid_email,
+    handle_phone_number_already_taken, handle_invalid_phone_number,
+    handle_missing_fields, handle_incorrect_otp, handle_expired_otp
 )
 from app.schema.auth_validation import (
-    SignUpValidation, LoginWithEmailValidation, NicknameFormValidation, OTPSubmissionFormValidation, OTPGenerationSchema
+    SignUpValidation, LoginWithEmailValidation, NicknameFormValidation,
+    OTPSubmissionFormValidation, OTPGenerationSchema
 )
 from app.utils.response_util import set_response
 from app.services.auth_service import AuthService
@@ -28,9 +29,6 @@ auth.register_error_handler(InvalidEmailException, handle_invalid_email)
 auth.register_error_handler(PhoneNumberAlreadyTaken, handle_phone_number_already_taken)
 auth.register_error_handler(InvalidPhoneNumberException, handle_invalid_phone_number)
 auth.register_error_handler(MissingFieldsException, handle_missing_fields)
-auth.register_error_handler(IncorrectPasswordException, handle_incorrect_password)
-auth.register_error_handler(PasswordTooShort, handle_password_too_short)
-auth.register_error_handler(IncorrectPasswordException, handle_incorrect_otp)
 auth.register_error_handler(ExpiredOTPException, handle_expired_otp)
 auth.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
 
@@ -72,7 +70,7 @@ def generate_otp():
     data = otp_schema.load(data)
     auth_service = AuthService()
     email = data.get('email')
-    auth_service.generate_otp(email)
+    auth_service.generate_otp(email) # type: ignore
     return set_response(200, {'code': 'otp_sent', 'message': 'OTP sent successfully.'})
 
 
@@ -87,7 +85,7 @@ def verify_otp():
     auth_service = AuthService()
     email = data.get('email')
     otp = data.get('otp')
-    user_id = auth_service.verify_otp(email, otp)
+    user_id = auth_service.verify_otp(email, otp) # type: ignore
     try:
         token_service = TokenService()
         access_token, refresh_token = token_service.generate_jwt_csrf_token(email=email, user_id=user_id)
@@ -111,14 +109,14 @@ def set_nickname():
     data = nickname_schema.load(data)
     if not data:
         raise MissingFieldsException('Please provide all the required fields')
-    nickname = data.get('nickname')
+    nickname = data.get('nickname') # type: ignore
     if not nickname:
         raise MissingFieldsException('Please provide a nickname.')
     if  len(nickname) < 3:
         pass # Raise custom exception here
-    current_user = get_jwt_identity()
+    current_user = get_jwt_identity()  # pylint: disable=unused-variable
     auth_service = AuthService()
-    auth_service.set_nickname(email=data.get('email'), nickname=data.get('nickname'))
+    auth_service.set_nickname(email=data.get('email'), nickname=nickname) # type: ignore
     return set_response(200, {
         'code': 'success', 'message': 'Nickname set successfully.'
     })

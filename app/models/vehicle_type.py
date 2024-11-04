@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from app.models.base import Base
 
 
-class VehicleType(Base):
+class VehicleType(Base):  # pylint: disable=R0903
     """ Model represents the vehicle type in the database. """
     __tablename__ = 'vehicle_type'
 
