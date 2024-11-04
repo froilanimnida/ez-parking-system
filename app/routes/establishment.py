@@ -86,7 +86,8 @@ def update_establishment():
         })
     updated_establishment_data = establishment_schema.load(data)
     EstablishmentService.update_establishment(
-        updated_establishment_data
+        establishment_id=1,
+        establishment_data=updated_establishment_data
     )
     return set_response(200, {
         'code': 'success',
