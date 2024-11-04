@@ -15,11 +15,11 @@ class EstablishmentValidation(Schema):
     contact_number = fields.Str(
         required=True,
         validate=[
-            validate.Length(min=10, max=15),
             validate.Regexp(
                 regex=r'^\+?[1-9]\d{1,14}$',
                 error='Invalid phone number format.'
-            )
+            ),
+            validate.Length(min=10, max=15),
         ]
     )
     opening_time = fields.Time(required=True)

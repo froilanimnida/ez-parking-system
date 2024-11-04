@@ -14,7 +14,8 @@ from app.routes.auth import auth
 from app.routes.slot import slot
 from app.extension import mail
 from app.utils.error_handlers import (
-    handle_database_errors, handle_validation_errors, handle_csrf_error, handle_general_exception
+    handle_database_errors, handle_validation_errors, handle_csrf_error, handle_general_exception,
+    handle_type_error
 )
 
 
@@ -71,6 +72,7 @@ def create_app():
     app.register_error_handler(DataError, handle_database_errors)
     app.register_error_handler(ValidationError, handle_validation_errors)
     app.register_error_handler(CSRFError, handle_csrf_error)
+    app.register_error_handler(TypeError, handle_type_error)
     getLogger()
 
     return app

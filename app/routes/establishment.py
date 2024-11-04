@@ -1,7 +1,7 @@
 """ Routes related to parking establishment. """
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 
 from app.schema.establishment_validation import EstablishmentValidation
 from app.services.establishment_service import EstablishmentService
@@ -85,7 +85,10 @@ def update_establishment():
             'message': 'Invalid request data.'
         })
     updated_establishment_data = establishment_schema.load(data)
-    EstablishmentService.update_establishment(updated_establishment_data)
+    EstablishmentService.update_establishment(
+        establishment_id=1,
+        establishment_data=updated_establishment_data
+    )
     return set_response(200, {
         'code': 'success',
         'message': 'Parking establishment updated successfully.'
@@ -96,7 +99,6 @@ def update_establishment():
 @jwt_required(optional=False)
 def delete_establishment():
     """ Delete a parking establishment. """
-    # TODO: Get the admin or manager ID and get their claims if they are allowed to delete an establishment.
     data = request.json
     if not data:
         return set_response(400, {

@@ -260,3 +260,13 @@ def handle_fresh_token_required(error):
             'message': 'Fresh token required error.'
         })
     raise error
+
+def handle_type_error(error):
+    """ This function handles type errors. """
+    if isinstance(error, TypeError):
+        logger.error("Type error: %s", error)
+        return set_response(400, {
+            'code': 'type_error',
+            'message': 'Invalid data type.'
+        })
+    raise error

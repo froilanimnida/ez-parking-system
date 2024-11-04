@@ -470,3 +470,154 @@ class TestSetOTPOperation:
                 'email_1': data['email']
             }
         mock_session.close.assert_called()
+
+
+class TestDeleteOTPOperation:
+    """Test Delete OTP operation."""
+    def test_delete_otp_with_whitespace_in_email(self, mock_session):
+        """Test delete_otp method with email containing leading and trailing whitespace."""
+        # Arrange
+        email_with_whitespace = "  test@example.com  "
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        OTPOperations.delete_otp(email_with_whitespace.strip())
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_stmt = mock_session.execute.call_args[0][0]
+        assert isinstance(update_stmt, Update)
+        assert str(update_stmt.whereclause) == '"user".email = :email_1'
+        compiled = update_stmt.compile()
+        assert compiled.params['email_1'] == email_with_whitespace.strip()
+        mock_session.commit.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_delete_otp_operational_error(self, mock_session):
+        """Test handling of OperationalError when deleting OTP."""
+        # Arrange
+        mock_session.execute.side_effect = OperationalError(
+            "statement", "params", "orig"  # type: ignore
+        )
+        email = "test@example.com"
+
+        # Act & Assert
+        with pytest.raises(OperationalError):
+            OTPOperations.delete_otp(email)
+
+        mock_session.execute.assert_called_once()
+        mock_session.rollback.assert_called_once()
+        mock_session.close.assert_called_once()
+
+        # Additional assert to verify the email used in the update statement
+        update_stmt = mock_session.execute.call_args[0][0]
+        assert '"user".email = :email_1' in str(update_stmt)
+        compiled = update_stmt.compile()
+        assert compiled.params['email_1'] == email
+
+    def test_delete_otp_with_sql_injection_attempt(self, mock_session):
+        """Test delete_otp method with a SQL injection attempt in the email."""
+        # Arrange
+        sql_injection_email = "'; DROP TABLE user; --"
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        OTPOperations.delete_otp(sql_injection_email)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_stmt = mock_session.execute.call_args[0][0]
+        assert isinstance(update_stmt, Update)
+        assert str(update_stmt.whereclause) == '"user".email = :email_1'
+        assert update_stmt.compile().params['email_1'] == sql_injection_email
+
+        mock_session.commit.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_delete_otp_with_multiple_users(self, mock_session):
+        """Test delete_otp method with an email matching multiple
+        users to ensure only the correct user is updated."""
+        # Arrange
+        email = "duplicate@example.com"
+        # Simulate no return value for the update operation
+        mock_session.execute.return_value = None
+
+        # Act
+        OTPOperations.delete_otp(email)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_stmt = mock_session.execute.call_args[0][0]
+        assert isinstance(update_stmt, Update)
+        assert str(update_stmt.whereclause) == '"user".email = :email_1'
+        compiled = update_stmt.compile()
+        assert compiled.params['email_1'] == email
+        assert compiled.params['otp_secret'] is None
+        assert compiled.params['otp_expiry'] is None
+        mock_session.commit.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_delete_otp_with_empty_email_raises_exception(self, mock_session):
+        """Test delete_otp method with an empty string as email raises exception."""
+        # Arrange
+        empty_email = ""
+        mock_session.execute.side_effect = DataError(
+            statement="UPDATE user ...",
+            params={},
+            orig=Exception("invalid input syntax for type email")
+        )
+
+        # Act & Assert
+        with pytest.raises(DataError) as exc_info:
+            OTPOperations.delete_otp(empty_email)
+
+        # Assert
+        assert "invalid input syntax for type email" in str(exc_info.value)
+        mock_session.execute.assert_called_once()
+        mock_session.rollback.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_delete_otp_commit_failure(self, mock_session):
+        """Test delete_otp method when session commit fails to ensure rollback is called."""
+        # Arrange
+        email = "test@example.com"
+        mock_session.execute = Mock()
+        mock_session.commit.side_effect = OperationalError(
+            "statement", "params", "orig"
+        )  # type: ignore
+
+        # Act
+        with pytest.raises(OperationalError):
+            OTPOperations.delete_otp(email)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        mock_session.rollback.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_delete_otp_with_concurrent_deletions(self, mock_session):
+        """Test delete_otp method with a large number of concurrent deletions."""
+        # Arrange
+        emails = [f"user{i}@example.com" for i in range(1000)]  # Simulate 1000 users
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        for email in emails:
+            OTPOperations.delete_otp(email)
+
+        # Assert
+        assert mock_session.execute.call_count == 1000
+        assert mock_session.commit.call_count == 1000
+
+        # Check that each call was made with the correct parameters
+        for i, email in enumerate(emails):
+            update_stmt = mock_session.execute.call_args_list[i][0][0]
+            assert isinstance(update_stmt, Update)
+            assert str(update_stmt.whereclause) == '"user".email = :email_1'
+            compiled = update_stmt.compile()
+            assert compiled.params['email_1'] == email
+
+        mock_session.close.assert_called()
