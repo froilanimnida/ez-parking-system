@@ -110,7 +110,7 @@ class GetEstablishmentOperations:
         except OperationalError as err:
             raise err
 
-class CreateEstablishmentOperations:
+class CreateEstablishmentOperations:  # pylint: disable=R0903
     """ Class for operations related to parking establishment (Creating). """
     @staticmethod
     def create_establishment(establishment_data: dict):
@@ -138,9 +138,8 @@ class CreateEstablishmentOperations:
             raise err
         finally:
             session.close()
-            
 
-class UpdateEstablishmentOperations:
+class UpdateEstablishmentOperations:  # pylint: disable=R0903
     """ Class for operations related to parking establishment (Updating). """
     @staticmethod
     def update_establishment(establishment_id: int, establishment_data: dict):
@@ -166,9 +165,8 @@ class UpdateEstablishmentOperations:
             raise err
         finally:
             session.close()
-            
 
-class DeleteEstablishmentOperations:
+class DeleteEstablishmentOperations:  # pylint: disable=R0903
     """ Class for operations related to parking establishment (Deleting). """
     @staticmethod
     def delete_establishment(establishment_id: int):
