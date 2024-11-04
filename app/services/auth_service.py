@@ -50,6 +50,8 @@ class UserRegistrationService:  # pylint: disable=R0903
         email = user_data.get('email')
         if not email:
             raise MissingFieldsException('Please provide an email address.')
+        if not isinstance(email, str):
+            raise InvalidEmailException('Invalid email address')
 
         if not search(r'^[a-z0-9]+[._]?[a-z0-9]+@\w+[.]\w+$', string=email):
             raise InvalidEmailException(
@@ -120,6 +122,9 @@ class UserOTPService:
     @classmethod
     def generate_otp(cls, email: str):
         """ Function to generate an OTP for a user. """
+        if not isinstance(email, str):
+            raise TypeError('Email must be a string.')
+        email = email.lower()
         seed = f"{getenv('TOTP_SECRET_KEY')}{int(time.time())}"
         six_digits_otp = TOTP(base64.b32encode(bytes.fromhex(seed))
                             .decode('UTF-8'),
@@ -141,6 +146,11 @@ class UserOTPService:
     @classmethod
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """ Function to verify an OTP for a user. """
+        if not isinstance(email, str):
+            raise TypeError('Email must be a string.')
+        if not isinstance(otp, str):
+            raise TypeError('OTP must be a string.')
+        email = email.lower()
         retrieved_otp, expiry, user_id = OTPOperations.get_otp(email=email)
         if datetime.now() > expiry:
             OTPOperations.delete_otp(email=email)
@@ -156,4 +166,9 @@ class UserProfileService:  # pylint: disable=R0903
     @classmethod
     def set_nickname(cls, email: str, nickname: str):
         """ Function to set a nickname for a user. """
+        if not isinstance(email, str):
+            raise TypeError('Email must be a string.')
+        if not isinstance(nickname, str):
+            raise TypeError('Nickname must be a string.')
+        email  = email.lower()
         UserOperations.set_nickname(email=email, nickname=nickname)
