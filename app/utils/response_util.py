@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import make_response, jsonify, json
 
 
-def set_response(status_code, messages, **kwargs):
+def set_response(status_code, messages):
     """ This function sets the response for the routes. """
     response = make_response(jsonify(messages), status_code)
     response.headers['Content-Type'] = 'application/json'

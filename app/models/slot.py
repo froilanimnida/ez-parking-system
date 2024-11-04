@@ -10,7 +10,7 @@ from app.models.base import Base
 from app.utils.engine import get_session
 
 
-class Slot(Base):
+class Slot(Base):  # pylint: disable=R0903
     """ Class model represents the model for the slot in the database. """
     __tablename__ = 'slot'
 
