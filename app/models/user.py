@@ -79,11 +79,11 @@ class UserOperations:
             session.close()
 
     @classmethod
-    def set_nickname(cls, user_id: int, nickname: str):  # pylint: disable=C0116
+    def set_nickname(cls, email: str, nickname: str):  # pylint: disable=C0116
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.id == user_id).values(nickname=nickname)
+                update(User).where(User.email == email).values(nickname=nickname)
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:

@@ -69,7 +69,7 @@ def generate_otp():
     otp_schema = OTPGenerationSchema()
     data = otp_schema.load(data)
     auth_service = AuthService()
-    email = data.get('email')
+    email = data.get('email') # type: ignore
     auth_service.generate_otp(email) # type: ignore
     return set_response(200, {'code': 'otp_sent', 'message': 'OTP sent successfully.'})
 
@@ -83,12 +83,14 @@ def verify_otp():
     if not data:
         raise MissingFieldsException('Please provide all the required fields')
     auth_service = AuthService()
-    email = data.get('email')
-    otp = data.get('otp')
+    email = data.get('email') # type: ignore
+    otp = data.get('otp') # type: ignore
     user_id = auth_service.verify_otp(email, otp) # type: ignore
     try:
         token_service = TokenService()
-        access_token, refresh_token = token_service.generate_jwt_csrf_token(email=email, user_id=user_id)
+        access_token, refresh_token = token_service.generate_jwt_csrf_token(   # pylint: disable=unused-variable
+            email=email, user_id=user_id
+        )
         response = set_response(200, messages="OTP Verified")
         set_access_cookies(response, access_token)
 
@@ -115,8 +117,9 @@ def set_nickname():
     if  len(nickname) < 3:
         pass # Raise custom exception here
     current_user = get_jwt_identity()  # pylint: disable=unused-variable
+    email = '' # get the email from jwt identity
     auth_service = AuthService()
-    auth_service.set_nickname(email=data.get('email'), nickname=nickname) # type: ignore
+    auth_service.set_nickname(email=email, nickname=nickname) # type: ignore
     return set_response(200, {
         'code': 'success', 'message': 'Nickname set successfully.'
     })

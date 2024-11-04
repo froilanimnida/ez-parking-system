@@ -33,7 +33,12 @@ slot.register_error_handler(
 def get_all_slots():
     """ Get all slots. """
     slots = SlotService.get_all_slots()
-    return set_response(200, messages='Slots retrieved successfully.', data=slots)
+    data = slots
+    response = set_response(
+        200, messages='Slots retrieved successfully.'
+    )
+    response.data = data
+    return response
 
 
 @slot.route('/v1/get-slots-by-vehicle-type/', methods=['GET'])
@@ -45,7 +50,12 @@ def get_slots_by_vehicle_type():
     vehicle_type_id = data.get('vehicle_type_id')
     establishment_id = data.get('establishment_id')
     slots = SlotService.get_slots_by_vehicle_type(vehicle_type_id, establishment_id)
-    return set_response(200, messages='Slots retrieved successfully.', data=slots)
+    data = slots
+    response = set_response(
+        200, messages='Slots retrieved successfully.'
+    )
+    response.data = data
+    return response
 
 
 @slot.route('/v1/get-slots-by-establishment-id/', methods=['GET'])
@@ -56,7 +66,12 @@ def get_slots_by_establishment_id():
         return set_response(400, messages='Please provide establishment ID.')
     establishment_id = data.get('establishment_id')
     slots = SlotService.get_slots_by_establishment_id(establishment_id)
-    return set_response(200, messages='Slots retrieved successfully.', data=slots)
+    data = slots
+    response = set_response(
+        200, messages='Slots retrieved successfully.'
+    )
+    response.data = data
+    return response
 
 
 @slot.route('/v1/get-slots-by-slot-code/', methods=['GET'])
@@ -67,4 +82,9 @@ def get_slots_by_slot_code():
         return set_response(400, messages='Please provide slot code.')
     slot_code = data.get('slot_code')
     slots = SlotService.get_slots_by_slot_code(slot_code)
-    return set_response(200, messages='Slots retrieved successfully.', data=slots)
+    data=slots
+    response = set_response(
+        200, messages='Slots retrieved successfully.'
+    )
+    response.data = data
+    return response
