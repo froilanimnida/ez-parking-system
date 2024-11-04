@@ -1,6 +1,5 @@
 """This module contains the classes for handling user authentication operations."""
 import base64
-import re
 import time
 from datetime import datetime, timedelta
 from hashlib import sha256
@@ -23,7 +22,7 @@ from app.utils.email_utility import send_mail
 class AuthService:
     """ Class to handle user authentication operations. """
     @classmethod
-    def create_new_user(cls, registration_data: dict) -> str:  # pylint: disable=C0116
+    def create_new_user(cls, registration_data: dict):  # pylint: disable=C0116
         return UserRegistrationService.register_user(user_data=registration_data)
 
     @classmethod
@@ -39,15 +38,15 @@ class AuthService:
         return UserOTPService.verify_otp(email=email, otp=otp)
 
     @classmethod
-    def set_nickname(cls, user_id, nickname):  # pylint: disable=C0116
-        return UserProfileService.set_nickname(user_id=user_id,  nickname=nickname)
+    def set_nickname(cls, email, nickname):  # pylint: disable=C0116
+        return UserProfileService.set_nickname(email=email,  nickname=nickname)
 
 
 
-class UserRegistrationService:
+class UserRegistrationService:  # pylint: disable=R0903
     """ Class to handle user registration operations. """
     @classmethod
-    def register_user(cls, user_data: dict) -> str:  # pylint: disable=C0116
+    def register_user(cls, user_data: dict):  # pylint: disable=C0116
         email = user_data.get('email')
         if not email:
             raise MissingFieldsException('Please provide an email address.')
@@ -77,12 +76,13 @@ class UserRegistrationService:
             'last_name': last_name,
             'email': email,
             'phone_number': phone_number,
-            'role': role
+            'role': role,
+            'creation_date': datetime.now(),
         }
         return UserOperations.create_new_user(user_data=user_data)
 
 
-class UserLoginService:
+class UserLoginService:  # pylint: disable=R0903
     """ Class to handle user login operations. """
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
@@ -122,15 +122,15 @@ class UserOTPService:
         """ Function to generate an OTP for a user. """
         seed = f"{getenv('TOTP_SECRET_KEY')}{int(time.time())}"
         six_digits_otp = TOTP(base64.b32encode(bytes.fromhex(seed))
-                              .decode('UTF-8'),
-                              digits=6, interval=300, digest=sha256).now()
+                            .decode('UTF-8'),
+                            digits=6, interval=300, digest=sha256).now()
         otp_expiry: datetime = datetime.now() + timedelta(minutes=5)
         one_time_password_template = render_template(
             template_name_or_list='auth/one-time-password.html',
             otp=six_digits_otp,
             user_name=email
         )
-        data: dict[str, str | datetime] = {
+        data = {
             'email': email,
             'otp_secret': six_digits_otp,
             'otp_expiry': otp_expiry
@@ -151,9 +151,9 @@ class UserOTPService:
         return user_id
 
 
-class UserProfileService:
+class UserProfileService:  # pylint: disable=R0903
     """ Class to handle user profile operations. """
     @classmethod
-    def set_nickname(cls, user_id: int, nickname: str):
+    def set_nickname(cls, email: str, nickname: str):
         """ Function to set a nickname for a user. """
-        UserOperations.set_nickname(user_id=user_id, nickname=nickname)
+        UserOperations.set_nickname(email=email, nickname=nickname)

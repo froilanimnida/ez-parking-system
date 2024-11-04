@@ -10,12 +10,13 @@ from flask_jwt_extended.exceptions import (
     FreshTokenRequired
 )
 from app.exceptions.authorization_exception import (
-    EmailNotFoundException, MissingFieldsException, InvalidEmailException, InvalidPhoneNumberException,
-    PhoneNumberAlreadyTaken, EmailAlreadyTaken, PasswordTooShort, IncorrectPasswordException,
+    EmailNotFoundException, MissingFieldsException, InvalidEmailException,
+    InvalidPhoneNumberException, PhoneNumberAlreadyTaken, EmailAlreadyTaken,
     IncorrectOTPException, ExpiredOTPException
 )
 from app.exceptions.slot_lookup_exceptions import (
-    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment, NoSlotsFoundInTheGivenVehicleType
+    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment,
+    NoSlotsFoundInTheGivenVehicleType
 )
 from app.utils.response_util import set_response
 
@@ -97,26 +98,6 @@ def handle_phone_number_already_taken(error):
         return set_response(400, {
             'code': 'phone_number_already_taken',
             'message': 'Phone number already taken.'
-        })
-    raise error
-
-def handle_password_too_short(error):
-    """ This function handles password too short exceptions. """
-    if isinstance(error, PasswordTooShort):
-        logger.error("Password too short: %s", error)
-        return set_response(400, {
-            'code': 'password_too_short',
-            'message': 'Password must be at least 8 characters long.'
-        })
-    raise error
-
-def handle_incorrect_password(error):
-    """ This function handles incorrect password exceptions. """
-    if isinstance(error, IncorrectPasswordException):
-        logger.error("Incorrect password: %s", error)
-        return set_response(400, {
-            'code': 'incorrect_password',
-            'message': 'Incorrect password.'
         })
     raise error
 

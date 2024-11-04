@@ -2,7 +2,7 @@
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 
-class TokenService:
+class TokenService:  # pylint: disable=R0903
     """ This class provides methods for generating JWT tokens. """
     @staticmethod
     def generate_jwt_csrf_token(email, user_id):  # pylint: disable=C0116

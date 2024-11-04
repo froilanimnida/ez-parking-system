@@ -14,8 +14,7 @@ from app.routes.auth import auth
 from app.routes.slot import slot
 from app.extension import mail
 from app.utils.error_handlers import (
-    handle_database_errors, handle_validation_errors, handle_csrf_error, handle_no_authorization_error,
-    handle_user_lookup_error, handle_general_exception
+    handle_database_errors, handle_validation_errors, handle_csrf_error, handle_general_exception
 )
 
 

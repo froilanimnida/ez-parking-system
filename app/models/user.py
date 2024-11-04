@@ -1,17 +1,15 @@
 """ This module contains the User class and UserOperations class. """
-from uuid import UUID
 from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm.session import Session
 
-from app.exceptions.authorization_exception import (
-    EmailNotFoundException, IncorrectPasswordException
-)
+from app.exceptions.authorization_exception import EmailNotFoundException
+
 from app.utils.engine import get_session
 from app.models.base import Base
 
 
-class User(Base):
+class User(Base):  # pylint: disable=R0903
     """ Class to represent the user table in the database. """
     __tablename__: str = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -22,15 +20,16 @@ class User(Base):
     email = Column(VARCHAR(length=75), unique=True, nullable=False)
     phone_number = Column(VARCHAR(length=15), unique=True, nullable=False)
     role = Column(Enum('user', 'parking_manager', 'admin'), nullable=False)
-    otp_secret = Column(VARCHAR(length=10), nullable=True)
+    otp_secret = Column(VARCHAR(length=6), nullable=True)
     otp_expiry = Column(DATETIME, nullable=True)
+    creation_date = Column(DATETIME, nullable=False)
 
 
 class UserOperations:
     """ Class to handle user operations, such as creating a new user or logging in a user. """
     @classmethod
-    def create_new_user(cls, user_data: dict) -> str:  # pylint: disable=C0116
-        session: Session = get_session()
+    def create_new_user(cls, user_data: dict):  # pylint: disable=C0116
+        session = get_session()
         try:
             new_user = User(
                 uuid=user_data.get('uuid'),
@@ -38,13 +37,14 @@ class UserOperations:
                 last_name=user_data.get('last_name'),
                 email=user_data.get('email'),
                 phone_number=user_data.get('phone_number'),
-                role=user_data.get('role')
+                role=user_data.get('role'),
+                creation_date=user_data.get('creation_date')
             )
             session.add(new_user)
             session.commit()
-            uuid = UUID(bytes=new_user.uuid)  # type: ignore
-            return str(object=uuid)
+            return new_user.id
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+
             session.rollback()
             raise e
         finally:
@@ -58,10 +58,9 @@ class UserOperations:
                 statement=select(User).where(User.email == email)
             ).scalar()
             if user is None:
-                raise IncorrectPasswordException(message='Incorrect password.')
+                raise EmailNotFoundException('Email not found.')
             return user.email
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
+        except (OperationalError, DatabaseError) as e:
             raise e
         finally:
             session.close()
@@ -75,17 +74,16 @@ class UserOperations:
             ).scalar()
             return user is not None
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
             raise e
         finally:
             session.close()
 
     @classmethod
-    def set_nickname(cls, user_id: int, nickname: str):  # pylint: disable=C0116
+    def set_nickname(cls, email: str, nickname: str):  # pylint: disable=C0116
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.id == user_id).values(nickname=nickname)
+                update(User).where(User.email == email).values(nickname=nickname)
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
