@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import Update
 from sqlalchemy.exc import IntegrityError, DataError, OperationalError, DatabaseError
 
 from app.exceptions.authorization_exception import EmailNotFoundException
@@ -480,4 +481,212 @@ class TestIsEmailTaken:
         mock_session.execute.assert_called_once()
         select_statement = mock_session.execute.call_args[0][0]
         assert '"user".email = :email_1' in str(select_statement)
+        mock_session.close.assert_called_once()
+
+
+class TestSetNickname:
+    """Test for set_nickname operation."""
+    def test_set_nickname_for_existing_user(self, mock_session):
+        """Test setting a valid nickname for an existing user."""
+        # Arrange
+        email = "test@example.com"
+        nickname = "test_nickname"
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        UserOperations.set_nickname(email, nickname)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_statement = mock_session.execute.call_args[0][0]
+        assert isinstance(update_statement, Update)
+        assert str(update_statement) == (
+            'UPDATE "user" SET nickname=:nickname WHERE "user".email = :email_1'
+        )
+
+
+    def test_set_nickname_with_empty_string(self, mock_session):
+        """Test setting an empty string as a nickname."""
+        # Arrange
+        email = "test@example.com"
+        nickname = ""
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        UserOperations.set_nickname(email, nickname)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_statement = mock_session.execute.call_args[0][0]
+        assert isinstance(update_statement, Update)
+        assert str(update_statement) == (
+            'UPDATE "user" SET nickname=:nickname WHERE "user".email = :email_1'
+        )
+        assert update_statement.compile().params == {'nickname': '', 'email_1': 'test@example.com'}
+        mock_session.commit.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_set_nickname_very_long(self, mock_session):
+        """Test setting a very long nickname (255 characters)."""
+        # Arrange
+        email = "test@example.com"
+        long_nickname = "a" * 255
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        UserOperations.set_nickname(email, long_nickname)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_statement = mock_session.execute.call_args[0][0]
+        assert str(update_statement).startswith('UPDATE "user"')
+        assert 'SET nickname=:nickname' in str(update_statement)
+        assert '"user".email = :email_1' in str(update_statement)
+
+    def test_set_nickname_with_special_characters(self, mock_session):
+        """Test setting a nickname with special characters."""
+        # Arrange
+        email = "test@example.com"
+        nickname = "User@123!#$%"
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        UserOperations.set_nickname(email, nickname)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_statement = mock_session.execute.call_args[0][0]
+        assert str(update_statement) == (
+        'UPDATE "user" SET nickname=:nickname WHERE "user".email = :email_1'
+    )
+
+    def test_set_nickname_for_non_existent_email(self, mock_session):
+        """Test setting a nickname for a non-existent email."""
+        # Arrange
+        email = "nonexistent@example.com"
+        nickname = "NewNickname"
+        mock_session.execute.return_value = None
+        mock_session.commit.side_effect = IntegrityError(
+            statement="UPDATE user ...",
+            params={},
+            orig=Exception(
+                "Key (email)=(nonexistent@example.com) is not present in table \"user\"."
+            )
+        )
+
+        # Act & Assert
+        with pytest.raises(IntegrityError) as exc_info:
+            UserOperations.set_nickname(email, nickname)
+
+        assert "is not present in table \"user\"" in str(exc_info.value)
+        mock_session.execute.assert_called_once()
+        mock_session.commit.assert_called_once()
+        mock_session.rollback.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_set_nickname_duplicate_nickname(self, mock_session):
+        """Test setting the same nickname for multiple users raises IntegrityError."""
+        # Arrange
+        email1 = "user1@example.com"
+        email2 = "user2@example.com"
+        nickname = "duplicate_nickname"
+        mock_session.execute.side_effect = [None, IntegrityError(
+            "statement", "params", "orig"  # type: ignore
+        )]
+
+        # Act & Assert
+        UserOperations.set_nickname(email1, nickname)
+
+        with pytest.raises(IntegrityError):
+            UserOperations.set_nickname(email2, nickname)
+
+        assert mock_session.execute.call_count == 2
+        assert mock_session.commit.call_count == 1
+        assert mock_session.rollback.call_count == 1
+        assert mock_session.close.call_count == 2
+
+    def test_update_existing_nickname(self, mock_session):
+        """Test updating an existing nickname for a user."""
+        email = "test@example.com"
+        new_nickname = "new_nickname"
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        UserOperations.set_nickname(email, new_nickname)
+
+        mock_session.execute.assert_called_once()
+        update_statement = mock_session.execute.call_args[0][0]
+        assert isinstance(update_statement, Update)
+        assert update_statement.table.name == 'user' # type: ignore
+        assert str(update_statement.whereclause) == '"user".email = :email_1'
+
+        compiled = update_statement.compile()
+        assert compiled.params['nickname'] == new_nickname
+
+        mock_session.commit.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_set_nickname_with_whitespace(self, mock_session):
+        """Test setting a nickname with leading/trailing whitespace."""
+        # Arrange
+        email = "test@example.com"
+        nickname_with_whitespace = "  Nickname with Spaces  "
+        expected_nickname = "Nickname with Spaces"  # pylint: disable=W0612
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        UserOperations.set_nickname(email, nickname_with_whitespace)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_stmt = mock_session.execute.call_args[0][0]
+        assert isinstance(update_stmt, Update)
+        assert str(update_stmt.whereclause) == '"user".email = :email_1'
+
+    def test_set_nickname_with_unicode_characters(self, mock_session):
+        """Test setting a nickname with Unicode characters."""
+        # Arrange
+        email = "user@example.com"
+        nickname = "😊 Ünïcödë Nick 🎉"
+        mock_session.execute = Mock()
+        mock_session.commit = Mock()
+
+        # Act
+        UserOperations.set_nickname(email, nickname)
+
+        # Assert
+        mock_session.execute.assert_called_once()
+        update_stmt = mock_session.execute.call_args[0][0]
+        assert isinstance(update_stmt, Update)
+        assert str(update_stmt) == (
+            'UPDATE "user" SET nickname=:nickname WHERE "user".email = :email_1'
+        )
+        assert update_stmt.compile().params == {
+            'nickname': '😊 Ünïcödë Nick 🎉', 'email_1': 'user@example.com'
+        }
+        mock_session.commit.assert_called_once()
+        mock_session.close.assert_called_once()
+
+    def test_set_nickname_database_connection_lost(self, mock_session):
+        """Test set_nickname when the database connection is lost during the operation."""
+        # Arrange
+        email = "test@example.com"
+        nickname = "new_nickname"
+        mock_session.execute.side_effect = OperationalError(
+            "statement", "params", "Connection lost" # type: ignore
+        )
+
+        # Act
+        with pytest.raises(OperationalError) as exc_info:
+            UserOperations.set_nickname(email, nickname)
+
+        # Assert
+        assert "Connection lost" in str(exc_info.value)
+        mock_session.execute.assert_called_once()
+        mock_session.rollback.assert_called_once()
         mock_session.close.assert_called_once()
