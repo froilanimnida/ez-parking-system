@@ -1,5 +1,4 @@
 """ This module contains the User class and UserOperations class. """
-from uuid import UUID
 from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm.session import Session
@@ -31,7 +30,7 @@ class UserOperations:
     """ Class to handle user operations, such as creating a new user or logging in a user. """
     @classmethod
     def create_new_user(cls, user_data: dict):  # pylint: disable=C0116
-        session: Session = get_session()
+        session = get_session()
         try:
             new_user = User(
                 uuid=user_data.get('uuid'),
@@ -46,6 +45,7 @@ class UserOperations:
             session.commit()
             return new_user.id
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+
             session.rollback()
             raise e
         finally:
@@ -59,10 +59,9 @@ class UserOperations:
                 statement=select(User).where(User.email == email)
             ).scalar()
             if user is None:
-                raise IncorrectPasswordException(message='Incorrect password.')
+                raise EmailNotFoundException('Email not found.')
             return user.email
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
+        except (OperationalError, DatabaseError) as e:
             raise e
         finally:
             session.close()
@@ -76,7 +75,6 @@ class UserOperations:
             ).scalar()
             return user is not None
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
             raise e
         finally:
             session.close()
