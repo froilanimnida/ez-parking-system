@@ -24,12 +24,13 @@ class User(Base):
     role = Column(Enum('user', 'parking_manager', 'admin'), nullable=False)
     otp_secret = Column(VARCHAR(length=10), nullable=True)
     otp_expiry = Column(DATETIME, nullable=True)
+    creation_date = Column(DATETIME, nullable=False)
 
 
 class UserOperations:
     """ Class to handle user operations, such as creating a new user or logging in a user. """
     @classmethod
-    def create_new_user(cls, user_data: dict) -> str:  # pylint: disable=C0116
+    def create_new_user(cls, user_data: dict):  # pylint: disable=C0116
         session: Session = get_session()
         try:
             new_user = User(
@@ -38,12 +39,12 @@ class UserOperations:
                 last_name=user_data.get('last_name'),
                 email=user_data.get('email'),
                 phone_number=user_data.get('phone_number'),
-                role=user_data.get('role')
+                role=user_data.get('role'),
+                creation_date=user_data.get('creation_date')
             )
             session.add(new_user)
             session.commit()
-            uuid = UUID(bytes=new_user.uuid)  # type: ignore
-            return str(object=uuid)
+            return new_user.id
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
             raise e
