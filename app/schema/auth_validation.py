@@ -3,7 +3,7 @@
     and other authentication related validation methods
 """
 
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, fields, validate, pre_load
 
 
 
@@ -32,6 +32,24 @@ class SignUpValidation(Schema):
         ]
     )
 
+    @pre_load
+    def normalize_email(self, **kwargs):  # pylint: disable=unused-argument
+        """ Method to convert email to lowercase. """
+        self.context['email'] = self.context['email'].lower()
+        return self.context['email']
+
+    @pre_load
+    def normalize_first_name(self, **kwargs):  # pylint: disable=unused-argument
+        """ Method to convert first name to lowercase. """
+        self.context['first_name'] = self.context['first_name'].lower()
+        return self.context['first_name']
+
+    @pre_load
+    def normalize_last_name(self, **kwargs):  # pylint: disable=unused-argument
+        """ Method to convert last name to lowercase. """
+        self.context['last_name'] = self.context['last_name'].lower()
+        return self.context['last_name']
+
 
 class LoginWithEmailValidation(Schema):
     """ Class to handle email login validation. """
@@ -39,6 +57,12 @@ class LoginWithEmailValidation(Schema):
         required=True,
         validate=validate.Length(min=1, max=75)
     )
+
+    @pre_load
+    def normalize_email(self, **kwargs):  # pylint: disable=unused-argument
+        """ Method to convert email to lowercase. """
+        self.context['email'] = self.context['email'].lower()
+        return self.context['email']
 
 
 class OTPGenerationSchema(Schema):
@@ -59,9 +83,21 @@ class OTPSubmissionFormValidation(Schema):
         validate=validate.Length(min=1, max=75)
     )
 
+    @pre_load
+    def normalize_email(self, **kwargs):  # pylint: disable=unused-argument
+        """ Method to convert email to lowercase. """
+        self.context['email'] = self.context['email'].lower()
+        return self.context['email']
+
 class NicknameFormValidation(Schema):
     """ Class to handle nickname validation. """
     nickname = fields.Str(
         required=True,
         validate=validate.Length(min=1, max=75)
     )
+
+    @pre_load
+    def normalize_nickname(self, **kwargs):  # pylint: disable=unused-argument
+        """ Method to convert nickname to lowercase. """
+        self.context['nickname'] = self.context['nickname'].lower()
+        return self.context['nickname']
