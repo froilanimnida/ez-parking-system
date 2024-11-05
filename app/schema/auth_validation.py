@@ -3,100 +3,84 @@
     and other authentication related validation methods
 """
 
-from marshmallow import Schema, fields, validate, pre_load
+from marshmallow import Schema, fields, validate, post_load
 
 
-class SignUpValidation(Schema):
-    """ Class to handle user registration validation. """
-    first_name = fields.Str(
-        required=True,
-        validate=validate.Length(min=1, max=100)
-    )
-    last_name = fields.Str(
-        required=True,
-        validate=validate.Length(min=1, max=100)
-    )
-    email = fields.Email(
-        required=True,
-        validate=validate.Length(min=1, max=75)
-    )
+class SignUpValidationSchema(Schema):
+    """Class to handle user registration validation."""
+
+    first_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    last_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    email = fields.Email(required=True, validate=validate.Length(min=1, max=75))
     phone_number = fields.Str(
         required=True,
         validate=[
             validate.Length(min=10, max=15),
             validate.Regexp(
-                regex=r'^\+?[1-9]\d{1,14}$',
-                error='Invalid phone number format.'
-            )
-        ]
+                regex=r"^\+?[1-9]\d{1,14}$", error="Invalid phone number format."
+            ),
+        ],
     )
 
-    @pre_load
-    def normalize_email(self, **kwargs):  # pylint: disable=unused-argument
-        """ Method to convert email to lowercase. """
-        self.context['email'] = self.context['email'].lower()
-        return self.context['email']
+    @post_load
+    def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to convert email to lowercase."""
+        in_data["email"] = in_data["email"].lower()
+        return in_data
 
-    @pre_load
-    def normalize_first_name(self, **kwargs):  # pylint: disable=unused-argument
-        """ Method to convert first name to lowercase. """
-        self.context['first_name'] = self.context['first_name'].lower()
-        return self.context['first_name']
+    @post_load
+    def normalize_first_name(
+        self, in_data, **kwargs
+    ):  # pylint: disable=unused-argument
+        """Method to convert first name to lowercase."""
+        in_data["first_name"] = in_data["first_name"].capitalize()
+        return in_data
 
-    @pre_load
-    def normalize_last_name(self, **kwargs):  # pylint: disable=unused-argument
-        """ Method to convert last name to lowercase. """
-        self.context['last_name'] = self.context['last_name'].lower()
-        return self.context['last_name']
+    @post_load
+    def normalize_last_name(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to convert last name to lowercase."""
+        in_data["last_name"] = in_data["last_name"].capitalize()
+        return in_data
 
 
-class LoginWithEmailValidation(Schema):
-    """ Class to handle email login validation. """
-    email = fields.Email(
-        required=True,
-        validate=validate.Length(min=1, max=75)
-    )
+class LoginWithEmailValidationSchema(Schema):
+    """Class to handle email login validation."""
 
-    @pre_load
-    def normalize_email(self, **kwargs):  # pylint: disable=unused-argument
-        """ Method to convert email to lowercase. """
-        self.context['email'] = self.context['email'].lower()
-        return self.context['email']
+    email = fields.Email(required=True, validate=validate.Length(min=1, max=75))
+
+    @post_load
+    def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to convert email to lowercase."""
+        in_data["email"] = in_data["email"].lower()
+        return in_data
 
 
 class OTPGenerationSchema(Schema):
-    """ Class to handle OTP validation. """
-    otp = fields.Str(
-        required=True,
-        validate=validate.Length(min=6, max=6)
-    )
+    """Class to handle OTP validation."""
 
-class OTPSubmissionFormValidation(Schema):
-    """ Class to handle OTP submission validation. """
-    otp = fields.Str(
-        required=True,
-        validate=validate.Length(min=6, max=6)
-    )
-    email = fields.Email(
-        required=True,
-        validate=validate.Length(min=1, max=75)
-    )
+    otp = fields.Str(required=True, validate=validate.Length(min=6, max=6))
 
-    @pre_load
-    def normalize_email(self, **kwargs):  # pylint: disable=unused-argument
-        """ Method to convert email to lowercase. """
-        self.context['email'] = self.context['email'].lower()
-        return self.context['email']
 
-class NicknameFormValidation(Schema):
-    """ Class to handle nickname validation. """
-    nickname = fields.Str(
-        required=True,
-        validate=validate.Length(min=1, max=75)
-    )
+class OTPSubmissionSchema(Schema):
+    """Class to handle OTP submission validation."""
 
-    @pre_load
-    def normalize_nickname(self, **kwargs):  # pylint: disable=unused-argument
-        """ Method to convert nickname to lowercase. """
-        self.context['nickname'] = self.context['nickname'].lower()
-        return self.context['nickname']
+    otp = fields.Str(required=True, validate=validate.Length(min=6, max=6))
+    email = fields.Email(required=True, validate=validate.Length(min=1, max=75))
+
+    @post_load
+    def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to convert email to lowercase."""
+        in_data["email"] = in_data["email"].lower()
+        return in_data
+
+
+class NicknameFormValidationSchema(Schema):
+    """Class to handle nickname validation."""
+
+    nickname = fields.Str(required=True, validate=validate.Length(min=1, max=75))
+
+    @post_load
+    def normalize_nickname(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to convert nickname to lowercase."""
+        in_data["nickname"] = in_data["nickname"].lower()
+        return in_data
