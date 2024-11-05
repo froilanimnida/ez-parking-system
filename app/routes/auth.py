@@ -103,7 +103,7 @@ def verify_otp():
         access_token, refresh_token = (  # pylint: disable=unused-variable
             token_service.generate_jwt_csrf_token(email=email, user_id=user_id)
         )
-        response = set_response(200, messages="OTP Verified")
+        response = set_response(200, "OTP Verified")
         set_access_cookies(response, access_token)
 
         return response
