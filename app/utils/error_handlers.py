@@ -200,12 +200,17 @@ def handle_no_slots_found_in_the_given_vehicle_type(error):
 def handle_validation_errors(error):
     """This function handles validation errors."""
     if isinstance(error, ValidationError):
+        errors = [
+            f"Error on field {str(error_message).replace('_', ' ').title()}: "
+            f"{''.join(error.messages[error_message])}"  # type: ignore
+            for error_message in error.messages
+        ]
         logger.error("Validation error: %s", error)
         return set_response(
             400,
             {
                 "code": "validation_error",
-                "validation_errors": dict(error.messages),  # type: ignore
+                "validation_errors": errors,
             },
         )
     raise error
