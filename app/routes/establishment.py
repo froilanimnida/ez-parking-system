@@ -39,7 +39,7 @@ def get_all_establishments():
         {
             "code": "success",
             "message": "Parking establishments retrieved successfully.",
-            "data": establishments,
+            "establishments": establishments,
         },
     )
 
@@ -70,7 +70,7 @@ def get_nearest_establishments():
         {
             "code": "success",
             "message": "Nearest parking establishments retrieved successfully.",
-            "data": establishments,
+            "establishments": establishments,
         },
     )
 
@@ -84,7 +84,7 @@ def get_24_hours_establishments():
         {
             "code": "success",
             "message": "24 hours parking establishments retrieved successfully.",
-            "data": establishments,
+            "establishments": establishments,
         },
     )
 

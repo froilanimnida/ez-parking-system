@@ -10,7 +10,6 @@ from app.exceptions.slot_lookup_exceptions import (
 from app.services.slot_service import SlotService
 from app.utils.response_util import set_response
 from app.utils.error_handlers import (
-    handle_general_exception,
     handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment,
     handle_no_slots_found_in_the_given_vehicle_type,
@@ -18,7 +17,6 @@ from app.utils.error_handlers import (
 
 slot = Blueprint("slot", __name__)
 
-slot.register_error_handler(Exception, handle_general_exception)
 slot.register_error_handler(
     NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code
 )

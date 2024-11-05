@@ -11,7 +11,13 @@ class SignUpValidationSchema(Schema):
 
     first_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     last_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
-    email = fields.Email(required=True, validate=validate.Length(min=1, max=75))
+    email = fields.Email(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=75),
+            validate.Email(error="Invalid email format."),
+        ],
+    )
     phone_number = fields.Str(
         required=True,
         validate=[
@@ -20,6 +26,10 @@ class SignUpValidationSchema(Schema):
                 regex=r"^\+?[1-9]\d{1,14}$", error="Invalid phone number format."
             ),
         ],
+    )
+    role = fields.Str(
+        required=True,
+        validate=validate.OneOf(["user", "parking_manager", "admin"]),
     )
 
     @post_load

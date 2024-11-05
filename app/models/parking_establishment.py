@@ -11,11 +11,14 @@ from sqlalchemy import (
     DECIMAL,
     func,
     update,
+    join,
+    select,
 )
 from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
+from app.models.slot import Slot
 from app.utils.engine import get_session
 
 
@@ -131,6 +134,26 @@ class GetEstablishmentOperations:
                 session.query(ParkingEstablishment)
                 .filter(ParkingEstablishment.is_24_hours)
                 .all()
+            )
+            return [establishment.to_dict() for establishment in establishments]
+        except OperationalError as err:
+            raise err
+
+    @staticmethod
+    def get_all_establishment_by_vehicle_type_accommodation(vehicle_type_id: int):
+        """Get all parking establishments by vehicle type accommodation."""
+        session = get_session()
+        try:
+            establishments = session.execute(
+                select(ParkingEstablishment)
+                .select_from(
+                    join(
+                        ParkingEstablishment,
+                        Slot,
+                        ParkingEstablishment.establishment_id == Slot.establishment_id,
+                    )
+                )
+                .where(Slot.vehicle_type_id == vehicle_type_id)
             )
             return [establishment.to_dict() for establishment in establishments]
         except OperationalError as err:
