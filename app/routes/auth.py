@@ -97,11 +97,15 @@ def verify_otp():
     auth_service = AuthService()
     email = data.get("email")  # type: ignore
     otp = data.get("otp")  # type: ignore
-    user_id = auth_service.verify_otp(email, otp)  # type: ignore
+    remember_me = data.get("remember_me")  # type: ignore
+    user_id, role = auth_service.verify_otp(email, otp)  # type: ignore
     try:
         token_service = TokenService()
-        access_token, refresh_token = (  # pylint: disable=unused-variable
-            token_service.generate_jwt_csrf_token(email=email, user_id=user_id)
+        (
+            access_token,
+            refresh_token,  # pylint: disable=unused-variable
+        ) = token_service.generate_jwt_csrf_token(
+            email=email, user_id=user_id, role=role, remember_me=remember_me  # type: ignore
         )
         response = set_response(200, "OTP Verified")
         set_access_cookies(response, access_token)

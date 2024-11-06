@@ -32,6 +32,10 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType,
 )
+from app.exceptions.establishment_lookup_exception import (
+    EstablishmentDoesNotExist,
+    EstablishmentEditsNotAllowedException,
+)
 from app.utils.response_util import set_response
 
 logger = getLogger(__name__)
@@ -333,5 +337,33 @@ def handle_type_error(error):
         logger.error("Type error: %s", error)
         return set_response(
             400, {"code": "type_error", "message": "Invalid data type."}
+        )
+    raise error
+
+
+def handle_establishment_does_not_exist(error):
+    """This function handles establishment doesn't exist errors."""
+    if isinstance(error, EstablishmentDoesNotExist):
+        logger.error("Establishment doesn't exist: %s", error)
+        return set_response(
+            404,
+            {
+                "code": "establishment_does_not_exist",
+                "message": "Establishment doesn't exist.",
+            },
+        )
+    raise error
+
+
+def handle_establishment_edits_not_allowed(error):
+    """This function handles establishment edits not allowed errors."""
+    if isinstance(error, EstablishmentEditsNotAllowedException):
+        logger.error("Establishment edits not allowed: %s", error)
+        return set_response(
+            403,
+            {
+                "code": "establishment_edits_not_allowed",
+                "message": "Establishment edits not allowed.",
+            },
         )
     raise error

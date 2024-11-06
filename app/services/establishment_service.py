@@ -61,6 +61,7 @@ class CreateEstablishmentService:  # pylint: disable=R0903
         new_parking_establishment_uuid = uuid4().bytes
         establishment_data["uuid"] = new_parking_establishment_uuid
         establishment_data["created_at"] = datetime.now()
+        establishment_data["updated_at"] = datetime.now()
         CreateEstablishmentOperations.create_establishment(establishment_data)
 
 
