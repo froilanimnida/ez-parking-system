@@ -2,6 +2,7 @@
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=W0621
+# pylint: disable=unused-import
 
 from datetime import datetime, timedelta
 from unittest.mock import Mock
@@ -12,10 +13,15 @@ from sqlalchemy.exc import IntegrityError, DataError, OperationalError, Database
 
 from app.exceptions.authorization_exception import EmailNotFoundException
 from app.models.user import User, OTPOperations
-from tests.models.user_conftest import mock_session, valid_user_data  # pylint: disable=unused-import
+from tests.models.user_conftest import (
+    mock_session,
+    valid_user_data,
+)
+
 
 class TestGetOTPOperations:
     """Test for OTP operations."""
+
     def test_get_otp_returns_correct_values_for_valid_email(self, mock_session):
         """Test get_otp method returns correct values for a valid email."""
         # Arrange
@@ -23,13 +29,19 @@ class TestGetOTPOperations:
         user_id = 1
         otp_secret = "123456"
         otp_expiry = datetime.now()
-        mock_session.execute.return_value.first.return_value = (user_id, otp_secret, otp_expiry)
+        role = "user"
+        mock_session.execute.return_value.first.return_value = (
+            user_id,
+            otp_secret,
+            otp_expiry,
+            role,
+        )
 
         # Act
         result = OTPOperations.get_otp(email)
 
         # Assert
-        assert result == (otp_secret, otp_expiry, user_id)
+        assert result == (otp_secret, otp_expiry, user_id, role)
         mock_session.execute.assert_called_once()
         mock_session.close.assert_called_once()
 
@@ -46,7 +58,7 @@ class TestGetOTPOperations:
         with pytest.raises(EmailNotFoundException) as exc_info:
             OTPOperations.get_otp(non_existent_email)
 
-        assert str(exc_info.value) == 'Email not found.'
+        assert str(exc_info.value) == "Email not found."
         mock_session.execute.assert_called_once()
         mock_session.rollback.assert_not_called()
         mock_session.close.assert_called_once()
@@ -54,7 +66,7 @@ class TestGetOTPOperations:
     def test_get_otp_handles_integrity_error(self, mock_session):
         """Test get_otp method handles IntegrityError and rolls back session."""
         mock_session.execute.side_effect = IntegrityError(
-            statement="SELECT ...", params={}, orig=None # type: ignore
+            statement="SELECT ...", params={}, orig=None  # type: ignore
         )
 
         with pytest.raises(IntegrityError):
@@ -70,7 +82,7 @@ class TestGetOTPOperations:
         mock_session.execute.side_effect = DataError(
             statement="SELECT ...",
             params={},
-            orig=Exception("invalid input syntax for type integer")
+            orig=Exception("invalid input syntax for type integer"),
         )
         email = "test@example.com"
 
@@ -131,11 +143,13 @@ class TestGetOTPOperations:
         """Test get_otp method with an email containing special characters."""
         # Arrange
         email_with_special_chars = "user+test@example.com"
-        mock_user = (1, "123456", datetime.now())
+        mock_user = (1, "123456", datetime.now(), None)
         mock_session.execute.return_value.first.return_value = mock_user
 
         # Act
-        otp_secret, otp_expiry, user_id = OTPOperations.get_otp(email_with_special_chars)
+        otp_secret, otp_expiry, user_id, role = OTPOperations.get_otp(
+            email_with_special_chars
+        )
 
         # Assert
         mock_session.execute.assert_called_once()
@@ -144,22 +158,24 @@ class TestGetOTPOperations:
         assert otp_secret == "123456"
         assert isinstance(otp_expiry, datetime)
         assert user_id == 1
+        assert role is None
         mock_session.close.assert_called_once()
 
     def test_get_otp_with_very_long_email(self, mock_session):
         """Test get_otp method with a very long email address (edge case)."""
         # Arrange
         very_long_email = "a" * 320 + "@example.com"  # 320 characters before @ + domain
-        mock_user = (1, "123456", datetime.now())
+        mock_user = (1, "123456", datetime.now(), None)
         mock_session.execute.return_value.first.return_value = mock_user
 
         # Act
-        otp_secret, otp_expiry, user_id = OTPOperations.get_otp(very_long_email)
+        otp_secret, otp_expiry, user_id, role = OTPOperations.get_otp(very_long_email)
 
         # Assert
         assert otp_secret == "123456"
         assert isinstance(otp_expiry, datetime)
         assert user_id == 1
+        assert role is None
         mock_session.execute.assert_called_once()
         select_statement = mock_session.execute.call_args[0][0]
         assert '"user".email = :email_1' in str(select_statement)
@@ -173,30 +189,36 @@ class TestGetOTPOperations:
         mock_user.id = 1
         mock_user.otp_secret = None
         mock_user.otp_expiry = None
+        mock_user.role = None
         mock_session.execute.return_value.first.return_value = (
-            mock_user.id, mock_user.otp_secret, mock_user.otp_expiry
+            mock_user.id,
+            mock_user.otp_secret,
+            mock_user.otp_expiry,
+            mock_user.role,
         )
 
         # Act
-        otp_secret, otp_expiry, user_id = OTPOperations.get_otp(email)
+        otp_secret, otp_expiry, user_id, role = OTPOperations.get_otp(email)
 
         # Assert
         assert otp_secret is None
         assert otp_expiry is None
         assert user_id == 1
+        assert role is None
         mock_session.execute.assert_called_once()
         mock_session.close.assert_called_once()
 
 
 class TestSetOTPOperation:
     """Test for set_otp operation."""
+
     def test_set_otp_for_existing_user_with_valid_data(self, mock_session):
         """Test setting OTP for an existing user with valid data."""
         # Arrange
         valid_data = {
-            'email': 'test@example.com',
-            'otp_secret': '123456',
-            'otp_expiry': datetime.now() + timedelta(minutes=5)
+            "email": "test@example.com",
+            "otp_secret": "123456",
+            "otp_expiry": datetime.now() + timedelta(minutes=5),
         }
         mock_session.execute = Mock()
         mock_session.commit = Mock()
@@ -220,9 +242,9 @@ class TestSetOTPOperation:
         # Arrange
         mock_session.execute.return_value = None
         data = {
-            'email': 'nonexistent@example.com',
-            'otp_secret': '123456',
-            'otp_expiry': datetime.now() + timedelta(minutes=5)
+            "email": "nonexistent@example.com",
+            "otp_secret": "123456",
+            "otp_expiry": datetime.now() + timedelta(minutes=5),
         }
 
         # Act
@@ -240,16 +262,16 @@ class TestSetOTPOperation:
 
         # Extract and compare the values
         compiled = update_stmt.compile()
-        assert compiled.params['otp_secret'] == data['otp_secret']
-        assert compiled.params['otp_expiry'] == data['otp_expiry']
+        assert compiled.params["otp_secret"] == data["otp_secret"]
+        assert compiled.params["otp_expiry"] == data["otp_expiry"]
 
     def test_set_otp_with_empty_otp_secret(self, mock_session):
         """Test setting OTP with empty OTP secret."""
         # Arrange
         data = {
-            'email': 'test@example.com',
-            'otp_secret': '',
-            'otp_expiry': datetime.now()
+            "email": "test@example.com",
+            "otp_secret": "",
+            "otp_expiry": datetime.now(),
         }
         mock_session.execute = Mock()
         mock_session.commit = Mock()
@@ -262,8 +284,8 @@ class TestSetOTPOperation:
         assert str(update_stmt.whereclause) == '"user".email = :email_1'
 
         compiled = update_stmt.compile()
-        assert compiled.params['otp_secret'] == data['otp_secret']
-        assert compiled.params['otp_expiry'] == data['otp_expiry']
+        assert compiled.params["otp_secret"] == data["otp_secret"]
+        assert compiled.params["otp_expiry"] == data["otp_expiry"]
 
         mock_session.commit.assert_called_once()
         mock_session.close.assert_called_once()
@@ -273,9 +295,9 @@ class TestSetOTPOperation:
         # Arrange
         past_date = datetime.now() - timedelta(days=1)
         data = {
-            'email': 'test@example.com',
-            'otp_secret': '123456',
-            'otp_expiry': past_date
+            "email": "test@example.com",
+            "otp_secret": "123456",
+            "otp_expiry": past_date,
         }
         mock_session.execute = Mock()
         mock_session.commit = Mock()
@@ -292,9 +314,9 @@ class TestSetOTPOperation:
             'WHERE "user".email = :email_1'
         )
         assert update_stmt.compile().params == {
-            'otp_secret': '123456',
-            'otp_expiry': past_date,
-            'email_1': 'test@example.com'
+            "otp_secret": "123456",
+            "otp_expiry": past_date,
+            "email_1": "test@example.com",
         }
         mock_session.commit.assert_called_once()
         mock_session.close.assert_called_once()
@@ -304,15 +326,17 @@ class TestSetOTPOperation:
         # Arrange
         very_long_otp_secret = "a" * 1000  # Create a string of 1000 'a' characters
         data = {
-            'email': 'test@example.com',
-            'otp_secret': very_long_otp_secret,
-            'otp_expiry': datetime.now() + timedelta(minutes=5)
+            "email": "test@example.com",
+            "otp_secret": very_long_otp_secret,
+            "otp_expiry": datetime.now() + timedelta(minutes=5),
         }
-        mock_session.execute = Mock(side_effect=DataError(
-            statement="INSERT INTO user ...",
-            params={},
-            orig=Exception("value too long for type character varying(6)")
-        ))
+        mock_session.execute = Mock(
+            side_effect=DataError(
+                statement="INSERT INTO user ...",
+                params={},
+                orig=Exception("value too long for type character varying(6)"),
+            )
+        )
         mock_session.commit = Mock()
 
         # Act
@@ -331,12 +355,12 @@ class TestSetOTPOperation:
         mock_session.execute.side_effect = DataError(
             statement="UPDATE user ...",
             params={},
-            orig=Exception("invalid input syntax for type timestamp")
+            orig=Exception("invalid input syntax for type timestamp"),
         )
         test_data = {
-            'email': 'test@example.com',
-            'otp_secret': '123456',
-            'otp_expiry': 'invalid_timestamp'
+            "email": "test@example.com",
+            "otp_secret": "123456",
+            "otp_expiry": "invalid_timestamp",
         }
 
         # Act and Assert
@@ -355,9 +379,9 @@ class TestSetOTPOperation:
             "statement", "params", "orig"  # type: ignore
         )
         data = {
-            'email': 'test@example.com',
-            'otp_secret': '123456',
-            'otp_expiry': datetime.now()
+            "email": "test@example.com",
+            "otp_secret": "123456",
+            "otp_expiry": datetime.now(),
         }
 
         # Act & Assert
@@ -373,14 +397,14 @@ class TestSetOTPOperation:
         # Arrange
         email = "test@example.com"
         otp_data_1 = {
-            'email': email,
-            'otp_secret': '123456',
-            'otp_expiry': datetime.now() + timedelta(minutes=5)
+            "email": email,
+            "otp_secret": "123456",
+            "otp_expiry": datetime.now() + timedelta(minutes=5),
         }
         otp_data_2 = {
-            'email': email,
-            'otp_secret': '789012',
-            'otp_expiry': datetime.now() + timedelta(minutes=10)
+            "email": email,
+            "otp_secret": "789012",
+            "otp_expiry": datetime.now() + timedelta(minutes=10),
         }
         mock_session.execute = Mock()
         mock_session.commit = Mock()
@@ -398,29 +422,25 @@ class TestSetOTPOperation:
         assert isinstance(first_call, Update)
         assert str(first_call.whereclause) == '"user".email = :email_1'
         compiled_first = first_call.compile()
-        assert compiled_first.params['otp_secret'] == otp_data_1['otp_secret']
-        assert compiled_first.params['otp_expiry'] == otp_data_1['otp_expiry']
-        assert compiled_first.params['email_1'] == otp_data_1['email']
+        assert compiled_first.params["otp_secret"] == otp_data_1["otp_secret"]
+        assert compiled_first.params["otp_expiry"] == otp_data_1["otp_expiry"]
+        assert compiled_first.params["email_1"] == otp_data_1["email"]
 
         # Check second call
         second_call = mock_session.execute.call_args_list[1][0][0]
         assert isinstance(second_call, Update)
         assert str(second_call.whereclause) == '"user".email = :email_1'
         compiled_second = second_call.compile()
-        assert compiled_second.params['otp_secret'] == otp_data_2['otp_secret']
-        assert compiled_second.params['otp_expiry'] == otp_data_2['otp_expiry']
-        assert compiled_second.params['email_1'] == otp_data_2['email']
+        assert compiled_second.params["otp_secret"] == otp_data_2["otp_secret"]
+        assert compiled_second.params["otp_expiry"] == otp_data_2["otp_expiry"]
+        assert compiled_second.params["email_1"] == otp_data_2["email"]
 
         mock_session.close.assert_called()
 
     def test_set_otp_with_null_values(self, mock_session):
         """Test setting OTP with null values for otp_secret and otp_expiry."""
         # Arrange
-        data = {
-            'email': 'test@example.com',
-            'otp_secret': None,
-            'otp_expiry': None
-        }
+        data = {"email": "test@example.com", "otp_secret": None, "otp_expiry": None}
         mock_session.execute = Mock()
         mock_session.commit = Mock()
 
@@ -432,8 +452,8 @@ class TestSetOTPOperation:
         assert str(update_statement.whereclause) == '"user".email = :email_1'
 
         compiled = update_statement.compile()
-        assert compiled.params['otp_secret'] == data['otp_secret']
-        assert compiled.params['otp_expiry'] == data['otp_expiry']
+        assert compiled.params["otp_secret"] == data["otp_secret"]
+        assert compiled.params["otp_expiry"] == data["otp_expiry"]
 
         mock_session.commit.assert_called_once()
         mock_session.close.assert_called_once()
@@ -444,9 +464,21 @@ class TestSetOTPOperation:
         mock_session.execute = Mock()
         mock_session.commit = Mock()
         user_data = [
-            {'email': 'user1@example.com', 'otp_secret': '123456', 'otp_expiry': datetime.now()},
-            {'email': 'user2@example.com', 'otp_secret': '654321', 'otp_expiry': datetime.now()},
-            {'email': 'user3@example.com', 'otp_secret': '789012', 'otp_expiry': datetime.now()}
+            {
+                "email": "user1@example.com",
+                "otp_secret": "123456",
+                "otp_expiry": datetime.now(),
+            },
+            {
+                "email": "user2@example.com",
+                "otp_secret": "654321",
+                "otp_expiry": datetime.now(),
+            },
+            {
+                "email": "user3@example.com",
+                "otp_secret": "789012",
+                "otp_expiry": datetime.now(),
+            },
         ]
 
         # Act
@@ -465,15 +497,16 @@ class TestSetOTPOperation:
             )
             compiled = call_args.compile()
             assert compiled.params == {
-                'otp_secret': data['otp_secret'],
-                'otp_expiry': data['otp_expiry'],
-                'email_1': data['email']
+                "otp_secret": data["otp_secret"],
+                "otp_expiry": data["otp_expiry"],
+                "email_1": data["email"],
             }
         mock_session.close.assert_called()
 
 
 class TestDeleteOTPOperation:
     """Test Delete OTP operation."""
+
     def test_delete_otp_with_whitespace_in_email(self, mock_session):
         """Test delete_otp method with email containing leading and trailing whitespace."""
         # Arrange
@@ -490,7 +523,7 @@ class TestDeleteOTPOperation:
         assert isinstance(update_stmt, Update)
         assert str(update_stmt.whereclause) == '"user".email = :email_1'
         compiled = update_stmt.compile()
-        assert compiled.params['email_1'] == email_with_whitespace.strip()
+        assert compiled.params["email_1"] == email_with_whitespace.strip()
         mock_session.commit.assert_called_once()
         mock_session.close.assert_called_once()
 
@@ -514,7 +547,7 @@ class TestDeleteOTPOperation:
         update_stmt = mock_session.execute.call_args[0][0]
         assert '"user".email = :email_1' in str(update_stmt)
         compiled = update_stmt.compile()
-        assert compiled.params['email_1'] == email
+        assert compiled.params["email_1"] == email
 
     def test_delete_otp_with_sql_injection_attempt(self, mock_session):
         """Test delete_otp method with a SQL injection attempt in the email."""
@@ -531,7 +564,7 @@ class TestDeleteOTPOperation:
         update_stmt = mock_session.execute.call_args[0][0]
         assert isinstance(update_stmt, Update)
         assert str(update_stmt.whereclause) == '"user".email = :email_1'
-        assert update_stmt.compile().params['email_1'] == sql_injection_email
+        assert update_stmt.compile().params["email_1"] == sql_injection_email
 
         mock_session.commit.assert_called_once()
         mock_session.close.assert_called_once()
@@ -553,9 +586,9 @@ class TestDeleteOTPOperation:
         assert isinstance(update_stmt, Update)
         assert str(update_stmt.whereclause) == '"user".email = :email_1'
         compiled = update_stmt.compile()
-        assert compiled.params['email_1'] == email
-        assert compiled.params['otp_secret'] is None
-        assert compiled.params['otp_expiry'] is None
+        assert compiled.params["email_1"] == email
+        assert compiled.params["otp_secret"] is None
+        assert compiled.params["otp_expiry"] is None
         mock_session.commit.assert_called_once()
         mock_session.close.assert_called_once()
 
@@ -566,7 +599,7 @@ class TestDeleteOTPOperation:
         mock_session.execute.side_effect = DataError(
             statement="UPDATE user ...",
             params={},
-            orig=Exception("invalid input syntax for type email")
+            orig=Exception("invalid input syntax for type email"),
         )
 
         # Act & Assert
@@ -585,8 +618,8 @@ class TestDeleteOTPOperation:
         email = "test@example.com"
         mock_session.execute = Mock()
         mock_session.commit.side_effect = OperationalError(
-            "statement", "params", "orig"
-        )  # type: ignore
+            "statement", "params", "orig"  # type: ignore
+        )
 
         # Act
         with pytest.raises(OperationalError):
@@ -618,6 +651,6 @@ class TestDeleteOTPOperation:
             assert isinstance(update_stmt, Update)
             assert str(update_stmt.whereclause) == '"user".email = :email_1'
             compiled = update_stmt.compile()
-            assert compiled.params['email_1'] == email
+            assert compiled.params["email_1"] == email
 
         mock_session.close.assert_called()

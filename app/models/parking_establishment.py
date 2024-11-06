@@ -7,16 +7,22 @@ from sqlalchemy import (
     Integer,
     BINARY,
     TIME,
-    DateTime,
     DECIMAL,
+    and_,
     func,
     update,
     join,
     select,
+    ForeignKey,
+    TIMESTAMP,
 )
 from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
 
+from app.exceptions.establishment_lookup_exception import (
+    EstablishmentDoesNotExist,
+    EstablishmentEditsNotAllowedException,
+)
 from app.models.base import Base
 from app.models.slot import Slot
 from app.utils.engine import get_session
@@ -28,6 +34,7 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903
     __tablename__ = "parking_establishment"
 
     establishment_id = Column(Integer, primary_key=True)
+    manager_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     uuid = Column(BINARY(16), nullable=False)
     name = Column(VARCHAR(255), nullable=False)
     address = Column(VARCHAR(255), nullable=False)
@@ -35,8 +42,8 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903
     opening_time = Column(TIME, nullable=False)
     closing_time = Column(TIME, nullable=False)
     is_24_hours = Column(Boolean, nullable=False)
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
+    created_at = Column(TIMESTAMP, nullable=False)
+    updated_at = Column(TIMESTAMP, nullable=False)
     hourly_rate = Column(DECIMAL(8, 2), nullable=False)
     longitude = Column(DECIMAL(9, 6), nullable=False)
     latitude = Column(DECIMAL(9, 6), nullable=False)
@@ -44,6 +51,7 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903
     slot = relationship(
         "Slot", back_populates="parking_establishment", cascade="all, delete-orphan"
     )
+    user = relationship("User", back_populates="parking_establishment")
 
     def to_dict(self):
         """Convert the ParkingEstablishment instance to a dictionary."""
@@ -66,6 +74,20 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903
 
 class GetEstablishmentOperations:
     """Class for operations related to parking establishment (Getting)."""
+
+    @staticmethod
+    def is_establishment_exists(establishment_id: int):
+        """Check if the parking establishment exists in the database."""
+        session = get_session()
+        try:
+            return (
+                session.query(ParkingEstablishment)
+                .filter(ParkingEstablishment.establishment_id == establishment_id)
+                .count()
+                > 0
+            )
+        except OperationalError as err:
+            raise err
 
     @staticmethod
     def get_all_establishments():
@@ -170,6 +192,7 @@ class CreateEstablishmentOperations:  # pylint: disable=R0903
         try:
             establishment = ParkingEstablishment(
                 uuid=establishment_data.get("uuid"),
+                manager_id=establishment_data.get("manager_id"),
                 name=establishment_data.get("name"),
                 address=establishment_data.get("address"),
                 contact_number=establishment_data.get("contact_number"),
@@ -199,9 +222,33 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
         """Update a parking establishment."""
         session = get_session()
         try:
+            is_establishment_exists = (
+                GetEstablishmentOperations.is_establishment_exists(establishment_id)
+            )
+            if not is_establishment_exists:
+                raise EstablishmentDoesNotExist("Establishment does not exist")
+            is_allowed_to_make_edits = (
+                session.query(ParkingEstablishment).filter(
+                    and_(
+                        ParkingEstablishment.establishment_id == establishment_id,
+                        ParkingEstablishment.manager_id
+                        == establishment_data.get("manager_id"),
+                    )
+                )
+            ).count()
+            if not is_allowed_to_make_edits:
+                raise EstablishmentEditsNotAllowedException(
+                    "You are not allowed to make edits to this establishment."
+                )
             session.execute(
                 update(ParkingEstablishment)
-                .where(ParkingEstablishment.establishment_id == establishment_id)
+                .where(
+                    and_(
+                        ParkingEstablishment.establishment_id == establishment_id,
+                        ParkingEstablishment.manager_id
+                        == establishment_data.get("manager_id"),
+                    )
+                )
                 .values(
                     {
                         "name": establishment_data.get("name"),

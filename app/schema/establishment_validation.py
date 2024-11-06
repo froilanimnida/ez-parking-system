@@ -6,6 +6,7 @@ from marshmallow import Schema, fields, validate
 class EstablishmentValidationSchema(Schema):
     """Class to handle parking establishment validation."""
 
+    manager_id = fields.Integer(required=True)
     name = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     address = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     contact_number = fields.Str(
@@ -29,6 +30,7 @@ class UpdateEstablishmentInfoSchema(Schema):
     """Class to handle update of parking establishment information."""
 
     establishment_id = fields.Integer(required=True)
+    manager_id = fields.Integer(required=True)
     name = fields.Str(validate=validate.Length(min=3, max=255))
     address = fields.Str(validate=validate.Length(min=3, max=255))
     contact_number = fields.Str(

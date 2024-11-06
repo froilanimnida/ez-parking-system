@@ -28,6 +28,7 @@ class TestSignUpValidation:
             "last_name": "doe",
             "email": "John.Doe@example.com",
             "phone_number": "+1234567890",
+            "role": "User",
         }
 
     def test_valid_data(self, valid_data):
@@ -38,6 +39,7 @@ class TestSignUpValidation:
         assert result.get("last_name") == "Doe"  # type: ignore
         assert result.get("email") == "john.doe@example.com"  # type: ignore
         assert result.get("phone_number") == "+1234567890"  # type: ignore
+        assert result.get("role") == "user"  # type: ignore
 
     def test_missing_first_name(self, valid_data):
         """Test that missing first name raises ValidationError."""

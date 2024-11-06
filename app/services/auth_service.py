@@ -133,14 +133,14 @@ class UserOTPService:
     @classmethod
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """Function to verify an OTP for a user."""
-        retrieved_otp, expiry, user_id = OTPOperations.get_otp(email=email)
+        retrieved_otp, expiry, user_id, role = OTPOperations.get_otp(email=email)
         if datetime.now() > expiry:
             OTPOperations.delete_otp(email=email)
             raise ExpiredOTPException(message="OTP has expired.")
         if retrieved_otp != otp or not otp:
             raise IncorrectOTPException(message="Incorrect OTP.")
         OTPOperations.delete_otp(email=email)
-        return user_id
+        return (user_id, role)
 
 
 class UserProfileService:  # pylint: disable=R0903

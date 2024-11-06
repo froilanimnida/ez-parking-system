@@ -1,22 +1,48 @@
 """ Routes related to parking establishment. """
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt
 
+from app.exceptions.establishment_lookup_exception import (
+    EstablishmentDoesNotExist,
+    EstablishmentEditsNotAllowedException,
+)
 from app.schema.establishment_validation import (
     EstablishmentValidationSchema,
     UpdateEstablishmentInfoSchema,
 )
 from app.services.establishment_service import EstablishmentService
+from app.utils.error_handlers import (
+    handle_establishment_does_not_exist,
+    handle_establishment_edits_not_allowed,
+)
 from app.utils.response_util import set_response
 
 establishment = Blueprint("establishment", __name__)
 
+establishment.register_error_handler(
+    EstablishmentDoesNotExist, handle_establishment_does_not_exist
+)
+establishment.register_error_handler(
+    EstablishmentEditsNotAllowedException, handle_establishment_edits_not_allowed
+)
+
 
 @establishment.route("/v1/establishment/create", methods=["POST"])
+@jwt_required(optional=True)
 def create_establishment():
     """Create a new parking establishment."""
+    current_user = get_jwt()
     data = request.json
+    data["manager_id"] = current_user.get("sub").get("user_id")  # type: ignore
+    if current_user.get("role") != "parking_manager":
+        return set_response(
+            403,
+            {
+                "code": "forbidden",
+                "message": "Only parking managers can create establishments.",
+            },
+        )
     establishment_schema = EstablishmentValidationSchema()
     if not data:
         return set_response(400, {"code": "error", "message": "Invalid request data."})
@@ -90,9 +116,20 @@ def get_24_hours_establishments():
 
 
 @establishment.route("/v1/establishment/update-establishment", methods=["PATCH"])
+@jwt_required(optional=True)
 def update_establishment():
     """Update parking establishment data."""
     data = request.json
+    current_user = get_jwt()
+    if current_user.get("role") not in ['parking_manager', 'admin']:
+        return set_response(
+            401,
+            {
+                "code": "error",
+                "message": "You are not authorized to perform this action.",
+            },
+        )
+    data["manager_id"] = current_user.get("sub").get("user_id")  # type: ignore
     establishment_schema = UpdateEstablishmentInfoSchema()
     if not data:
         return set_response(400, {"code": "error", "message": "Invalid request data."})
