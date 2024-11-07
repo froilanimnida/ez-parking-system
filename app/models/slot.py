@@ -20,7 +20,7 @@ from sqlalchemy.exc import OperationalError, DataError, IntegrityError, Database
 
 from app.models.base import Base
 from app.models.vehicle_type import VehicleTypeOperations
-from app.exceptions.vehicle_type_exception import VehicleTypeDoesNotExist
+from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.utils.engine import get_session
 
 

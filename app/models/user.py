@@ -20,7 +20,7 @@ from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select,
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
-from app.exceptions.authorization_exception import EmailNotFoundException
+from app.exceptions.authorization_exceptions import EmailNotFoundException
 
 from app.utils.engine import get_session
 from app.models.base import Base

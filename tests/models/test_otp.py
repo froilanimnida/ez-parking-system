@@ -11,7 +11,7 @@ import pytest
 from sqlalchemy import Update
 from sqlalchemy.exc import IntegrityError, DataError, OperationalError, DatabaseError
 
-from app.exceptions.authorization_exception import EmailNotFoundException
+from app.exceptions.authorization_exceptions import EmailNotFoundException
 from app.models.user import User, OTPOperations
 from tests.models.user_conftest import (
     mock_session,

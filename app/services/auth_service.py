@@ -11,7 +11,7 @@ from flask import render_template
 from flask_jwt_extended import create_access_token, create_refresh_token
 from pyotp import TOTP
 
-from app.exceptions.authorization_exception import (
+from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     ExpiredOTPException,
     IncorrectOTPException,

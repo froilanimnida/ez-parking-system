@@ -32,7 +32,7 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.engine import get_session
-from app.exceptions.vehicle_type_exception import VehicleTypeDoesNotExist
+from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 
 
 class VehicleType(Base):  # pylint: disable=R0903 disable=C0115

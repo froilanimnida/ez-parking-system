@@ -3,7 +3,7 @@
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt
 
-from app.exceptions.establishment_lookup_exception import (
+from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentDoesNotExist,
     EstablishmentEditsNotAllowedException,
 )

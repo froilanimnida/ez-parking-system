@@ -17,7 +17,7 @@ from flask_jwt_extended.exceptions import (
 from marshmallow.exceptions import ValidationError
 from sqlalchemy.exc import DataError, IntegrityError, DatabaseError, OperationalError
 
-from app.exceptions.authorization_exception import (
+from app.exceptions.authorization_exceptions import (
     EmailNotFoundException,
     MissingFieldsException,
     InvalidEmailException,
@@ -32,10 +32,11 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType,
 )
-from app.exceptions.establishment_lookup_exception import (
+from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentDoesNotExist,
     EstablishmentEditsNotAllowedException,
 )
+from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.utils.response_util import set_response
 
 logger = getLogger(__name__)
@@ -364,6 +365,20 @@ def handle_establishment_edits_not_allowed(error):
             {
                 "code": "establishment_edits_not_allowed",
                 "message": "Establishment edits not allowed.",
+            },
+        )
+    raise error
+
+
+def handle_vehicle_type_does_not_exist(error):
+    """This function handles vehicle type doesn't exist errors."""
+    if isinstance(error, VehicleTypeDoesNotExist):
+        logger.error("Vehicle type doesn't exist: %s", error)
+        return set_response(
+            404,
+            {
+                "code": "vehicle_type_does_not_exist",
+                "message": "Vehicle type doesn't exist.",
             },
         )
     raise error

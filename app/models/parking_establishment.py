@@ -24,7 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
 
-from app.exceptions.establishment_lookup_exception import (
+from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentDoesNotExist,
     EstablishmentEditsNotAllowedException,
 )
@@ -156,7 +156,8 @@ class GetEstablishmentOperations:
             longitude (float): The longitude coordinate of the reference point
 
         Returns:
-            list: A list of dictionaries containing parking establishment details, sorted by distance
+            list: A list of dictionaries containing parking establishment details, sorted by
+            distance
 
         Raises:
             OperationalError: If there is a database operation error
@@ -222,7 +223,8 @@ class GetEstablishmentOperations:
             vehicle_type_id (int): The ID of the vehicle type to filter establishments by.
 
         Returns:
-            list: A list of dictionaries containing details of parking establishments that can accommodate
+            list: A list of dictionaries containing details of parking establishments that can
+            accommodate
                 the specified vehicle type.
 
         Raises:
@@ -314,7 +316,8 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
 
         Raises:
             EstablishmentDoesNotExist: If the establishment with given ID does not exist.
-            EstablishmentEditsNotAllowedException: If the manager_id does not match the establishment.
+            EstablishmentEditsNotAllowedException: If the manager_id does not match the
+            establishment.
             OperationalError: If there is a database operation error.
             DatabaseError: If there is a database-related error.
             DataError: If there is an error with the data format.
