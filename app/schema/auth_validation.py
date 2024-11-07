@@ -11,7 +11,13 @@ class SignUpValidationSchema(Schema):
 
     first_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     last_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
-    email = fields.Email(required=True, validate=validate.Length(min=1, max=75))
+    email = fields.Email(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=75),
+            validate.Email(error="Invalid email format."),
+        ],
+    )
     phone_number = fields.Str(
         required=True,
         validate=[
@@ -20,6 +26,10 @@ class SignUpValidationSchema(Schema):
                 regex=r"^\+?[1-9]\d{1,14}$", error="Invalid phone number format."
             ),
         ],
+    )
+    role = fields.Str(
+        required=True,
+        validate=validate.OneOf(["User", "Parking Manager", "Admin"]),
     )
 
     @post_load
@@ -40,6 +50,12 @@ class SignUpValidationSchema(Schema):
     def normalize_last_name(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Method to convert last name to lowercase."""
         in_data["last_name"] = in_data["last_name"].capitalize()
+        return in_data
+
+    @post_load
+    def normalize_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to convert role to lowercase."""
+        in_data["role"] = str(in_data["role"]).lower().replace(" ", "_")
         return in_data
 
 
@@ -66,6 +82,7 @@ class OTPSubmissionSchema(Schema):
 
     otp = fields.Str(required=True, validate=validate.Length(min=6, max=6))
     email = fields.Email(required=True, validate=validate.Length(min=1, max=75))
+    remember_me = fields.Bool(required=False)
 
     @post_load
     def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument

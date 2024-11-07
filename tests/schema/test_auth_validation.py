@@ -1,4 +1,18 @@
-""" Tests for auth_validation schema. """
+"""
+    Contains the tests related to authentication marshmallow schema
+    and other authentication related validation methods.
+
+    This module includes tests for:
+    - SignUpValidationSchema
+    - OTPGenerationSchema
+    - OTPSubmissionSchema
+    - NicknameFormValidationSchema
+    - LoginWithEmailValidationSchema
+
+    The tests are written to ensure that the schema correctly validates
+    the provided data.
+
+"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -28,6 +42,7 @@ class TestSignUpValidation:
             "last_name": "doe",
             "email": "John.Doe@example.com",
             "phone_number": "+1234567890",
+            "role": "User",
         }
 
     def test_valid_data(self, valid_data):
@@ -38,6 +53,7 @@ class TestSignUpValidation:
         assert result.get("last_name") == "Doe"  # type: ignore
         assert result.get("email") == "john.doe@example.com"  # type: ignore
         assert result.get("phone_number") == "+1234567890"  # type: ignore
+        assert result.get("role") == "user"  # type: ignore
 
     def test_missing_first_name(self, valid_data):
         """Test that missing first name raises ValidationError."""
@@ -169,12 +185,12 @@ class TestOTPGenerationSchema:
     def test_invalid_otp_length(self, valid_data):
         """Test that OTP with invalid length raises ValidationError."""
         schema = OTPGenerationSchema()
-        valid_data.update({"otp": "12345"})  # Less than 6 characters
+
+        valid_data.update({"otp": "1234567"})  # More than 6 characters
         with pytest.raises(ValidationError) as exc_info:
             schema.load(valid_data)
         assert "otp" in exc_info.value.messages
-
-        valid_data.update({"otp": "1234567"})  # More than 6 characters
+        valid_data.update({"otp": "12345"})  # Less than 6 characters
         with pytest.raises(ValidationError) as exc_info:
             schema.load(valid_data)
         assert "otp" in exc_info.value.messages
