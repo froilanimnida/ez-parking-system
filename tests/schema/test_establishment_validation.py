@@ -1,34 +1,39 @@
 """ Test cases for establishment validation schema. """
 
 # pylint: disable=unused-import
+# pylint: disable=redefined-outer-name
 
 from datetime import time
 
 import pytest
 from marshmallow import ValidationError
 
-from app.schema.establishment_validation import EstablishmentValidationSchema
+from app.schema.establishment_validation import (
+    EstablishmentValidationSchema,
+    UpdateEstablishmentInfoSchema,
+)
 from tests.models.user_conftest import mock_session
 
 
-class TestEstablishmentCreation:
-    """Test cases for establishment creation."""
+@pytest.fixture
+def valid_establishment_data():
+    """Return valid establishment data."""
+    return {
+        "manager_id": 1,
+        "name": "Test Parking",
+        "address": "123 Test Street",
+        "contact_number": "+1234567890",
+        "opening_time": "08:00:00",
+        "closing_time": "20:00:00",
+        "is_24_hours": False,
+        "hourly_rate": 2.50,
+        "longitude": -73.935242,
+        "latitude": 40.730610,
+    }
 
-    @pytest.fixture
-    def valid_establishment_data(self):
-        """Return valid establishment data."""
-        return {
-            "manager_id": 1,
-            "name": "Test Parking",
-            "address": "123 Test Street",
-            "contact_number": "+1234567890",
-            "opening_time": "08:00:00",
-            "closing_time": "20:00:00",
-            "is_24_hours": False,
-            "hourly_rate": 2.50,
-            "longitude": -73.935242,
-            "latitude": 40.730610,
-        }
+
+class TestEstablishmentCreationSchema:
+    """Test cases for establishment creation."""
 
     def test_valid_establishment_data(self, valid_establishment_data):
         """Test valid establishment data."""
@@ -169,3 +174,185 @@ class TestEstablishmentCreation:
         with pytest.raises(ValidationError) as exc:
             schema.load(valid_establishment_data)
         assert "Closing time must be greater than opening time" in str(exc.value)
+
+    def test_edge_case_opening_time_is_equal_to_closing_time(
+        self, valid_establishment_data
+    ):
+        """Test edge cases for time fields."""
+        schema = EstablishmentValidationSchema()
+        valid_establishment_data["opening_time"] = "14:00:00"
+        valid_establishment_data["closing_time"] = "14:00:00"
+        with pytest.raises(ValidationError) as exc:
+            schema.load(valid_establishment_data)
+        assert "Closing time must be greater than opening time" in str(exc.value)
+
+
+class TestEstablishmentUpdateSchema:
+    """Test cases for EstablishmentUpdateSchema."""
+
+    def test_valid_updated_data(self, valid_establishment_data):
+        """Test valid updated data."""
+        # update some data from the existing valid_establishment_data
+        updated_data = valid_establishment_data.copy()
+        # Add manager id to the existing valid_establishment_data
+        updated_data["establishment_id"] = 1
+        updated_data["manager_id"] = 1
+        updated_data["name"] = "Updated Name"
+        updated_data["contact_number"] = "+123456789"
+        updated_data["address"] = "Updated Address"
+        updated_data["opening_time"] = "14:00:00"
+        updated_data["closing_time"] = "15:00:00"
+        updated_data["is_24_hours"] = False
+        schema = UpdateEstablishmentInfoSchema()
+        result = schema.load(updated_data)
+        assert result.get("name") == "Updated Name"  # type: ignore
+        assert result.get("contact_number") == "+123456789"  # type: ignore
+        assert result.get("address") == "Updated Address"  # type: ignore
+        assert str(result.get("opening_time")) == "14:00:00"  # type: ignore
+        assert str(result.get("closing_time")) == "15:00:00"  # type: ignore
+        assert result.get("is_24_hours") is False  # type: ignore
+        assert result.get("manager_id") == 1  # type: ignore
+
+    def test_invalid_updated_data(self, valid_establishment_data):
+        """Test invalid updated data."""
+        updated_data = valid_establishment_data.copy()
+        updated_data["opening_time"] = "invalid_time_format"
+        updated_data["establishment_id"] = 1
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "opening_time" in exc.value.messages
+        assert "Not a valid time" in str(exc.value.messages)
+        updated_data["opening_time"] = "14:00:00"
+        updated_data["closing_time"] = "13:00:00"
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "Closing time must be greater than opening time" in str(exc.value)
+        updated_data["opening_time"] = "14:00:00"
+        updated_data["closing_time"] = "14:00:00"
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "Closing time must be greater than opening time" in str(exc.value)
+        updated_data["opening_time"] = "14:00:00"
+        updated_data["closing_time"] = "13:00:00"
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+
+    def test_invalid_manager_id(self, valid_establishment_data):
+        """Test invalid manager id."""
+        updated_data = valid_establishment_data.copy()
+        updated_data["manager_id"] = "not_an_integer"
+        updated_data["establishment_id"] = 1
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "manager_id" in exc.value.messages
+        assert "Not a valid integer" in str(exc.value.messages)
+
+    def test_missing_manager_id(self, valid_establishment_data):
+        """Test missing manager id."""
+        updated_data = valid_establishment_data.copy()
+        updated_data.pop("manager_id")
+        updated_data["establishment_id"] = 1
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "manager_id" in exc.value.messages
+        assert "Missing data for required field" in str(exc.value.messages)
+
+    def test_missing_establishment_id(self, valid_establishment_data):
+        """Test missing establishment id."""
+        updated_data = valid_establishment_data.copy()
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "establishment_id" in exc.value.messages
+        assert "Missing data for required field" in str(exc.value.messages)
+
+    def test_invalid_establishment_id(self, valid_establishment_data):
+        """Test invalid establishment id."""
+        updated_data = valid_establishment_data.copy()
+        updated_data["establishment_id"] = "not_an_integer"
+        updated_data["manager_id"] = 1
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "establishment_id" in exc.value.messages
+        assert "Not a valid integer" in str(exc.value.messages)
+
+    def test_invalid_name(self, valid_establishment_data):
+        """Test invalid name."""
+        updated_data = valid_establishment_data.copy()
+        updated_data["establishment_id"] = 1
+        updated_data["manager_id"] = 1
+        updated_data["name"] = "a" * 256
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "name" in str(exc.value)
+
+    @pytest.mark.parametrize(
+        "field, value",
+        [
+            ("contact_number", "+12345678901234567890"),
+            ("address", "a" * 256),
+        ],
+    )
+    def test_invalid_field_length(self, field, value, valid_establishment_data):
+        """Test invalid field length."""
+        updated_data = valid_establishment_data.copy()
+        updated_data[field] = value
+        updated_data["establishment_id"] = 1
+        updated_data["manager_id"] = 1
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert field in exc.value.messages
+        assert "Length must be between" in str(exc.value.messages)
+
+    @pytest.mark.parametrize(
+        "field, value",
+        [
+            ("contact_number", "+12345678901234567890"),
+            ("address", "a" * 256),
+        ],
+        ids=["contact_number", "address"],
+    )
+    def test_invalid_field_format(self, field, value, valid_establishment_data):
+        """Test invalid field format."""
+        updated_data = valid_establishment_data.copy()
+        updated_data["manager_id"] = 1
+        updated_data["establishment_id"] = 1
+        updated_data[field] = value
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert field in exc.value.messages
+        assert "Length must be between" in str(exc.value.messages)
+
+    @pytest.mark.parametrize(
+        "opening_time, closing_time",
+        [
+            ("15:00:00", "13:00:00"),
+            ("14:00:00", "14:00:00"),
+        ],
+    )
+    def test_invalid_opening_closing_time(
+        self, opening_time, closing_time, valid_establishment_data
+    ):
+        """Test invalid opening and closing time."""
+        updated_data = valid_establishment_data.copy()
+        updated_data["opening_time"] = opening_time
+        updated_data["closing_time"] = closing_time
+        updated_data["establishment_id"] = 1
+        updated_data["manager_id"] = 1
+        schema = UpdateEstablishmentInfoSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load(updated_data)
+        assert "Closing time must be greater than opening time" in str(exc.value)
+        updated_data["opening_time"] = "14:00:00"
+        updated_data["closing_time"] = "15:00:00"
+        result = schema.load(updated_data)
+        assert result.get("is_24_hours") is False  # type: ignore
+        assert str(result.get("opening_time")) == "14:00:00"  # type: ignore
+        assert str(result.get("closing_time")) == "15:00:00"  # type: ignore
