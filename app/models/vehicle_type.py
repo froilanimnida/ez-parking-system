@@ -13,7 +13,8 @@
         updated_at (DateTime): Timestamp when the vehicle type was last updated.
 
     Relationships:
-        slot: Establishes a relationship with the Slot model, allowing cascading delete-orphan operations.
+        slot: Establishes a relationship with the Slot model, allowing cascading delete-orphan
+        operations.
 """
 
 from sqlalchemy import (
@@ -60,13 +61,15 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         Check if a vehicle type exists in the database based on its code.
 
         Parameters:
-        vehicle_type (VehicleType): An instance of VehicleType containing the code to check for existence.
+        vehicle_type (VehicleType): An instance of VehicleType containing the code to check for
+        existence.
 
         Returns:
         bool: True if the vehicle type exists, False otherwise.
 
         Raises:
-        IntegrityError, OperationalError, DatabaseError, DataError: If any database error occurs during the operation.
+        IntegrityError, OperationalError, DatabaseError, DataError: If any database error occurs
+        during the operation.
         """
         session = get_session()
         try:
@@ -75,7 +78,7 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
                 .filter(VehicleType.code == vehicle_type.code)
                 .first()
             )
-            return True if vehicle_type else False
+            return bool(vehicle_type)
         except (IntegrityError, OperationalError, DatabaseError, DataError) as e:
             raise e
         finally:
@@ -93,7 +96,8 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
             - code (str): The unique code for the vehicle type.
             - name (str): The name of the vehicle type.
             - description (str): A brief description of the vehicle type.
-            - size_category (str): The size category of the vehicle type (e.g., SMALL, MEDIUM, LARGE).
+            - size_category (str): The size category of the vehicle type
+                (e.g., SMALL, MEDIUM, LARGE).
             - base_rate_multiplier (float): The base rate multiplier for the vehicle type.
             - is_active (bool): A flag indicating whether the vehicle type is active or not.
             - created_at (datetime): The date and time when the vehicle type was created.
@@ -103,7 +107,8 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         None
 
         Raises:
-        IntegrityError, OperationalError, DatabaseError, DataError: If any database error occurs during the operation.
+        IntegrityError, OperationalError, DatabaseError, DataError: If any database error occurs
+        during the operation.
         """
         session = get_session()
         try:
@@ -215,7 +220,7 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
             session.close()
 
 
-class DeleteVehicleType:
+class DeleteVehicleType:  # pylint: disable=too-few-public-methods
     """
     Class for managing vehicle type deletion operations in the database.
 

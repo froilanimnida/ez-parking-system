@@ -16,9 +16,11 @@ from sqlalchemy import (
     Boolean,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, DataError, IntegrityError, DatabaseError
 
 from app.models.base import Base
+from app.models.vehicle_type import VehicleTypeOperations
+from app.exceptions.vehicle_type_exception import VehicleTypeDoesNotExist
 from app.utils.engine import get_session
 
 
@@ -151,3 +153,60 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             return slot
         except OperationalError as error:
             raise error
+
+
+class CreatingSlotOperations:  # pylint: disable=R0903
+    """
+    Class for managing parking slot creation operations in the database.
+
+    Methods:
+        create_slot(slot_data: dict): Creates a new parking slot with the provided slot data.
+            Validates vehicle type existence before creation.
+
+    Raises:
+        VehicleTypeDoesNotExist: If the specified vehicle type does not exist.
+        OperationalError, DataError, IntegrityError, DatabaseError: If any database error occurs.
+    """
+
+    @staticmethod
+    def create_slot(slot_data: dict):
+        """
+        Creates a new parking slot in the database with the provided slot data.
+
+        Parameters:
+            slot_data (dict): Dictionary containing slot details including establishment_id,
+                            slot_code, vehicle_type_id, created_at and updated_at.
+
+        Raises:
+            VehicleTypeDoesNotExist: If the specified vehicle type does not exist.
+            OperationalError: If there is a problem executing the database operation.
+            DataError: If there is a problem with the data format.
+            IntegrityError: If there is a violation of database constraints.
+            DatabaseError: If any other database error occurs.
+        """
+        session = get_session()
+        try:
+            if VehicleTypeOperations.is_vehicle_type_exist(
+                slot_data.get("vehicle_type_id")
+            ):
+                raise VehicleTypeDoesNotExist("Vehicle type does not exist.")
+            new_slot = Slot(
+                establishment_id=slot_data.get("establishment_id"),
+                slot_code=slot_data.get("slot_code"),
+                vehicle_type_id=slot_data.get("vehicle_type_id"),
+                created_at=slot_data.get("created_at"),
+                updated_at=slot_data.get("updated_at"),
+            )
+            session.add(new_slot)
+            session.commit()
+        except (
+            OperationalError,
+            DataError,
+            IntegrityError,
+            DatabaseError,
+            VehicleTypeDoesNotExist,
+        ) as error:
+            session.rollback()
+            raise error
+        finally:
+            session.close()
