@@ -167,16 +167,17 @@ class TestOTPGenerationSchema:
         with pytest.raises(ValidationError) as exc_info:
             schema.load(valid_data)
         assert "otp" in exc_info.value.messages
-
+    
     def test_invalid_otp_length(self, valid_data):
         """Test that OTP with invalid length raises ValidationError."""
         schema = OTPGenerationSchema()
-        valid_data.update({"otp": "12345"})  # Less than 6 characters
+
+        valid_data.update({"otp": "1234567"})  # More than 6 characters
         with pytest.raises(ValidationError) as exc_info:
             schema.load(valid_data)
         assert "otp" in exc_info.value.messages
-
-        valid_data.update({"otp": "1234567"})  # More than 6 characters
+        
+        valid_data.update({"otp": "12345"})  # Less than 6 characters
         with pytest.raises(ValidationError) as exc_info:
             schema.load(valid_data)
         assert "otp" in exc_info.value.messages
