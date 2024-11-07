@@ -1,6 +1,7 @@
 """ Validation for new establishment data. """
 
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, fields, post_load, validate, validates_schema
+from marshmallow.exceptions import ValidationError
 
 
 class EstablishmentValidationSchema(Schema):
@@ -25,6 +26,28 @@ class EstablishmentValidationSchema(Schema):
     longitude = fields.Float(required=True)
     latitude = fields.Float(required=True)
 
+    @validates_schema
+    def validate_opening_and_closing_time(
+        self, data, **kwargs  # pylint: disable=unused-argument
+    ):
+        """Validate opening and closing time."""
+        if data["opening_time"] >= data["closing_time"]:
+            raise ValidationError("Closing time must be greater than opening time.")
+
+    @post_load
+    def format_time_to_24_hours_if_24_hours_establishment(
+        self, in_data, **kwargs  # pylint: disable=unused-argument
+    ):
+        """Format time to 24 hours if establishment is 24 hours."""
+
+        if in_data["is_24_hours"]:
+            in_data["opening_time"] = "00:00:00:00:00"
+            in_data["closing_time"] = "23:59:59:59:59"
+        elif in_data["opening_time"] or in_data["closing_time"]:
+            # If the time is provided and the 24 hours is true flip it to false:
+            in_data["is_24_hours"] = False
+        return in_data
+
 
 class UpdateEstablishmentInfoSchema(Schema):
     """Class to handle update of parking establishment information."""
@@ -47,3 +70,25 @@ class UpdateEstablishmentInfoSchema(Schema):
     hourly_rate = fields.Float()
     longitude = fields.Float()
     latitude = fields.Float()
+
+    @post_load
+    def format_time_to_24_hours_if_24_hours_establishment(
+        self, in_data, **kwargs  # pylint: disable=unused-argument
+    ):
+        """Format time to 24 hours if establishment is 24 hours."""
+
+        if in_data["opening_time"] or in_data["closing_time"]:
+            # If the time is provided and the 24 hours is true flip it to false:
+            in_data["is_24_hours"] = False
+        elif in_data["is_24_hours"]:
+            in_data["opening_time"] = "00:00:00:00:00"
+            in_data["closing_time"] = "23:59:59:59:59"
+        return in_data
+
+    @validates_schema
+    def validate_opening_and_closing_time(
+        self, data, **kwargs  # pylint: disable=unused-argument
+    ):
+        """Validate opening and closing time."""
+        if data["opening_time"] >= data["closing_time"]:
+            raise ValidationError("Closing time must be greater than opening time.")
