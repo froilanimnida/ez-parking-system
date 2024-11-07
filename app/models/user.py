@@ -16,6 +16,8 @@
         parking_establishment (relationship): Relationship to the ParkingEstablishment model.
 """
 
+# pylint: disable=R0801
+
 from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship

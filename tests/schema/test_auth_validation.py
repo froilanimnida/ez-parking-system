@@ -1,4 +1,18 @@
-""" Tests for auth_validation schema. """
+"""
+    Contains the tests related to authentication marshmallow schema
+    and other authentication related validation methods.
+
+    This module includes tests for:
+    - SignUpValidationSchema
+    - OTPGenerationSchema
+    - OTPSubmissionSchema
+    - NicknameFormValidationSchema
+    - LoginWithEmailValidationSchema
+
+    The tests are written to ensure that the schema correctly validates
+    the provided data.
+
+"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument

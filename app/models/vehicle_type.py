@@ -17,6 +17,8 @@
         operations.
 """
 
+# pylint: disable=R0801
+
 from sqlalchemy import (
     BOOLEAN,
     Column,
