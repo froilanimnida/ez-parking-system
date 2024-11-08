@@ -26,7 +26,8 @@ class TokenService:  # pylint: disable=C0115
         )
         return access_token, refresh_token
 
-    def refresh_nearly_expired_token(self, access_token):
+    @staticmethod
+    def refresh_nearly_expired_token(access_token):
         """Refresh the nearly expired token."""
         print("Refreshing token")
         print(access_token)

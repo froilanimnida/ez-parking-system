@@ -14,7 +14,7 @@ from app.exceptions.authorization_exceptions import (
     ExpiredOTPException,
     IncorrectOTPException,
 )
-from app.utils.error_handlers import (
+from app.utils.error_handlers.auth_error_handlers import (
     handle_email_not_found,
     handle_email_already_taken,
     handle_invalid_email,
@@ -130,6 +130,7 @@ def set_nickname():
         raise MissingFieldsException("Please provide a nickname.")
     if len(nickname) < 3:
         pass  # Raise custom exception here
+    # noinspection PyUnusedLocal
     current_user = get_jwt_identity()  # pylint: disable=unused-variable
     email = ""  # get the email from jwt identity
     auth_service = AuthService()

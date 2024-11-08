@@ -609,17 +609,15 @@ class TestSetNickname:
 
     def test_set_nickname_with_whitespace(self, mock_session):
         """Test setting a nickname with leading/trailing whitespace."""
-        # Arrange
         email = "test@example.com"
         nickname_with_whitespace = "  Nickname with Spaces  "
+        # noinspection PyUnusedLocal
         expected_nickname = "Nickname with Spaces"  # pylint: disable=W0612
         mock_session.execute = Mock()
         mock_session.commit = Mock()
 
-        # Act
         UserOperations.set_nickname(email, nickname_with_whitespace)
 
-        # Assert
         mock_session.execute.assert_called_once()
         update_stmt = mock_session.execute.call_args[0][0]
         assert isinstance(update_stmt, Update)

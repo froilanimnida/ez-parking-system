@@ -11,11 +11,11 @@ from app.exceptions.slot_lookup_exceptions import (
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.services.slot_service import SlotService
 from app.utils.response_util import set_response
-from app.utils.error_handlers import (
+from app.utils.error_handlers.vehicle_type_error_handlers import handle_vehicle_type_does_not_exist
+from app.utils.error_handlers.slot_lookup_error_handlers import (
     handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment,
-    handle_no_slots_found_in_the_given_vehicle_type,
-    handle_vehicle_type_does_not_exist,
+    handle_no_slots_found_in_the_given_vehicle_type
 )
 
 slot = Blueprint("slot", __name__)
