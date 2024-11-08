@@ -235,7 +235,7 @@ class TestEstablishmentUpdateSchema:
         assert "Closing time must be greater than opening time" in str(exc.value)
         updated_data["opening_time"] = "14:00:00"
         updated_data["closing_time"] = "13:00:00"
-        with pytest.raises(ValidationError) as exc:
+        with pytest.raises(ValidationError):
             schema.load(updated_data)
 
     def test_invalid_manager_id(self, valid_establishment_data):

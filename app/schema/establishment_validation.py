@@ -4,6 +4,7 @@ from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 
+# noinspection PyUnusedLocal
 class EstablishmentValidationSchema(Schema):
     """Class to handle parking establishment validation."""
 

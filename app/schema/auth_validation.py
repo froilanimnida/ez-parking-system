@@ -6,6 +6,7 @@
 from marshmallow import Schema, fields, validate, post_load
 
 
+# noinspection PyUnusedLocal
 class SignUpValidationSchema(Schema):
     """Class to handle user registration validation."""
 
@@ -59,6 +60,7 @@ class SignUpValidationSchema(Schema):
         return in_data
 
 
+# noinspection PyUnusedLocal
 class LoginWithEmailValidationSchema(Schema):
     """Class to handle email login validation."""
 

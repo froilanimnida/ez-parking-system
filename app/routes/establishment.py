@@ -12,7 +12,7 @@ from app.schema.establishment_validation import (
     UpdateEstablishmentInfoSchema,
 )
 from app.services.establishment_service import EstablishmentService
-from app.utils.error_handlers import (
+from app.utils.error_handlers.establishment_error_handlers import (
     handle_establishment_does_not_exist,
     handle_establishment_edits_not_allowed,
 )

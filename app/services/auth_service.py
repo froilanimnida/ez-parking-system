@@ -140,7 +140,7 @@ class UserOTPService:
         if retrieved_otp != otp or not otp:
             raise IncorrectOTPException(message="Incorrect OTP.")
         OTPOperations.delete_otp(email=email)
-        return (user_id, role)
+        return user_id, role
 
 
 class UserProfileService:  # pylint: disable=R0903
