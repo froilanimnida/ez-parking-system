@@ -44,9 +44,7 @@ def create_establishment():
             },
         )
     establishment_schema = EstablishmentValidationSchema()
-    if not data:
-        return set_response(400, {"code": "error", "message": "Invalid request data."})
-    new_establishment_data = establishment_schema.load(data)
+    new_establishment_data = establishment_schema.load(data)  # type: ignore
     EstablishmentService.create_new_parking_establishment(
         new_establishment_data  # type: ignore
     )
@@ -140,10 +138,8 @@ def update_establishment():
         )
     data["manager_id"] = current_user.get("sub").get("user_id")  # type: ignore
     establishment_schema = UpdateEstablishmentInfoSchema()
-    if not data:
-        return set_response(400, {"code": "error", "message": "Invalid request data."})
-    establishment_id = data["establishment_id"]
-    updated_establishment_data = establishment_schema.load(data)
+    establishment_id = data["establishment_id"]  # type: ignore
+    updated_establishment_data = establishment_schema.load(data)  # type: ignore
     EstablishmentService.update_establishment(
         establishment_id=establishment_id,
         establishment_data=updated_establishment_data,  # type: ignore

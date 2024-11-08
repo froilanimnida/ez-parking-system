@@ -15,18 +15,6 @@ class EmailNotFoundException(EzParkingBaseException):
         self.message = message
         super().__init__(message)
 
-
-class InvalidEmailException(EzParkingBaseException):
-    """
-        This error is for error that the user tries to log in with an email that
-        is invalid.
-    """
-
-    def __init__(self, message="Email is invalid."):
-        self.message = message
-        super().__init__(message)
-
-
 class MissingFieldsException(EzParkingBaseException):
     """
         This error is for error that the user tries to log in without the required fields.

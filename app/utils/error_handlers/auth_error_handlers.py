@@ -3,7 +3,6 @@
 from app.exceptions.authorization_exceptions import (
     EmailNotFoundException,
     MissingFieldsException,
-    InvalidEmailException,
     InvalidPhoneNumberException,
     PhoneNumberAlreadyTaken,
     EmailAlreadyTaken,
@@ -12,6 +11,7 @@ from app.exceptions.authorization_exceptions import (
 )
 
 from app.utils.error_handlers.base_error_handler import handle_error
+
 
 def handle_email_not_found(error):
     """This function handles email not found exceptions."""
@@ -33,18 +33,6 @@ def handle_missing_fields(error):
             400,
             "missing_fields",
             "Please provide all the required fields.",
-        )
-    raise error
-
-
-def handle_invalid_email(error):
-    """This function handles invalid email exceptions."""
-    if isinstance(error, InvalidEmailException):
-        return handle_error(
-            error,
-            400,
-            "invalid_email",
-            "Please provide a valid email address.",
         )
     raise error
 
