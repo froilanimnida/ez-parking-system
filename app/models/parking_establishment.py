@@ -247,6 +247,30 @@ class GetEstablishmentOperations:
         except OperationalError as err:
             raise err
 
+    @staticmethod
+    def get_available_slots():
+        """
+        Retrieves all parking establishments with available slots.
+
+        Returns:
+            list: A list of dictionaries containing details of parking establishments with
+            available slots.
+
+        Raises:
+            OperationalError: If there is a database operation error.
+        """
+        session = get_session()
+        try:
+            establishments = (
+                session.query(ParkingEstablishment)
+                .join(Slot)
+                .filter(Slot.slot_status == "open")
+                .all()
+            )
+            return [establishment.to_dict() for establishment in establishments]
+        except OperationalError as err:
+            raise err
+
 
 class CreateEstablishmentOperations:  # pylint: disable=R0903
     """

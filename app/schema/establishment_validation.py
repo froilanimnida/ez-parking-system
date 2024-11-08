@@ -49,8 +49,8 @@ class EstablishmentValidationSchema(Schema):
         """Format time to 24 hours if establishment is 24 hours."""
 
         if in_data["is_24_hours"]:
-            in_data["opening_time"] = "00:00:00:00:00"
-            in_data["closing_time"] = "23:59:59:59:59"
+            in_data["opening_time"] = "00:00"
+            in_data["closing_time"] = "23:59"
         elif in_data["opening_time"] or in_data["closing_time"]:
             # If the time is provided and the 24 hours is true flip it to false:
             in_data["is_24_hours"] = False

@@ -84,9 +84,18 @@ def get_nearest_establishments():
         )
     latitude = data.get("latitude")
     longitude = data.get("longitude")
-    if not latitude or not longitude:
+    if (
+        not latitude
+        or not longitude
+        or not isinstance(latitude, (int, float))
+        or not isinstance(longitude, (int, float))
+    ):
         return set_response(
-            400, {"code": "error", "message": "Please provide latitude and longitude."}
+            400,
+            {
+                "code": "error",
+                "message": "Please provide valid latitude and longitude.",
+            },
         )
     establishments = EstablishmentService.get_nearest_establishments(
         latitude, longitude
@@ -121,7 +130,7 @@ def update_establishment():
     """Update parking establishment data."""
     data = request.json
     current_user = get_jwt()
-    if current_user.get("role") not in ['parking_manager', 'admin']:
+    if current_user.get("role") not in ["parking_manager", "admin"]:
         return set_response(
             401,
             {
