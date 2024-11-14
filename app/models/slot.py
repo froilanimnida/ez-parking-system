@@ -6,6 +6,8 @@
     Maintains relationships with VehicleType and ParkingEstablishment models.
 """
 
+# pylint: disable=R0903, C0115, C0413, E1102, C0415
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -13,13 +15,18 @@ from sqlalchemy import (
     Enum,
     DateTime,
     ForeignKey,
+    select,
     Boolean,
+    func,
+    and_,
+    update,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.exc import OperationalError, DataError, IntegrityError, DatabaseError
 
+from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.models.base import Base
-from app.models.vehicle_type import VehicleTypeOperations
+from app.models.vehicle_type import VehicleType, VehicleTypeOperations
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.utils.engine import get_session
 
@@ -52,6 +59,22 @@ class Slot(Base):  # pylint: disable=R0903 disable=C0115
         "ParkingEstablishment",
         back_populates="slot",
     )
+    parking_transaction = relationship(
+        "ParkingTransaction",
+        back_populates="slot",
+    )
+
+    def to_dict(self):  # pylint: disable=C0116
+        return {
+            "slot_id": self.slot_id,
+            "establishment_id": self.establishment_id,
+            "slot_code": self.slot_code,
+            "vehicle_type_id": self.vehicle_type_id,
+            "slot_status": self.slot_status,
+            "is_active": self.is_active,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
 
 
 class GettingSlotsOperations:  # pylint: disable=R0903
@@ -66,7 +89,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
     """
 
     @staticmethod
-    def get_all_slots():
+    def get_all_slots(establishment_id: int):
         """Retrieves all slots from the database.
 
         Returns:
@@ -77,8 +100,28 @@ class GettingSlotsOperations:  # pylint: disable=R0903
         """
         session = get_session()
         try:
-            slots = session.query(Slot).all()
-            return slots
+            slots = (
+                session.query(
+                    Slot,
+                    VehicleType.code.label("vehicle_type_code"),
+                    VehicleType.name.label("vehicle_type_name"),
+                    VehicleType.size_category.label("size_category"),
+                )
+                .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
+                .where(Slot.establishment_id == establishment_id)
+            )
+            slots_list = []
+            for slot in slots:
+                slot_dict = slot[0].to_dict()
+                slot_dict.update(
+                    {
+                        "vehicle_type_code": slot[1],
+                        "vehicle_type_name": slot[2],
+                        "size_category": slot[3],
+                    }
+                )
+                slots_list.append(slot_dict)
+            return slots_list
         except OperationalError as error:
             raise error
 
@@ -112,27 +155,65 @@ class GettingSlotsOperations:  # pylint: disable=R0903
 
     @staticmethod
     def get_slots_by_establishment(establishment_id: int):
-        """Retrieves all slots from the database for a specific establishment.
+        """Retrieves all slots from the database for a specific establishment with open slot count.
 
         Args:
             establishment_id (int): The ID of the parking establishment.
 
         Returns:
-            list[Slot]: List of slot objects belonging to the establishment.
+            list[dict]: List of dictionaries containing slot, vehicle type info and open slot count.
 
         Raises:
             OperationalError: If there is a database operation error.
         """
         session = get_session()
         try:
-            slots = (
-                session.query(Slot)
-                .filter(Slot.establishment_id == establishment_id)
-                .all()
+            # First get total open slots count
+            open_slots_count = (
+                session.query(func.count(Slot.slot_id))
+                .filter(
+                    Slot.establishment_id == establishment_id,
+                    Slot.slot_status == "open",
+                )
+                .scalar()
             )
-            return slots
+
+            # Then get detailed slot info
+            results = session.execute(
+                select(
+                    Slot,
+                    VehicleType.name.label("vehicle_type_name"),
+                    VehicleType.size_category.label("size_category"),
+                    VehicleType.code.label("vehicle_type_code"),
+                    func.count(Slot.slot_id)
+                    .filter(Slot.slot_status == "open")
+                    .over(partition_by=VehicleType.vehicle_id)
+                    .label("available_slots"),
+                )
+                .where(Slot.establishment_id == establishment_id)
+                .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
+            ).all()
+
+            slots_with_vehicle_info = []
+            for result in results:
+                slot_dict = result[0].to_dict()
+                slot_dict.update(
+                    {
+                        "vehicle_type_name": result[1],
+                        "size_category": result[2],
+                        "vehicle_type_code": result[3],
+                        "available_slots": result[4],
+                        "total_open_slots": open_slots_count,
+                    }
+                )
+                slots_with_vehicle_info.append(slot_dict)
+
+            return slots_with_vehicle_info
+
         except OperationalError as error:
             raise error
+        finally:
+            session.close()
 
     @staticmethod
     def get_slots_by_slot_code(slot_code: str):
@@ -155,7 +236,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             raise error
 
 
-class CreatingSlotOperations:  # pylint: disable=R0903
+class ParkingManagerOperation:  # pylint: disable=R0903
     """
     Class for managing parking slot creation operations in the database.
 
@@ -206,6 +287,100 @@ class CreatingSlotOperations:  # pylint: disable=R0903
             DatabaseError,
             VehicleTypeDoesNotExist,
         ) as error:
+            session.rollback()
+            raise error
+        finally:
+            session.close()
+
+    @staticmethod
+    def delete_slot(slot_id: int, manager_id: int):
+        """
+        Deletes a parking slot from the database.
+
+        Parameters:
+            slot_id (int): The ID of the slot to be deleted.
+            manager_id (int): The ID of the parking manager making the request.
+
+        Raises:
+            OperationalError: If there is a problem executing the database operation.
+            DataError: If there is a problem with the data format.
+            IntegrityError: If there is a violation of database constraints.
+            DatabaseError: If any other database error occurs.
+        """
+        from app.models.parking_establishment import ParkingEstablishment
+
+        session = get_session()
+
+        try:
+            slot = (
+                session.query(Slot)
+                .join(
+                    ParkingEstablishment,
+                    Slot.establishment_id == ParkingEstablishment.establishment_id,
+                )
+                .where(
+                    and_(
+                        Slot.slot_id == slot_id,
+                        ParkingEstablishment.manager_id == manager_id,
+                    )
+                )
+            )
+            if slot:
+                session.delete(slot)
+                session.commit()
+            else:
+                raise SlotNotFound("Slot not found.")
+        except (OperationalError, DataError, IntegrityError, DatabaseError) as error:
+            session.rollback()
+            raise error
+        finally:
+            session.close()
+
+    @staticmethod
+    def update_slot(slot_id: int, manager_id: int, slot_data: dict):
+        """
+        Updates a parking slot in the database.
+
+        Parameters:
+            slot_id (int): The ID of the slot to be updated.
+            manager_id (int): The ID of the parking manager making the request.
+
+        Raises:
+            OperationalError: If there is a problem executing the database operation.
+            DataError: If there is a problem with the data format.
+            IntegrityError: If there is a violation of database constraints.
+            DatabaseError: If any other database error occurs.
+        """
+        from app.models.parking_establishment import ParkingEstablishment
+
+        session = get_session()
+        try:
+            is_eligible_to_edit = (
+                session.query(Slot)
+                .join(
+                    ParkingEstablishment,
+                    Slot.establishment_id == ParkingEstablishment.establishment_id,
+                )
+                .where(
+                    and_(
+                        Slot.slot_id == slot_id,
+                        ParkingEstablishment.manager_id == manager_id,
+                    )
+                )
+            )
+            if not is_eligible_to_edit:
+                raise SlotNotFound("Slot not found.")
+            session.execute(
+                update(Slot)
+                .where(Slot.slot_id == slot_id)
+                .values(
+                    is_active=slot_data.get("is_active"),
+                    slot_code=slot_data.get("slot_code"),
+                    vehicle_type_id=slot_data.get("vehicle_type_id"),
+                    updated_at=slot_data.get("updated_at"),
+                )
+            )
+        except (OperationalError, DataError, IntegrityError, DatabaseError) as error:
             session.rollback()
             raise error
         finally:

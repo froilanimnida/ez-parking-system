@@ -4,6 +4,7 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType,
+    SlotNotFound,
 )
 from app.utils.error_handlers.base_error_handler import handle_error
 
@@ -40,5 +41,17 @@ def handle_no_slots_found_in_the_given_establishment(error):
             404,
             "no_slots_found_in_the_given_establishment",
             "No slots found in the given establishment.",
+        )
+    raise error
+
+
+def handle_slot_not_found(error):
+    """This function handles slot not found exceptions."""
+    if isinstance(error, SlotNotFound):
+        return handle_error(
+            error,
+            404,
+            "slot_not_found",
+            "Slot not found.",
         )
     raise error

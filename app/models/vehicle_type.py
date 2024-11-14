@@ -53,6 +53,11 @@ class VehicleType(Base):  # pylint: disable=R0903 disable=C0115
     slot = relationship(
         "Slot", back_populates="vehicle_type", cascade="all, delete-orphan"
     )
+    parking_transaction = relationship(
+        "ParkingTransaction",
+        back_populates="vehicle_type",
+        cascade="all, delete-orphan",
+    )
 
 
 class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115

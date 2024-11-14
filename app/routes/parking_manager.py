@@ -3,11 +3,15 @@
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt
 
+from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.schema.slot_validation import SlotValidationSchema
 from app.services.slot_service import SlotService
+from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
 
 parking_manager_bp = Blueprint("parking_manager", __name__)
+
+parking_manager_bp.register_error_handler(SlotNotFound, handle_slot_not_found)
 
 
 @parking_manager_bp.route("/v1/parking-manager/slot/create", methods=["POST"])
