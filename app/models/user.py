@@ -141,12 +141,12 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             session.close()
 
     @classmethod
-    def set_nickname(cls, email: str, nickname: str):
+    def set_nickname(cls, user_id: int, nickname: str):
         """
-        Updates the nickname of a user identified by their email.
+        Updates the nickname of a user identified by their user_id.
 
         Parameters:
-        email (str): The email address of the user whose nickname is to be updated.
+        user_id (int): The user_id of the user whose nickname is to be updated.
         nickname (str): The new nickname to be set for the user.
 
         Raises:
@@ -156,7 +156,7 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.email == email).values(nickname=nickname)
+                update(User).where(User.user_id == user_id).values(nickname=nickname)
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:

@@ -1,7 +1,12 @@
 """ This module contains the routes for the authentication endpoints. """
 
 from flask import Blueprint, request
-from flask_jwt_extended import get_jwt_identity, set_access_cookies, jwt_required
+from flask_jwt_extended import (
+    get_jwt,
+    set_access_cookies,
+    jwt_required,
+    set_refresh_cookies,
+)
 
 from app.services.token_service import TokenService
 from app.exceptions.authorization_exceptions import (
@@ -41,6 +46,7 @@ auth.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
 
 
 @auth.route("/v1/auth/create-new-account", methods=["POST"])
+@jwt_required(optional=True)
 def create_new_account():
     """Create a new user account."""
     data = request.get_json()
@@ -54,6 +60,7 @@ def create_new_account():
 
 
 @auth.route("/v1/auth/login", methods=["POST"])
+@jwt_required(optional=True)
 def login():
     """Login a user."""
     data = request.get_json()
@@ -65,6 +72,7 @@ def login():
 
 
 @auth.route("/v1/auth/generate-otp", methods=["PATCH"])
+@jwt_required(optional=True)
 def generate_otp():
     """Generate an OTP."""
     data = request.get_json()
@@ -77,6 +85,7 @@ def generate_otp():
 
 
 @auth.route("/v1/auth/verify-otp", methods=["PATCH"])
+@jwt_required(optional=True)
 def verify_otp():
     """Verify the OTP."""
     data = request.get_json()
@@ -91,12 +100,13 @@ def verify_otp():
         token_service = TokenService()
         (
             access_token,
-            refresh_token,  # pylint: disable=unused-variable
+            refresh_token,
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me  # type: ignore
         )
         response = set_response(200, "OTP Verified")
         set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
 
         return response
 
@@ -112,11 +122,9 @@ def set_nickname():
     nickname_schema = NicknameFormValidationSchema()
     data = nickname_schema.load(data)
     nickname = data.get("nickname")  # type: ignore
-    # noinspection PyUnusedLocal
-    current_user = get_jwt_identity()  # pylint: disable=unused-variable
-    email = ""  # get the email from jwt identity
+    user_id = get_jwt().get("sub").get("user_id")  # type: ignore
     auth_service = AuthService()
-    auth_service.set_nickname(email=email, nickname=nickname)  # type: ignore
+    auth_service.set_nickname(user_id=user_id, nickname=nickname)  # type: ignore
     return set_response(
         200, {"code": "success", "message": "Nickname set successfully."}
     )
