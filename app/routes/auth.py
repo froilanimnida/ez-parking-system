@@ -128,3 +128,13 @@ def set_nickname():
     return set_response(
         200, {"code": "success", "message": "Nickname set successfully."}
     )
+
+
+@auth.route("/v1/auth/logout", methods=["POST"])
+@jwt_required(optional=False)
+def logout():
+    """Logout the user."""
+    response = set_response(200, "Logged out successfully.")
+    set_access_cookies(response, "")
+    set_refresh_cookies(response, "")
+    return response
