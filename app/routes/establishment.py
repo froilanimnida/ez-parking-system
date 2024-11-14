@@ -12,7 +12,7 @@ from app.schema.establishment_validation import (
     UpdateEstablishmentInfoSchema,
 )
 from app.services.establishment_service import EstablishmentService
-from app.utils.error_handlers import (
+from app.utils.error_handlers.establishment_error_handlers import (
     handle_establishment_does_not_exist,
     handle_establishment_edits_not_allowed,
 )
@@ -44,9 +44,7 @@ def create_establishment():
             },
         )
     establishment_schema = EstablishmentValidationSchema()
-    if not data:
-        return set_response(400, {"code": "error", "message": "Invalid request data."})
-    new_establishment_data = establishment_schema.load(data)
+    new_establishment_data = establishment_schema.load(data)  # type: ignore
     EstablishmentService.create_new_parking_establishment(
         new_establishment_data  # type: ignore
     )
@@ -84,9 +82,18 @@ def get_nearest_establishments():
         )
     latitude = data.get("latitude")
     longitude = data.get("longitude")
-    if not latitude or not longitude:
+    if (
+        not latitude
+        or not longitude
+        or not isinstance(latitude, (int, float))
+        or not isinstance(longitude, (int, float))
+    ):
         return set_response(
-            400, {"code": "error", "message": "Please provide latitude and longitude."}
+            400,
+            {
+                "code": "error",
+                "message": "Please provide valid latitude and longitude.",
+            },
         )
     establishments = EstablishmentService.get_nearest_establishments(
         latitude, longitude
@@ -121,7 +128,7 @@ def update_establishment():
     """Update parking establishment data."""
     data = request.json
     current_user = get_jwt()
-    if current_user.get("role") not in ['parking_manager', 'admin']:
+    if current_user.get("role") not in ["parking_manager", "admin"]:
         return set_response(
             401,
             {
@@ -131,10 +138,8 @@ def update_establishment():
         )
     data["manager_id"] = current_user.get("sub").get("user_id")  # type: ignore
     establishment_schema = UpdateEstablishmentInfoSchema()
-    if not data:
-        return set_response(400, {"code": "error", "message": "Invalid request data."})
-    establishment_id = data["establishment_id"]
-    updated_establishment_data = establishment_schema.load(data)
+    establishment_id = data["establishment_id"]  # type: ignore
+    updated_establishment_data = establishment_schema.load(data)  # type: ignore
     EstablishmentService.update_establishment(
         establishment_id=establishment_id,
         establishment_data=updated_establishment_data,  # type: ignore

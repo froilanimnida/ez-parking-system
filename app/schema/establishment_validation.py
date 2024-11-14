@@ -4,6 +4,7 @@ from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 
+# noinspection PyUnusedLocal
 class EstablishmentValidationSchema(Schema):
     """Class to handle parking establishment validation."""
 
@@ -49,8 +50,8 @@ class EstablishmentValidationSchema(Schema):
         """Format time to 24 hours if establishment is 24 hours."""
 
         if in_data["is_24_hours"]:
-            in_data["opening_time"] = "00:00:00:00:00"
-            in_data["closing_time"] = "23:59:59:59:59"
+            in_data["opening_time"] = "00:00"
+            in_data["closing_time"] = "23:59"
         elif in_data["opening_time"] or in_data["closing_time"]:
             # If the time is provided and the 24 hours is true flip it to false:
             in_data["is_24_hours"] = False

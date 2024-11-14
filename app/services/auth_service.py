@@ -41,8 +41,8 @@ class AuthService:
         return UserOTPService.verify_otp(email=email, otp=otp)
 
     @classmethod
-    def set_nickname(cls, email, nickname):  # pylint: disable=C0116
-        return UserProfileService.set_nickname(email=email, nickname=nickname)
+    def set_nickname(cls, user_id, nickname):  # pylint: disable=C0116
+        return UserProfileService.set_nickname(user_id=user_id, nickname=nickname)
 
 
 class UserRegistrationService:  # pylint: disable=R0903
@@ -140,16 +140,13 @@ class UserOTPService:
         if retrieved_otp != otp or not otp:
             raise IncorrectOTPException(message="Incorrect OTP.")
         OTPOperations.delete_otp(email=email)
-        return (user_id, role)
+        return user_id, role
 
 
 class UserProfileService:  # pylint: disable=R0903
     """Class to handle user profile operations."""
 
     @classmethod
-    def set_nickname(cls, email: str, nickname: str):
+    def set_nickname(cls, user_id: int, nickname: str):
         """Function to set a nickname for a user."""
-        if not isinstance(email, str):
-            raise TypeError("Email must be a string.")
-        email = email.lower()
-        UserOperations.set_nickname(email=email, nickname=nickname)
+        UserOperations.set_nickname(user_id=user_id, nickname=nickname)

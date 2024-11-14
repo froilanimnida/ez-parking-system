@@ -37,7 +37,7 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
     __tablename__ = "parking_establishment"
 
     establishment_id = Column(Integer, primary_key=True)
-    manager_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    manager_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
     uuid = Column(BINARY(16), nullable=False)
     name = Column(VARCHAR(255), nullable=False)
     address = Column(VARCHAR(255), nullable=False)
@@ -242,6 +242,30 @@ class GetEstablishmentOperations:
                     )
                 )
                 .where(Slot.vehicle_type_id == vehicle_type_id)
+            )
+            return [establishment.to_dict() for establishment in establishments]
+        except OperationalError as err:
+            raise err
+
+    @staticmethod
+    def get_available_slots():
+        """
+        Retrieves all parking establishments with available slots.
+
+        Returns:
+            list: A list of dictionaries containing details of parking establishments with
+            available slots.
+
+        Raises:
+            OperationalError: If there is a database operation error.
+        """
+        session = get_session()
+        try:
+            establishments = (
+                session.query(ParkingEstablishment)
+                .join(Slot)
+                .filter(Slot.slot_status == "open")
+                .all()
             )
             return [establishment.to_dict() for establishment in establishments]
         except OperationalError as err:

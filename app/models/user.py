@@ -30,7 +30,7 @@ from app.models.base import Base
 
 class User(Base):  # pylint: disable=R0903 disable=C0115
     __tablename__: str = "user"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(BINARY(length=16), unique=True, nullable=False)
     nickname = Column(VARCHAR(length=75), unique=True, nullable=True)
     first_name = Column(VARCHAR(length=100), nullable=False)
@@ -81,7 +81,7 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             )
             session.add(new_user)
             session.commit()
-            return new_user.id
+            return new_user.user_id
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
             raise e
@@ -141,12 +141,12 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             session.close()
 
     @classmethod
-    def set_nickname(cls, email: str, nickname: str):
+    def set_nickname(cls, user_id: int, nickname: str):
         """
-        Updates the nickname of a user identified by their email.
+        Updates the nickname of a user identified by their user_id.
 
         Parameters:
-        email (str): The email address of the user whose nickname is to be updated.
+        user_id (int): The user_id of the user whose nickname is to be updated.
         nickname (str): The new nickname to be set for the user.
 
         Raises:
@@ -156,7 +156,7 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.email == email).values(nickname=nickname)
+                update(User).where(User.user_id == user_id).values(nickname=nickname)
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
@@ -188,7 +188,7 @@ class OTPOperations:
         try:
             user = session.execute(
                 select(
-                    User.id,
+                    User.user_id,
                     User.otp_secret,
                     User.otp_expiry,
                     User.role,
