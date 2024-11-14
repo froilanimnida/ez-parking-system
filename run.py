@@ -6,22 +6,15 @@ from werkzeug import run_simple
 
 from app import create_app
 
-load_dotenv(dotenv_path='.env')
+load_dotenv(dotenv_path=".env")
 
 app = create_app()
-CORS(app, supports_credentials=True, origins='*')
+CORS(app, supports_credentials=True, origins="*")
 
 
-if __name__ == '__main__':
-    # app.run(
-    #     host='localhost',
-    #     port=5000,
-    #     debug=True,
-    #     threaded=True,
-    #     load_dotenv=True,
-    # )
+if __name__ == "__main__":
     run_simple(
-        hostname='localhost',
+        hostname="localhost",
         port=5000,
         application=app,
         threaded=True,
