@@ -37,7 +37,7 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
     __tablename__ = "parking_establishment"
 
     establishment_id = Column(Integer, primary_key=True)
-    manager_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    manager_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
     uuid = Column(BINARY(16), nullable=False)
     name = Column(VARCHAR(255), nullable=False)
     address = Column(VARCHAR(255), nullable=False)
