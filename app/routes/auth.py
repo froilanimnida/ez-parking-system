@@ -5,7 +5,7 @@ from flask_jwt_extended import (
     get_jwt,
     set_access_cookies,
     jwt_required,
-    set_refresh_cookies,
+    set_refresh_cookies, get_jwt_identity,
 )
 
 from app.services.token_service import TokenService
@@ -16,6 +16,7 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     ExpiredOTPException,
     IncorrectOTPException,
+    RequestNewOTPException
 )
 from app.utils.error_handlers.auth_error_handlers import (
     handle_email_not_found,
@@ -24,6 +25,7 @@ from app.utils.error_handlers.auth_error_handlers import (
     handle_invalid_phone_number,
     handle_incorrect_otp,
     handle_expired_otp,
+    handle_request_new_otp
 )
 from app.schema.auth_validation import (
     OTPGenerationSchema,
@@ -43,6 +45,7 @@ auth.register_error_handler(PhoneNumberAlreadyTaken, handle_phone_number_already
 auth.register_error_handler(InvalidPhoneNumberException, handle_invalid_phone_number)
 auth.register_error_handler(ExpiredOTPException, handle_expired_otp)
 auth.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
+auth.register_error_handler(RequestNewOTPException, handle_request_new_otp)
 
 
 @auth.route("/v1/auth/create-new-account", methods=["POST"])
@@ -104,7 +107,7 @@ def verify_otp():
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me  # type: ignore
         )
-        response = set_response(200, "OTP Verified")
+        response = set_response(200, {"code": "success", "message": "OTP verified."})
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
 
@@ -134,7 +137,17 @@ def set_nickname():
 @jwt_required(optional=False)
 def logout():
     """Logout the user."""
-    response = set_response(200, "Logged out successfully.")
+    response = set_response(200, {"code": "success", "message": "Logged out successfully."})
     set_access_cookies(response, "")
     set_refresh_cookies(response, "")
     return response
+
+
+@auth.route('/v1/auth/verify-token', methods=['GET'])
+@jwt_required(optional=False)
+def verify_token():
+    """Verify the token."""
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    return set_response(200, {"code": "success", "message": "Token verified."})
+    

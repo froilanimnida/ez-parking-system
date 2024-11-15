@@ -267,7 +267,7 @@ class ParkingManagerOperation:  # pylint: disable=R0903
         """
         session = get_session()
         try:
-            if VehicleTypeOperations.is_vehicle_type_exist(
+            if not VehicleTypeOperations.is_vehicle_type_exist(
                 slot_data.get("vehicle_type_id")
             ):
                 raise VehicleTypeDoesNotExist("Vehicle type does not exist.")

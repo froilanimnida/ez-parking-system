@@ -81,3 +81,12 @@ class ExpiredOTPException(EzParkingBaseException):
     def __init__(self, message="Expired OTP."):
         self.message = message
         super().__init__(message)
+
+class RequestNewOTPException(EzParkingBaseException):
+    """
+        This error is for error that the user tries to log in with an expired OTP.
+    """
+
+    def __init__(self, message="Please request a new OTP."):
+        self.message = message
+        super().__init__(message)

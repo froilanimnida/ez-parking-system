@@ -54,69 +54,32 @@ def create_establishment():
     )
 
 
-@establishment.route("/v1/establishment/get-all", methods=["GET"])
-def get_all_establishments():
-    """Get all parking establishments."""
-    establishments = EstablishmentService.get_all_establishments()
+@establishment.route("/v1/user/query/establishments", methods=["GET"])
+def get_establishments():
+    """Get establishments with optional filters and sorting"""
+    args = request.args
+
+    latitude = args.get("latitude", type=float, default=None)
+    longitude = args.get("longitude", type=float, default=None)
+
+    is_24_hours = args.get("is_24_hours", type=bool, default=True)
+    vehicle_type_id = args.get("vehicle_type_id", type=int, default=None)
+    establishment_name = args.get("establishment_name", type=str, default=None)
+    query_params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "is_24_hours": is_24_hours,
+        "vehicle_type_id": vehicle_type_id,
+        "establishment_name": establishment_name,
+    }
+
+    establishments = EstablishmentService.get_establishments(query_params)
+
     return set_response(
         200,
         {
             "code": "success",
-            "message": "Parking establishments retrieved successfully.",
-            "establishments": establishments,
-        },
-    )
-
-
-@establishment.route("/v1/establishment/get-nearest", methods=["GET"])
-def get_nearest_establishments():
-    """Get nearest parking establishments based on the current user location."""
-    data = request.json
-    if not data:
-        return set_response(
-            400,
-            {
-                "code": "long_lat_missing",
-                "message": "You need to provide latitude and longitude.",
-            },
-        )
-    latitude = data.get("latitude")
-    longitude = data.get("longitude")
-    if (
-        not latitude
-        or not longitude
-        or not isinstance(latitude, (int, float))
-        or not isinstance(longitude, (int, float))
-    ):
-        return set_response(
-            400,
-            {
-                "code": "error",
-                "message": "Please provide valid latitude and longitude.",
-            },
-        )
-    establishments = EstablishmentService.get_nearest_establishments(
-        latitude, longitude
-    )
-    return set_response(
-        200,
-        {
-            "code": "success",
-            "message": "Nearest parking establishments retrieved successfully.",
-            "establishments": establishments,
-        },
-    )
-
-
-@establishment.route("/v1/establishment/get-24-hours", methods=["GET"])
-def get_24_hours_establishments():
-    """Get parking establishments that are open 24 hours."""
-    establishments = EstablishmentService.get_24_hours_establishments()
-    return set_response(
-        200,
-        {
-            "code": "success",
-            "message": "24 hours parking establishments retrieved successfully.",
+            "message": "Establishments retrieved successfully.",
             "establishments": establishments,
         },
     )
