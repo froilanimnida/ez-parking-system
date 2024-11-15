@@ -10,7 +10,7 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     IncorrectOTPException,
     ExpiredOTPException,
-    RequestNewOTPException
+    RequestNewOTPException,
 )
 
 from app.utils.error_handlers.base_error_handler import handle_error
@@ -99,6 +99,7 @@ def handle_expired_otp(error):
         )
     raise error
 
+
 def handle_request_new_otp(error):
     """This function handles request new OTP exceptions."""
     if isinstance(error, RequestNewOTPException):
@@ -110,12 +111,14 @@ def handle_request_new_otp(error):
         )
     raise error
 
+
 def handle_no_authorization(error):
     """This function handles no authorization exceptions."""
     if isinstance(error, NoAuthorizationError):
         return handle_error(
             error,
             401,
-            "no_authorization"
+            "no_authorization",
+            "No authorization.",
         )
     raise error

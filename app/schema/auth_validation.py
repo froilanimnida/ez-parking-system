@@ -3,7 +3,7 @@
     and other authentication related validation methods
 """
 
-from marshmallow import Schema, fields, validate, post_load
+from marshmallow import Schema, fields, pre_load, validate, post_load
 
 
 # noinspection PyUnusedLocal
@@ -24,13 +24,13 @@ class SignUpValidationSchema(Schema):
         validate=[
             validate.Length(min=10, max=15),
             validate.Regexp(
-                regex=r"^\+?[1-9]\d{1,14}$", error="Invalid phone number format."
+                regex=r"^\+?[0-9]\d{1,14}$", error="Invalid phone number format."
             ),
         ],
     )
     role = fields.Str(
         required=True,
-        validate=validate.OneOf(["User", "Parking Manager", "Admin"]),
+        validate=validate.OneOf(["user", "parking_manager", "admin"]),
     )
 
     @post_load
@@ -51,12 +51,6 @@ class SignUpValidationSchema(Schema):
     def normalize_last_name(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Method to convert last name to lowercase."""
         in_data["last_name"] = in_data["last_name"].capitalize()
-        return in_data
-
-    @post_load
-    def normalize_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
-        """Method to convert role to lowercase."""
-        in_data["role"] = str(in_data["role"]).lower().replace(" ", "_")
         return in_data
 
 

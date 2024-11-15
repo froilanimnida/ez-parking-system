@@ -5,7 +5,8 @@ from flask_jwt_extended import (
     get_jwt,
     set_access_cookies,
     jwt_required,
-    set_refresh_cookies, get_jwt_identity,
+    set_refresh_cookies,
+    get_jwt_identity,
 )
 
 from app.services.token_service import TokenService
@@ -16,7 +17,7 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     ExpiredOTPException,
     IncorrectOTPException,
-    RequestNewOTPException
+    RequestNewOTPException,
 )
 from app.utils.error_handlers.auth_error_handlers import (
     handle_email_not_found,
@@ -25,7 +26,7 @@ from app.utils.error_handlers.auth_error_handlers import (
     handle_invalid_phone_number,
     handle_incorrect_otp,
     handle_expired_otp,
-    handle_request_new_otp
+    handle_request_new_otp,
 )
 from app.schema.auth_validation import (
     OTPGenerationSchema,
@@ -53,6 +54,7 @@ auth.register_error_handler(RequestNewOTPException, handle_request_new_otp)
 def create_new_account():
     """Create a new user account."""
     data = request.get_json()
+    print(data)
     sign_up_schema = SignUpValidationSchema()
     validated_data = sign_up_schema.load(data)
     auth_service = AuthService()
@@ -137,17 +139,27 @@ def set_nickname():
 @jwt_required(optional=False)
 def logout():
     """Logout the user."""
-    response = set_response(200, {"code": "success", "message": "Logged out successfully."})
+    response = set_response(
+        200, {"code": "success", "message": "Logged out successfully."}
+    )
     set_access_cookies(response, "")
     set_refresh_cookies(response, "")
     return response
 
 
-@auth.route('/v1/auth/verify-token', methods=['GET'])
+@auth.route("/v1/auth/verify-token", methods=["GET"])
 @jwt_required(optional=False)
 def verify_token():
-    """Verify the token."""
-    # Access the identity of the current user with get_jwt_identity
-    current_user = get_jwt_identity()
-    return set_response(200, {"code": "success", "message": "Token verified."})
-    
+    """
+    Verify the JWT token from Authorization header.
+    Returns user information if token is valid.
+    """
+    try:
+        current_user = get_jwt()
+
+        return set_response(
+            200,
+            {"code": "success", "message": "Token verified successfully."},
+        )
+    except Exception as error:
+        return set_response(500, {"code": "error", "message": str(error)})
