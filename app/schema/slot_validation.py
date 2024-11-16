@@ -12,7 +12,8 @@ from marshmallow import Schema, fields, validate
 
 
 class SlotValidationSchema(Schema):  # pylint: disable=C0115
-    establishment_id = fields.Integer(required=True)
+    establishment_id = fields.Integer(required=True, validate=validate.Length(min=1))
+    manager_id = fields.Integer(required=True, validate=validate.Length(min=1))
     slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
     vehicle_type_id = fields.Integer(required=True)
     slot_status = fields.Str(

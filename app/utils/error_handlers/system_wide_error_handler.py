@@ -2,7 +2,7 @@
 
 from marshmallow.exceptions import ValidationError
 from flask import Flask
-from flask_jwt_extended.exceptions import CSRFError
+from flask_jwt_extended.exceptions import CSRFError, NoAuthorizationError
 from sqlalchemy.exc import DatabaseError, OperationalError, IntegrityError, DataError
 
 from app.utils.error_handlers.jwt_error_handlers import handle_csrf_error
@@ -12,10 +12,12 @@ from app.utils.error_handlers.general_error_handler import (
     handle_general_exception,
     handle_type_error,
 )
+from app.utils.error_handlers.auth_error_handlers import handle_no_authorization
 
 
 def register_system_wide_error_handlers(app: Flask):
     """Register system-wide error handlers."""
+    app.register_error_handler(NoAuthorizationError, handle_no_authorization)
     app.register_error_handler(DatabaseError, handle_database_errors)
     app.register_error_handler(OperationalError, handle_database_errors)
     app.register_error_handler(IntegrityError, handle_database_errors)

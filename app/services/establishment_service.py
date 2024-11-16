@@ -18,34 +18,22 @@ class EstablishmentService:
     def create_new_parking_establishment(cls, establishment_data: dict):
         """Create a new parking establishment."""
         CreateEstablishmentService.create_new_parking_establishment(establishment_data)
-
+    @classmethod
+    def get_establishments(cls, query_dict: dict,) -> list:
+        """
+        Get establishments with optional filtering and sorting
+        """
+        return GetEstablishmentService.get_establishments(query_dict=query_dict)
     @classmethod
     def get_establishment_by_id(cls, establishment_id: int):
         """Get parking establishment by ID."""
         return GetEstablishmentService.get_establishment_by_id(establishment_id)
-
-    @classmethod
-    def get_all_establishments(cls):
-        """Get all parking establishments."""
-        return GetEstablishmentService.get_all_establishments()
-
-    @classmethod
-    def get_nearest_establishments(cls, latitude: float, longitude: float):
-        """Get nearest parking establishments based on the current user location."""
-        return GetEstablishmentService.get_nearest_establishments(latitude, longitude)
-
-    @classmethod
-    def get_24_hours_establishments(cls):
-        """Get parking establishments that are open 24 hours."""
-        return GetEstablishmentService.get_24_hours_establishments()
-
     @classmethod
     def update_establishment(cls, establishment_id: int, establishment_data: dict):
         """Update parking establishment."""
         UpdateEstablishmentService.update_establishment(
             establishment_id, establishment_data
         )
-
     @classmethod
     def delete_establishment(cls, establishment_id: int):
         """Delete parking establishment."""
@@ -54,7 +42,6 @@ class EstablishmentService:
 
 class CreateEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to creating parking establishment."""
-
     @classmethod
     def create_new_parking_establishment(cls, establishment_data: dict):
         """Create a new parking establishment."""
@@ -64,36 +51,22 @@ class CreateEstablishmentService:  # pylint: disable=R0903
         establishment_data["updated_at"] = datetime.now()
         CreateEstablishmentOperations.create_establishment(establishment_data)
 
-
 class GetEstablishmentService:
     """Class for operations related to getting parking establishment."""
-
     @classmethod
-    def get_all_establishments(cls):
-        """Get all parking establishments."""
-        return GetEstablishmentOperations.get_all_establishments()
+    def get_establishments(cls, query_dict: dict) -> list:
+        """
+        Get establishments with optional filtering and sorting
+        """
+        return GetEstablishmentOperations.get_establishments(query_dict)
 
     @classmethod
     def get_establishment_by_id(cls, establishment_id: int):
-        """Get parking establishment by ID."""
+        """Get parking establishment by ID. This is the overview of the parking establishment."""
         return GetEstablishmentOperations.get_establishment_by_id(establishment_id)
-
-    @classmethod
-    def get_nearest_establishments(cls, latitude: float, longitude: float):
-        """Get nearest parking establishments based on the current user location."""
-        return GetEstablishmentOperations.get_nearest_establishments(
-            latitude, longitude
-        )
-
-    @classmethod
-    def get_24_hours_establishments(cls):
-        """Get parking establishments that are open 24 hours."""
-        return GetEstablishmentOperations.get_24_hours_establishments()
-
 
 class UpdateEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to updating parking establishment."""
-
     @classmethod
     def update_establishment(cls, establishment_id: int, establishment_data: dict):
         """Update parking establishment."""
@@ -105,7 +78,6 @@ class UpdateEstablishmentService:  # pylint: disable=R0903
 
 class DeleteEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to deleting parking establishment."""
-
     @classmethod
     def delete_establishment(cls, establishment_id: int):
         """Delete parking establishment."""

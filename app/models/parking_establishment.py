@@ -1,9 +1,11 @@
-"""]
+"""
     SQLAlchemy model representing a parking establishment.
     Contains details about a parking facility including location, operating hours,
     pricing and relationships with slots and manager. Provides methods to convert
     the model instance to a dictionary format.
 """
+
+# pylint: disable=E1102, C0415
 
 from sqlalchemy import (
     VARCHAR,
@@ -16,10 +18,9 @@ from sqlalchemy import (
     and_,
     func,
     update,
-    join,
-    select,
     ForeignKey,
     TIMESTAMP,
+    case,
 )
 from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
@@ -74,6 +75,30 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
             "latitude": float(self.latitude),  # type: ignore
         }
 
+    def calculate_distance_from(self, latitude: float, longitude: float) -> float:
+        """Calculate distance from given coordinates to this establishment"""
+        radius_km = 6371
+        return radius_km * func.acos(
+            func.cos(func.radians(latitude))
+            * func.cos(func.radians(self.latitude))
+            * func.cos(func.radians(self.longitude) - func.radians(longitude))
+            + func.sin(func.radians(latitude)) * func.sin(func.radians(self.latitude))
+        )  # type: ignore
+
+    @classmethod
+    def order_by_distance(
+        cls, latitude: float, longitude: float, ascending: bool = True
+    ):
+        """Get order_by expression for distance-based sorting"""
+        radius_km = 6371
+        distance_formula = radius_km * func.acos(
+            func.cos(func.radians(latitude))
+            * func.cos(func.radians(cls.latitude))
+            * func.cos(func.radians(cls.longitude) - func.radians(longitude))
+            + func.sin(func.radians(latitude)) * func.sin(func.radians(cls.latitude))
+        )
+        return distance_formula.asc() if ascending else distance_formula.desc()
+
 
 class GetEstablishmentOperations:
     """Class for operations related to parking establishment (Getting)."""
@@ -102,24 +127,8 @@ class GetEstablishmentOperations:
             )
         except OperationalError as err:
             raise err
-
-    @staticmethod
-    def get_all_establishments():
-        """
-        Retrieves all parking establishments from the database.
-
-        Returns:
-            list: A list of dictionaries containing parking establishment details.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            establishments = session.query(ParkingEstablishment).all()
-            return [establishment.to_dict() for establishment in establishments]
-        except OperationalError as err:
-            raise err
+        finally:
+            session.close()
 
     @staticmethod
     def get_establishment_by_id(establishment_id: int):
@@ -145,131 +154,87 @@ class GetEstablishmentOperations:
             return establishment
         except OperationalError as err:
             raise err
+        finally:
+            session.close()
 
+    # pylint: disable=R0914
     @staticmethod
-    def get_nearest_establishments(latitude: float, longitude: float):
+    def get_establishments(query_dict: dict):
         """
-        Retrieves parking establishments ordered by distance from given coordinates.
-
-        Args:
-            latitude (float): The latitude coordinate of the reference point
-            longitude (float): The longitude coordinate of the reference point
-
-        Returns:
-            list: A list of dictionaries containing parking establishment details, sorted by
-            distance
-
-        Raises:
-            OperationalError: If there is a database operation error
+        Combined query for establishments with optional filters
         """
+
         session = get_session()
         try:
-            radius_km = 6371
-
-            establishments = (
-                session.query(ParkingEstablishment)
-                .filter(
-                    ParkingEstablishment.latitude.isnot(None),
-                    ParkingEstablishment.longitude.isnot(None),
+            # Base query with slot statistics
+            establishment_name = query_dict.get("establishment_name")
+            latitude = query_dict.get("latitude")
+            longitude = query_dict.get("longitude")
+            is_24_hours = query_dict.get("is_24_hours")
+            vehicle_type_id = query_dict.get("vehicle_type_id")
+            query = (
+                session.query(
+                    ParkingEstablishment,
+                    func.count(case((Slot.slot_status == "open", 1))).label(
+                        "open_slots"
+                    ),
+                    func.count(case((Slot.slot_status == "occupied", 1))).label(
+                        "occupied_slots"
+                    ),
+                    func.count(case((Slot.slot_status == "reserved", 1))).label(
+                        "reserved_slots"
+                    ),
                 )
-                .order_by(
-                    (
-                        radius_km
-                        * func.acos(
-                            func.cos(func.radians(latitude))
-                            * func.cos(func.radians(ParkingEstablishment.latitude))
-                            * func.cos(
-                                func.radians(ParkingEstablishment.longitude)
-                                - func.radians(longitude)
-                            )
-                            + func.sin(func.radians(latitude))
-                            * func.sin(func.radians(ParkingEstablishment.latitude))
-                        )
-                    ).asc()
-                )
-            ).all()
-            return [establishment.to_dict() for establishment in establishments]
-        except OperationalError as error:
-            raise error
-
-    @staticmethod
-    def get_24_hours_establishments():
-        """
-        Retrieves all 24-hour parking establishments from the database.
-
-        Returns:
-            list: A list of dictionaries containing details of 24-hour parking establishments.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            establishments = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.is_24_hours)
-                .all()
+                .outerjoin(Slot)
+                .group_by(ParkingEstablishment.establishment_id)
             )
-            return [establishment.to_dict() for establishment in establishments]
-        except OperationalError as err:
-            raise err
 
-    @staticmethod
-    def get_all_establishment_by_vehicle_type_accommodation(vehicle_type_id: int):
-        """
-        Retrieves all parking establishments that accommodate a specific vehicle type.
+            if is_24_hours is not None:
+                query = query.filter(ParkingEstablishment.is_24_hours == is_24_hours)
 
-        Args:
-            vehicle_type_id (int): The ID of the vehicle type to filter establishments by.
+            if vehicle_type_id is not None:
+                query = query.filter(Slot.vehicle_type_id == vehicle_type_id)
+            if establishment_name is not None:
+                query = query.filter(
+                    ParkingEstablishment.name.ilike(f"%{establishment_name}%")
+                )
 
-        Returns:
-            list: A list of dictionaries containing details of parking establishments that can
-            accommodate
-                the specified vehicle type.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            establishments = session.execute(
-                select(ParkingEstablishment)
-                .select_from(
-                    join(
-                        ParkingEstablishment,
-                        Slot,
-                        ParkingEstablishment.establishment_id == Slot.establishment_id,
+            if latitude is not None and longitude is not None:
+                query = query.order_by(
+                    ParkingEstablishment.order_by_distance(
+                        latitude=latitude, longitude=longitude, ascending=True
                     )
                 )
-                .where(Slot.vehicle_type_id == vehicle_type_id)
-            )
-            return [establishment.to_dict() for establishment in establishments]
+
+            establishments = query.all()
+
+            # Format results
+            result = []
+            for (
+                establishment,
+                open_count,
+                occupied_count,
+                reserved_count,
+            ) in establishments:
+                establishment_dict = establishment.to_dict()
+                establishment_dict.update(
+                    {
+                        "slot_statistics": {
+                            "open_slots": open_count,
+                            "occupied_slots": occupied_count,
+                            "reserved_slots": reserved_count,
+                            "total_slots": open_count + occupied_count + reserved_count,
+                        }
+                    }
+                )
+                result.append(establishment_dict)
+
+            return result
+
         except OperationalError as err:
             raise err
-
-    @staticmethod
-    def get_available_slots():
-        """
-        Retrieves all parking establishments with available slots.
-
-        Returns:
-            list: A list of dictionaries containing details of parking establishments with
-            available slots.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            establishments = (
-                session.query(ParkingEstablishment)
-                .join(Slot)
-                .filter(Slot.slot_status == "open")
-                .all()
-            )
-            return [establishment.to_dict() for establishment in establishments]
-        except OperationalError as err:
-            raise err
+        finally:
+            session.close()
 
 
 class CreateEstablishmentOperations:  # pylint: disable=R0903

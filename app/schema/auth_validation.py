@@ -24,7 +24,7 @@ class SignUpValidationSchema(Schema):
         validate=[
             validate.Length(min=10, max=15),
             validate.Regexp(
-                regex=r"^\+?[1-9]\d{1,14}$", error="Invalid phone number format."
+                regex=r"^\+?[0-9]\d{1,14}$", error="Invalid phone number format."
             ),
         ],
     )
@@ -56,7 +56,7 @@ class SignUpValidationSchema(Schema):
     @post_load
     def normalize_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Method to convert role to lowercase."""
-        in_data["role"] = str(in_data["role"]).lower().replace(" ", "_")
+        in_data["role"] = in_data["role"].lower().replace(" ", "_")
         return in_data
 
 

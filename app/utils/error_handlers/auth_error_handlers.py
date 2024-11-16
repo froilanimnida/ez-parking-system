@@ -1,5 +1,7 @@
 """ Wraps the error handlers for the authentication related errors. """
 
+from flask_jwt_extended.exceptions import NoAuthorizationError
+
 from app.exceptions.authorization_exceptions import (
     EmailNotFoundException,
     MissingFieldsException,
@@ -8,6 +10,7 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     IncorrectOTPException,
     ExpiredOTPException,
+    RequestNewOTPException,
 )
 
 from app.utils.error_handlers.base_error_handler import handle_error
@@ -93,5 +96,29 @@ def handle_expired_otp(error):
             400,
             "expired_otp",
             "Expired OTP.",
+        )
+    raise error
+
+
+def handle_request_new_otp(error):
+    """This function handles request new OTP exceptions."""
+    if isinstance(error, RequestNewOTPException):
+        return handle_error(
+            error,
+            400,
+            "request_new_otp",
+            "Request new OTP.",
+        )
+    raise error
+
+
+def handle_no_authorization(error):
+    """This function handles no authorization exceptions."""
+    if isinstance(error, NoAuthorizationError):
+        return handle_error(
+            error,
+            401,
+            "no_authorization",
+            "No authorization.",
         )
     raise error

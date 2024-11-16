@@ -16,6 +16,7 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     ExpiredOTPException,
     IncorrectOTPException,
+    RequestNewOTPException,
 )
 from app.utils.error_handlers.auth_error_handlers import (
     handle_email_not_found,
@@ -24,6 +25,7 @@ from app.utils.error_handlers.auth_error_handlers import (
     handle_invalid_phone_number,
     handle_incorrect_otp,
     handle_expired_otp,
+    handle_request_new_otp,
 )
 from app.schema.auth_validation import (
     OTPGenerationSchema,
@@ -43,6 +45,7 @@ auth.register_error_handler(PhoneNumberAlreadyTaken, handle_phone_number_already
 auth.register_error_handler(InvalidPhoneNumberException, handle_invalid_phone_number)
 auth.register_error_handler(ExpiredOTPException, handle_expired_otp)
 auth.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
+auth.register_error_handler(RequestNewOTPException, handle_request_new_otp)
 
 
 @auth.route("/v1/auth/create-new-account", methods=["POST"])
@@ -50,6 +53,7 @@ auth.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
 def create_new_account():
     """Create a new user account."""
     data = request.get_json()
+    print(data)
     sign_up_schema = SignUpValidationSchema()
     validated_data = sign_up_schema.load(data)
     auth_service = AuthService()
@@ -104,7 +108,7 @@ def verify_otp():
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me  # type: ignore
         )
-        response = set_response(200, "OTP Verified")
+        response = set_response(200, {"code": "success", "message": "OTP verified."})
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
 
@@ -134,7 +138,23 @@ def set_nickname():
 @jwt_required(optional=False)
 def logout():
     """Logout the user."""
-    response = set_response(200, "Logged out successfully.")
+    response = set_response(
+        200, {"code": "success", "message": "Logged out successfully."}
+    )
     set_access_cookies(response, "")
     set_refresh_cookies(response, "")
     return response
+
+
+@auth.route("/v1/auth/verify-token", methods=["POST"])
+@jwt_required(optional=False)
+def verify_token():
+    """
+    Verify the JWT token from Authorization header.
+    Returns user information if token is valid.
+    """
+    get_jwt()
+    return set_response(
+        200,
+        {"code": "success", "message": "Token verified successfully."},
+    )

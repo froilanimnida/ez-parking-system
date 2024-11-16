@@ -31,7 +31,7 @@ class ParkingTransaction(Base):  # pylint: disable=R0903
     uuid = Column(BINARY(16), nullable=False)
     slot_id = Column(Integer, ForeignKey("slot.slot_id"), nullable=False)
     vehicle_type_id = Column(
-        Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False
+        Integer, ForeignKey("vehicle_type.vehicle_id"), nullable=False
     )
     plate_number = Column(VARCHAR(15), nullable=False)
     entry_time = Column(DateTime, nullable=False)

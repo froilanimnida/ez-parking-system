@@ -15,7 +15,7 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     ExpiredOTPException,
     IncorrectOTPException,
-    EmailNotFoundException,
+    EmailNotFoundException, RequestNewOTPException,
 )
 from app.models.user import UserOperations, OTPOperations
 from app.utils.email_utility import send_mail
@@ -134,6 +134,8 @@ class UserOTPService:
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """Function to verify an OTP for a user."""
         retrieved_otp, expiry, user_id, role = OTPOperations.get_otp(email=email)
+        if expiry is None or retrieved_otp is None:
+            raise RequestNewOTPException("Please request for a new OTP.")
         if datetime.now() > expiry:
             OTPOperations.delete_otp(email=email)
             raise ExpiredOTPException(message="OTP has expired.")
