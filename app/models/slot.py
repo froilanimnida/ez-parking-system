@@ -26,7 +26,7 @@ from sqlalchemy.exc import OperationalError, DataError, IntegrityError, Database
 
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.models.base import Base
-from app.models.vehicle_type import VehicleType, VehicleTypeOperations
+from app.models.vehicle_type import VehicleTypeOperations
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.utils.engine import get_session
 
@@ -98,6 +98,8 @@ class GettingSlotsOperations:  # pylint: disable=R0903
         Raises:
             OperationalError: If there is a database operation error.
         """
+        from app.models.vehicle_type import VehicleType
+
         session = get_session()
         try:
             slots = (
@@ -166,6 +168,8 @@ class GettingSlotsOperations:  # pylint: disable=R0903
         Raises:
             OperationalError: If there is a database operation error.
         """
+        from app.models.vehicle_type import VehicleType
+
         session = get_session()
         try:
             # First get total open slots count

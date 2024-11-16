@@ -5,7 +5,7 @@
     the model instance to a dictionary format.
 """
 
-# pylint: disable=E1102
+# pylint: disable=E1102, C0415
 
 from sqlalchemy import (
     VARCHAR,
@@ -156,12 +156,14 @@ class GetEstablishmentOperations:
             raise err
         finally:
             session.close()
+
     # pylint: disable=R0914
     @staticmethod
     def get_establishments(query_dict: dict):
         """
         Combined query for establishments with optional filters
         """
+
         session = get_session()
         try:
             # Base query with slot statistics
@@ -173,9 +175,15 @@ class GetEstablishmentOperations:
             query = (
                 session.query(
                     ParkingEstablishment,
-                    func.count(case((Slot.slot_status == "open", 1))).label("open_slots"),
-                    func.count(case((Slot.slot_status == "occupied", 1))).label("occupied_slots"),
-                    func.count(case((Slot.slot_status == "reserved", 1))).label("reserved_slots"),
+                    func.count(case((Slot.slot_status == "open", 1))).label(
+                        "open_slots"
+                    ),
+                    func.count(case((Slot.slot_status == "occupied", 1))).label(
+                        "occupied_slots"
+                    ),
+                    func.count(case((Slot.slot_status == "reserved", 1))).label(
+                        "reserved_slots"
+                    ),
                 )
                 .outerjoin(Slot)
                 .group_by(ParkingEstablishment.establishment_id)
@@ -187,14 +195,14 @@ class GetEstablishmentOperations:
             if vehicle_type_id is not None:
                 query = query.filter(Slot.vehicle_type_id == vehicle_type_id)
             if establishment_name is not None:
-                query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
+                query = query.filter(
+                    ParkingEstablishment.name.ilike(f"%{establishment_name}%")
+                )
 
             if latitude is not None and longitude is not None:
                 query = query.order_by(
                     ParkingEstablishment.order_by_distance(
-                        latitude=latitude,
-                        longitude=longitude,
-                        ascending=True
+                        latitude=latitude, longitude=longitude, ascending=True
                     )
                 )
 
@@ -202,16 +210,23 @@ class GetEstablishmentOperations:
 
             # Format results
             result = []
-            for establishment, open_count, occupied_count, reserved_count in establishments:
+            for (
+                establishment,
+                open_count,
+                occupied_count,
+                reserved_count,
+            ) in establishments:
                 establishment_dict = establishment.to_dict()
-                establishment_dict.update({
-                    "slot_statistics": {
-                        "open_slots": open_count,
-                        "occupied_slots": occupied_count,
-                        "reserved_slots": reserved_count,
-                        "total_slots": open_count + occupied_count + reserved_count,
+                establishment_dict.update(
+                    {
+                        "slot_statistics": {
+                            "open_slots": open_count,
+                            "occupied_slots": occupied_count,
+                            "reserved_slots": reserved_count,
+                            "total_slots": open_count + occupied_count + reserved_count,
+                        }
                     }
-                })
+                )
                 result.append(establishment_dict)
 
             return result

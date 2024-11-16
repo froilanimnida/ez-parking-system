@@ -3,7 +3,7 @@
     and other authentication related validation methods
 """
 
-from marshmallow import Schema, fields, pre_load, validate, post_load
+from marshmallow import Schema, fields, validate, post_load
 
 
 # noinspection PyUnusedLocal

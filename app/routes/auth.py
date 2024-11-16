@@ -6,7 +6,6 @@ from flask_jwt_extended import (
     set_access_cookies,
     jwt_required,
     set_refresh_cookies,
-    get_jwt_identity,
 )
 
 from app.services.token_service import TokenService
@@ -147,19 +146,15 @@ def logout():
     return response
 
 
-@auth.route("/v1/auth/verify-token", methods=["GET"])
+@auth.route("/v1/auth/verify-token", methods=["POST"])
 @jwt_required(optional=False)
 def verify_token():
     """
     Verify the JWT token from Authorization header.
     Returns user information if token is valid.
     """
-    try:
-        current_user = get_jwt()
-
-        return set_response(
-            200,
-            {"code": "success", "message": "Token verified successfully."},
-        )
-    except Exception as error:
-        return set_response(500, {"code": "error", "message": str(error)})
+    get_jwt()
+    return set_response(
+        200,
+        {"code": "success", "message": "Token verified successfully."},
+    )
