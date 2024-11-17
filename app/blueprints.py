@@ -1,14 +1,12 @@
 """Register all blueprints."""
 
-from flask import Flask
+from flask_smorest import Api
 
-from app.routes.establishment import establishment
-from app.routes.auth import auth
-from app.routes.slot import slot
+from app.routes.auth import auth_blp
+from app.routes.slot import slot_blp
 
 
-def register_blueprints(app: Flask):
+def register_blueprints(app: Api):
     """Register all blueprints."""
-    app.register_blueprint(auth)
-    app.register_blueprint(slot)
-    app.register_blueprint(establishment)
+    app.register_blueprint(auth_blp)
+    app.register_blueprint(slot_blp)

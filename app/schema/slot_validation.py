@@ -20,3 +20,7 @@ class SlotValidationSchema(Schema):  # pylint: disable=C0115
         required=True, validate=validate.OneOf(["open", "reserved", "occupied"])
     )
     is_active = fields.Boolean(required=True)
+
+
+class SlotCodeValidationQuerySchema(Schema):  # pylint: disable=C0115
+    slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))

@@ -7,7 +7,7 @@ from flask_jwt_extended import JWTManager
 
 from app.blueprints import register_blueprints
 from app.config.development_config import DevelopmentConfig
-from app.extension import mail
+from app.extension import mail, api
 from app.utils.error_handlers.system_wide_error_handler import (
     register_system_wide_error_handlers,
 )
@@ -20,6 +20,8 @@ def create_app():
     template_dir = path.join(path.abspath(path.dirname(__file__)), "templates")
     app = Flask(__name__, template_folder=template_dir)
 
+    api.init_app(app)
+
     app.config.from_object(DevelopmentConfig)
 
     mail.init_app(app)
@@ -27,7 +29,7 @@ def create_app():
 
     setup_logging(app)
     register_system_wide_error_handlers(app)
-    register_blueprints(app)
+    register_blueprints(api)
     add_jwt_after_request_handler(app)
 
     return app

@@ -14,6 +14,12 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_DECODE_ALGORITHMS = ["HS256"]
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
 
+    API_TITLE = "EZ-Parking API"
+    API_VERSION = "v1"
+    OPENAPI_VERSION = "3.0.2"
+    OPENAPI_URL_PREFIX = "/"
+    OPENAPI_SWAGGER_UI_PATH = "/swagger-ui"
+
     MAIL_SERVER = getenv("MAIL_SERVER")
     MAIL_PORT = getenv("MAIL_PORT")
     MAIL_USE_TLS = getenv("MAIL_USE_TLS")

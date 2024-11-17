@@ -1,7 +1,6 @@
 """ Test cases for establishment validation schema. """
 
-# pylint: disable=unused-import
-# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import, redefined-outer-name, R0401
 
 from datetime import time
 
