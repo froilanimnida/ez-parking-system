@@ -30,7 +30,6 @@ from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentEditsNotAllowedException,
 )
 from app.models.base import Base
-from app.models.slot import Slot
 from app.utils.engine import get_session
 
 
@@ -163,10 +162,10 @@ class GetEstablishmentOperations:
         """
         Combined query for establishments with optional filters
         """
-
+        # pylint: disable=cyclic-import
+        from app.models.slot import Slot
         session = get_session()
         try:
-            # Base query with slot statistics
             establishment_name = query_dict.get("establishment_name")
             latitude = query_dict.get("latitude")
             longitude = query_dict.get("longitude")

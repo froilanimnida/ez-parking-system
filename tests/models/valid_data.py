@@ -1,21 +1,9 @@
-"""Fixtures for the user model tests."""
+""" Returns the session """
 
 from datetime import datetime
 from uuid import uuid4
 
-from unittest.mock import Mock, patch
-
 import pytest
-
-
-@pytest.fixture
-def mock_session():
-    """Mock the session object."""
-    with patch("app.models.user.get_session") as mock:
-        session = Mock()
-        mock.return_value = session
-        yield session
-
 
 @pytest.fixture
 def valid_user_data():

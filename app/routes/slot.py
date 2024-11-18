@@ -9,8 +9,7 @@ from app.schema.query_validation import (
     EstablishmentQueryValidation,
     EstablishmentSlotTypeValidation,
 )
-from app.schema.slot_validation import (
-    SlotValidationSchema,
+from app.schema.slot_query_validation import (
     SlotCodeValidationQuerySchema,
 )
 from app.schema.response_schema import ApiResponse
@@ -92,24 +91,6 @@ class GetSlotsBySlotCode(MethodView):
         slot_code = data.get("slot_code")
         slots = SlotService.get_slots_by_slot_code(slot_code)
         return set_response(200, {"slots": slots})
-
-
-@slot_blp.route("/create")
-class CreateSlot(MethodView):
-    """Create a new slot."""
-
-    @slot_blp.arguments(SlotValidationSchema)
-    @slot_blp.response(201, ApiResponse)
-    @slot_blp.doc(
-        description="Create a new slot",
-        responses={
-            201: {"description": "Slot created successfully"},
-            400: {"description": "Bad Request"},
-        },
-    )
-    def post(self, request):
-        SlotService.create_slot(request)
-        return set_response(201, "Slot created successfully.")
 
 
 slot_blp.register_error_handler(

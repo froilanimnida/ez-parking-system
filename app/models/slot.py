@@ -311,6 +311,7 @@ class ParkingManagerOperation:  # pylint: disable=R0903
             IntegrityError: If there is a violation of database constraints.
             DatabaseError: If any other database error occurs.
         """
+        # pylint: disable=cyclic-import
         from app.models.parking_establishment import ParkingEstablishment
 
         session = get_session()
@@ -355,6 +356,7 @@ class ParkingManagerOperation:  # pylint: disable=R0903
             IntegrityError: If there is a violation of database constraints.
             DatabaseError: If any other database error occurs.
         """
+        # pylint: disable=cyclic-import
         from app.models.parking_establishment import ParkingEstablishment
 
         session = get_session()
