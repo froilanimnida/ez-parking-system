@@ -108,18 +108,29 @@ class EstablishmentIdValidationSchema(Schema):
 
 
 class CreateSlotSchema(Schema):  # pylint: disable=C0115
-    establishment_id = fields.Integer(required=True, validate=validate.Length(min=1))
-    manager_id = fields.Integer(required=False, validate=validate.Length(min=1))
+    establishment_id = fields.Integer(required=True)
     slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
     vehicle_type_id = fields.Integer(required=True)
     slot_status = fields.Str(
-        required=True, validate=validate.OneOf(["open", "reserved", "occupied"])
+        missing="open",
+        required=False,
+        validate=validate.OneOf(["open", "reserved", "occupied"]),
     )
-    is_active = fields.Boolean(required=True)
+    is_active = fields.Boolean(required=False, missing=True)
 
 
 class UpdateSlotSchema(CreateSlotSchema):  # pylint: disable=C0115
     """Validation schema for update slot."""
+    vehicle_type_id = fields.Integer(required=False, missing=None)
+    slot_id = fields.Integer(required=True)
+    slot_status = fields.Str(
+        required=False,
+        missing=None,
+        validate=validate.OneOf(["open", "reserved", "occupied"]),
+    )
+    is_active = fields.Boolean(required=False, missing=None)
+    slot_code = fields.Str(required=False, missing=None, validate=validate.Length(min=3, max=45))
+
 
 
 class SlotCodeValidationQuerySchema(Schema):  # pylint: disable=C0115

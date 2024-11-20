@@ -7,6 +7,7 @@ from app.routes.establishment import establishment_blp
 from app.routes.parking_manager import parking_manager_blp
 from app.routes.slot import slot_blp
 from app.routes.transaction import transactions_blp
+from app.routes.admin import admin_blp
 
 
 def register_blueprints(app: Api):
@@ -16,3 +17,4 @@ def register_blueprints(app: Api):
     app.register_blueprint(establishment_blp)
     app.register_blueprint(parking_manager_blp)
     app.register_blueprint(transactions_blp)
+    app.register_blueprint(admin_blp)

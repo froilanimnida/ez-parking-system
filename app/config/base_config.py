@@ -12,7 +12,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
 
     JWT_ALGORITHM = "HS256"
     JWT_DECODE_ALGORITHMS = ["HS256"]
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
 
     API_TITLE = "EZ-Parking API"
     API_VERSION = "v1"
@@ -39,6 +39,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_CSRF_IN_COOKIES = True
     JWT_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
     JWT_ACCESS_CSRF_HEADER_NAME = "X-CSRF-TOKEN"
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_REFRESH_CSRF_HEADER_NAME = "X-CSRF-TOKEN"
     JWT_ACCESS_CSRF_COOKIE_NAME = "X-CSRF-TOKEN"
 

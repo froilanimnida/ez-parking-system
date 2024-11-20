@@ -1,6 +1,8 @@
 """ This module contains the logic for getting the list of slots. """
 
-from app.models.slot import GettingSlotsOperations, ParkingManagerOperation
+from datetime import datetime
+
+from app.models.slot import GettingSlotsOperations, SlotOperation
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenVehicleType,
@@ -66,4 +68,6 @@ class ParkingManagerService:  # pylint: disable=R0903
 
     @staticmethod
     def create_slot(new_slot_data: dict):  # pylint: disable=C0116
-        return ParkingManagerOperation.create_slot(new_slot_data)
+        new_slot_data["created_at"] = datetime.now()
+        new_slot_data["updated_at"] = datetime.now()
+        return SlotOperation.create_slot(new_slot_data)

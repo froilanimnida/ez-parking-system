@@ -15,7 +15,9 @@ from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken,
     ExpiredOTPException,
     IncorrectOTPException,
-    EmailNotFoundException, RequestNewOTPException,
+    EmailNotFoundException,
+    PhoneNumberAlreadyTaken,
+    RequestNewOTPException,
 )
 from app.models.user import UserOperations, OTPOperations
 from app.utils.email_utility import send_mail
@@ -54,6 +56,11 @@ class UserRegistrationService:  # pylint: disable=R0903
         is_email_taken: bool = UserOperations.is_email_taken(email=email)  # type: ignore
         if is_email_taken:
             raise EmailAlreadyTaken(message="Email already taken.")
+        is_phone_number = UserOperations.is_phone_number_taken(
+            phone_number=user_data.get("phone_number")  # type: ignore
+        )
+        if is_phone_number:
+            raise PhoneNumberAlreadyTaken(message="Phone number already taken.")
         phone_number = user_data.get("phone_number")
 
         first_name = user_data.get("first_name")

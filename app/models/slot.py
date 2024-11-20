@@ -240,7 +240,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             raise error
 
 
-class ParkingManagerOperation:  # pylint: disable=R0903
+class SlotOperation:  # pylint: disable=R0903
     """
     Class for managing parking slot creation operations in the database.
 
@@ -272,7 +272,7 @@ class ParkingManagerOperation:  # pylint: disable=R0903
         session = get_session()
         try:
             if not VehicleTypeOperations.is_vehicle_type_exist(
-                slot_data.get("vehicle_type_id")
+                slot_data.get("vehicle_type_id")  # type: ignore
             ):
                 raise VehicleTypeDoesNotExist("Vehicle type does not exist.")
             new_slot = Slot(
@@ -342,7 +342,9 @@ class ParkingManagerOperation:  # pylint: disable=R0903
             session.close()
 
     @staticmethod
-    def update_slot(slot_id: int, manager_id: int, slot_data: dict):
+    def update_slot(
+        slot_id: int, slot_data: dict, is_admin: bool = False, manager_id: int = 0
+    ):
         """
         Updates a parking slot in the database.
 
@@ -373,19 +375,18 @@ class ParkingManagerOperation:  # pylint: disable=R0903
                         ParkingEstablishment.manager_id == manager_id,
                     )
                 )
-            )
-            if not is_eligible_to_edit:
+            ).first()
+            if not is_eligible_to_edit and not is_admin:
                 raise SlotNotFound("Slot not found.")
+
+            update_values = {
+                key: value for key, value in slot_data.items() if value is not None
+            }
+
             session.execute(
-                update(Slot)
-                .where(Slot.slot_id == slot_id)
-                .values(
-                    is_active=slot_data.get("is_active"),
-                    slot_code=slot_data.get("slot_code"),
-                    vehicle_type_id=slot_data.get("vehicle_type_id"),
-                    updated_at=slot_data.get("updated_at"),
-                )
+                update(Slot).where(Slot.slot_id == slot_id).values(**update_values)
             )
+            session.commit()
         except (OperationalError, DataError, IntegrityError, DatabaseError) as error:
             session.rollback()
             raise error

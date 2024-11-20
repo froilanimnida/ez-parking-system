@@ -6,7 +6,7 @@ from datetime import timedelta
 from flask_jwt_extended import create_access_token, create_refresh_token
 
 
-class TokenService:  # pylint: disable=C0115
+class TokenService:  # pylint: disable=C0115, R0903
     @staticmethod
     def generate_jwt_csrf_token(
         email,
@@ -25,9 +25,3 @@ class TokenService:  # pylint: disable=C0115
             identity={"email": email, "user_id": user_id}
         )
         return access_token, refresh_token
-
-    @staticmethod
-    def refresh_nearly_expired_token(access_token):
-        """Refresh the nearly expired token."""
-        print("Refreshing token")
-        print(access_token)

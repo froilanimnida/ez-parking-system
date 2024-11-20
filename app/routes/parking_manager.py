@@ -161,7 +161,6 @@ class CreateSlot(MethodView):
     @parking_manager_required()
     @jwt_required(False)
     def post(self, new_slot_data):
-        new_slot_data["manager_id"] = get_jwt().get("sub", {}).get("user_id")
         SlotService.create_slot(new_slot_data)
         return set_response(201, "Slot created successfully.")
 

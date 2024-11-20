@@ -164,6 +164,7 @@ class GetEstablishmentOperations:
         """
         # pylint: disable=cyclic-import
         from app.models.slot import Slot
+
         session = get_session()
         try:
             establishment_name = query_dict.get("establishment_name")
@@ -207,7 +208,6 @@ class GetEstablishmentOperations:
 
             establishments = query.all()
 
-            # Format results
             result = []
             for (
                 establishment,

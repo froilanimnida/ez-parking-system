@@ -31,14 +31,15 @@ from app.models.base import Base
 class User(Base):  # pylint: disable=R0903 disable=C0115
     __tablename__: str = "user"
     user_id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(BINARY(length=16), unique=True, nullable=False)
-    nickname = Column(VARCHAR(length=75), unique=True, nullable=True)
-    first_name = Column(VARCHAR(length=100), nullable=False)
-    last_name = Column(VARCHAR(length=100), nullable=False)
-    email = Column(VARCHAR(length=75), unique=True, nullable=False)
-    phone_number = Column(VARCHAR(length=15), unique=True, nullable=False)
+    uuid = Column(BINARY(16), unique=True, nullable=False)
+    nickname = Column(VARCHAR(75), unique=True, nullable=True)
+    first_name = Column(VARCHAR(100), nullable=False)
+    last_name = Column(VARCHAR(100), nullable=False)
+    email = Column(VARCHAR(75), unique=True, nullable=False)
+    phone_number = Column(VARCHAR(15), unique=True, nullable=False)
     role = Column(Enum("user", "parking_manager", "admin"), nullable=False)
-    otp_secret = Column(VARCHAR(length=6), nullable=True)
+    plate_number = Column(VARCHAR(10), nullable=True, unique=True)
+    otp_secret = Column(VARCHAR(6), nullable=True, unique=True)
     otp_expiry = Column(DATETIME, nullable=True)
     creation_date = Column(DATETIME, nullable=False)
 
@@ -46,6 +47,13 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
         "ParkingEstablishment",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+
+    banned_plate = relationship(
+        "BannedPlate",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="BannedPlate.plate_number",
     )
 
 
@@ -134,6 +142,32 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             user = session.execute(select(User).where(User.email == email)).scalar()
+            return user is not None
+        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+            raise e
+        finally:
+            session.close()
+
+    @classmethod
+    def is_phone_number_taken(cls, phone_number: str) -> bool:
+        """
+        Checks if a phone number is already associated with an existing user.
+
+        Parameters:
+        phone_number (str): The phone number to check for existence.
+
+        Returns:
+        bool: True if the phone number is taken, False otherwise.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        session = get_session()
+        try:
+            user = session.execute(
+                select(User).where(User.phone_number == phone_number)
+            ).scalar()
             return user is not None
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             raise e
