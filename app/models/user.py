@@ -37,7 +37,7 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
     last_name = Column(VARCHAR(100), nullable=False)
     email = Column(VARCHAR(75), unique=True, nullable=False)
     phone_number = Column(VARCHAR(15), unique=True, nullable=False)
-    role = Column(Enum("user", "parking_manager", "admin"), nullable=False)
+    role = Column(Enum("user", "parking_manager", "admin", "cashier"), nullable=False)
     plate_number = Column(VARCHAR(10), nullable=True, unique=True)
     otp_secret = Column(VARCHAR(6), nullable=True, unique=True)
     otp_expiry = Column(DATETIME, nullable=True)

@@ -13,6 +13,7 @@ from flask_jwt_extended import (
 
 from app.services.token_service import TokenService
 from app.exceptions.authorization_exceptions import (
+    BannedUserException,
     EmailNotFoundException,
     InvalidPhoneNumberException,
     PhoneNumberAlreadyTaken,
@@ -22,6 +23,7 @@ from app.exceptions.authorization_exceptions import (
     RequestNewOTPException,
 )
 from app.utils.error_handlers.auth_error_handlers import (
+    handle_banned_user,
     handle_email_not_found,
     handle_email_already_taken,
     handle_phone_number_already_taken,
@@ -203,6 +205,7 @@ class VerifyToken(MethodView):
         )
 
 
+auth_blp.register_error_handler(BannedUserException, handle_banned_user)
 auth_blp.register_error_handler(EmailNotFoundException, handle_email_not_found)
 auth_blp.register_error_handler(EmailAlreadyTaken, handle_email_already_taken)
 auth_blp.register_error_handler(

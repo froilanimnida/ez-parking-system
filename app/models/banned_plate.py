@@ -47,9 +47,14 @@ class BannedPlateOperations:
             )
             session.add(banned_plate)
             session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+        except (
+            DataError,
+            IntegrityError,
+            OperationalError,
+            DatabaseError,
+        ) as exception:
             session.rollback()
-            raise e
+            raise exception
         finally:
             session.close()
 
@@ -62,9 +67,9 @@ class BannedPlateOperations:
                 BannedPlate.plate_number == plate_number
             ).delete()
             session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+        except (DataError, IntegrityError, OperationalError, DatabaseError) as exc:
             session.rollback()
-            raise e
+            raise exc
         finally:
             session.close()
 
@@ -74,8 +79,8 @@ class BannedPlateOperations:
         session = get_session()
         try:
             return session.query(BannedPlate).all()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            raise e
+        except (OperationalError, DatabaseError) as exc:
+            raise exc
         finally:
             session.close()
 
@@ -89,7 +94,7 @@ class BannedPlateOperations:
                 .filter(BannedPlate.plate_number == plate_number)
                 .first()
             )
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+        except (OperationalError, DatabaseError) as e:
             raise e
         finally:
             session.close()

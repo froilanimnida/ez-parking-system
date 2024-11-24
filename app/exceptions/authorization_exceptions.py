@@ -90,3 +90,13 @@ class RequestNewOTPException(EzParkingBaseException):
     def __init__(self, message="Please request a new OTP."):
         self.message = message
         super().__init__(message)
+
+
+class BannedUserException(EzParkingBaseException):
+    """
+        This error is for error that the user tries to log in with a banned account.
+    """
+
+    def __init__(self, message="User is banned."):
+        self.message = message
+        super().__init__(message)

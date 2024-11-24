@@ -6,9 +6,10 @@
     Maintains relationships with VehicleType and ParkingEstablishment models.
 """
 
-# pylint: disable=R0903, C0115, C0413, E1102, C0415
+# pylint: disable=R0903, C0115, C0413, E1102, C0415, R0801
 
 from sqlalchemy import (
+    DECIMAL,
     Column,
     Integer,
     VARCHAR,
@@ -20,6 +21,7 @@ from sqlalchemy import (
     func,
     and_,
     update,
+    SMALLINT,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.exc import OperationalError, DataError, IntegrityError, DatabaseError
@@ -48,6 +50,14 @@ class Slot(Base):  # pylint: disable=R0903 disable=C0115
         Enum("open", "reserved", "occupied"), nullable=False, default="open"
     )
     is_active = Column(Boolean, nullable=False, default=True)
+    slot_multiplier = Column(DECIMAL(3, 2), nullable=False, default=1.00)
+    is_premium = Column(Boolean, nullable=False, default=False)
+    slot_features = Column(
+        Enum("standard", "covered", "vip", "disabled", "ev_charging"),
+        nullable=False,
+        default="standard",
+    )
+    floor_level = Column(SMALLINT, nullable=False, default=1)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
@@ -72,9 +82,25 @@ class Slot(Base):  # pylint: disable=R0903 disable=C0115
             "vehicle_type_id": self.vehicle_type_id,
             "slot_status": self.slot_status,
             "is_active": self.is_active,
+            "slot_multiplier": self.slot_multiplier,
+            "is_premium": self.is_premium,
+            "slot_features": self.slot_features,
+            "floor_level": self.floor_level,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+
+    def calculate_total_multiplier(self) -> float:
+        """Calculate final rate multiplier including vehicle type and slot factors"""
+        base_multiplier = float(self.vehicle_type.base_rate_multiplier)
+        slot_multiplier = float(self.slot_multiplier)  # type: ignore
+
+        # Additional multipliers based on features
+        feature_multipliers = {"covered": 1.2, "vip": 1.5, "ev_charging": 1.3}
+
+        feature_mult = feature_multipliers.get(self.slot_features, 1.0)  # type: ignore
+
+        return base_multiplier * slot_multiplier * feature_mult
 
 
 class GettingSlotsOperations:  # pylint: disable=R0903

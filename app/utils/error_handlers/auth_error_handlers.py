@@ -3,6 +3,7 @@
 from flask_jwt_extended.exceptions import NoAuthorizationError
 
 from app.exceptions.authorization_exceptions import (
+    BannedUserException,
     EmailNotFoundException,
     MissingFieldsException,
     InvalidPhoneNumberException,
@@ -120,5 +121,17 @@ def handle_no_authorization(error):
             401,
             "no_authorization",
             "No authorization.",
+        )
+    raise error
+
+
+def handle_banned_user(error):
+    """This function handles banned user exceptions."""
+    if isinstance(error, BannedUserException):
+        return handle_error(
+            error,
+            403,
+            "banned_user",
+            "You are banned from using the service.",
         )
     raise error

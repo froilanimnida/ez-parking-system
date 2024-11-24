@@ -22,7 +22,11 @@ def create_ssl_context():
 
 
 app = create_app()
-CORS(app, supports_credentials=True, origins="https://127.0.0.1:5500")
+CORS(
+    app,
+    supports_credentials=True,
+    origins=["https://127.0.0.1:5500", "https://localhost:5173"],
+)
 
 if __name__ == "__main__":
     run_simple(

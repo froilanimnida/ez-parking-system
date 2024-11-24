@@ -124,8 +124,8 @@ class GetEstablishmentOperations:
                 .count()
                 > 0
             )
-        except OperationalError as err:
-            raise err
+        except (OperationalError, DatabaseError) as e:
+            raise e
         finally:
             session.close()
 
@@ -230,8 +230,8 @@ class GetEstablishmentOperations:
 
             return result
 
-        except OperationalError as err:
-            raise err
+        except (OperationalError, DatabaseError) as error:
+            raise error
         finally:
             session.close()
 
