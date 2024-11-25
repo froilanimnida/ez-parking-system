@@ -8,6 +8,7 @@ from uuid import uuid4
 import qrcode
 import qrcode.constants
 
+from app.exceptions.qr_code_exceptions import QRCodeError
 from app.models.parking_transaction import (
     ParkingTransactionOperation,
     UpdateTransaction,
@@ -22,6 +23,16 @@ class TransactionService:  # pylint: disable=too-few-public-methods
     def reserve_slot(reservation_data):
         """Reserves the slot for a user."""
         return SlotActionsService.reserve_slot(reservation_data)
+
+    @staticmethod
+    def verify_reservation_code(reservation_code):
+        """Verifies the reservation code for a user."""
+        return TransactionVerification.verify_entry_transaction(reservation_code)
+
+    @staticmethod
+    def verify_exit_code(exit_code):
+        """Verifies the exit code for a user."""
+        return TransactionVerification.verify_exit_transaction(exit_code)
 
     @staticmethod
     def occupy_slot(parking_data):
@@ -96,3 +107,28 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         img_byte_arr = img_byte_arr.getvalue()
         base64_image = b64encode(img_byte_arr).decode()
         return {"transaction_data": transaction_data, "qr_code": base64_image}
+
+
+class TransactionVerification:
+    """Wraps the service actions for transaction verification operations"""
+
+    @staticmethod
+    def verify_entry_transaction(transaction_qr_code_data):
+        """Verifies the entry transaction for a user."""
+        qr_code_utils = QRCodeUtils()
+        transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
+        print(transaction_data)
+        if transaction_data.get("status") != "reserved":  # type: ignore
+            raise QRCodeError("Invalid transaction status.")
+        return UpdateTransaction.update_transaction_status(
+            "active", transaction_data.get("uuid")  # type: ignore
+        )
+
+    @staticmethod
+    def verify_exit_transaction(transaction_qr_code_data):
+        """Verifies the exit transaction for a user."""
+        qr_code_utils = QRCodeUtils()
+        transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
+        print(transaction_data)
+        if transaction_data.get("status") != "active":  # type: ignore
+            raise QRCodeError("Invalid transaction status.")

@@ -8,6 +8,12 @@ from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
+from app.routes.transaction import handle_invalid_transaction_status
+
+from app.services.transaction_service import TransactionService
+from app.utils.error_handlers.qr_code_error_handlers import handle_invalid_qr_content
+
+from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.schema.parking_manager_validation import (
     CreateSlotSchema,
@@ -15,6 +21,7 @@ from app.schema.parking_manager_validation import (
     EstablishmentValidationSchema,
     UpdateEstablishmentInfoSchema,
     UpdateSlotSchema,
+    ValidateEntrySchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
@@ -34,15 +41,15 @@ def parking_manager_required():
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
-            is_parking_manager = (
-                get_jwt().get("sub", {}).get("role") == "parking_manager"
-            )
+            jwt_data = get_jwt()
+            is_parking_manager = jwt_data.get("role") == "parking_manager"
             if not is_parking_manager:
                 return set_response(
                     401,
                     {"code": "unauthorized", "message": "Parking manager required."},
                 )
-            return fn(*args, **kwargs)
+            manager_id = jwt_data.get("sub", {}).get("user_id")
+            return fn(*args, manager_id=manager_id, **kwargs)
 
         return decorator
 
@@ -64,16 +71,8 @@ class CreateEstablishment(MethodView):
     )
     @jwt_required(True)
     @parking_manager_required()
-    def post(self, new_establishment_data):
-        new_establishment_data["manager_id"] = get_jwt().get("sub", {}).get("user_id")
-        if get_jwt().get("sub", {}).get("role") != "parking_manager":
-            return set_response(
-                403,
-                {
-                    "code": "forbidden",
-                    "message": "Only parking managers can create establishments.",
-                },
-            )
+    def post(self, new_establishment_data, manager_id):
+        new_establishment_data["manager_id"] = manager_id
         EstablishmentService.create_new_parking_establishment(new_establishment_data)
         return set_response(
             201,
@@ -162,7 +161,9 @@ class CreateSlot(MethodView):
     @jwt_required(False)
     def post(self, new_slot_data):
         SlotService.create_slot(new_slot_data)
-        return set_response(201, "Slot created successfully.")
+        return set_response(
+            201, {"code": "success", "message": "Slot created successfully."}
+        )
 
 
 @parking_manager_blp.route("/slot/delete")
@@ -180,11 +181,12 @@ class DeleteSlot(MethodView):
     )
     @parking_manager_required()
     @jwt_required(False)
-    def delete(self, request):
+    def delete(self, request, manager_id):
         data = request.get_json()
-        manager_id = get_jwt().get("sub", {}).get("user_id")
         print(data, manager_id)
-        return set_response(200, "Slot deleted successfully.")
+        return set_response(
+            200, {"code": "success", "message": "Slot deleted successfully."}
+        )
 
 
 @parking_manager_blp.route("/slot/update", methods=["POST"])
@@ -203,10 +205,40 @@ class UpdateSlot(MethodView):
     )
     @parking_manager_required()
     @jwt_required(False)
-    def post(self, request):
-        manager_id = get_jwt().get("sub", {}).get("user_id")
+    def post(self, request, manager_id):
         print(manager_id, request)
-        return set_response(200, "Slot updated successfully.")
+        return set_response(
+            200, {"code": "success", "message": "Slot updated successfully."}
+        )
+
+
+@parking_manager_blp.route("/validate/entry")
+class EstablishmentEntry(MethodView):
+    @jwt_required(False)
+    @parking_manager_required()
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Routes that will validate the token of the reservation qr code and update"
+        "the status of slot to be occupied.",
+        responses={
+            200: "Transaction successfully verified",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    @parking_manager_blp.arguments(ValidateEntrySchema)
+    @parking_manager_blp.response(200, ApiResponse)
+    def patch(self, data, manager_id):  # pylint: disable=unused-argument
+        transaction_service = TransactionService
+        transaction_service.verify_reservation_code(data.get("transaction_code"))
+        return set_response(
+            200, {"code": "success", "message": "Transaction successfully verified."}
+        )
 
 
 parking_manager_blp.register_error_handler(SlotNotFound, handle_slot_not_found)
+parking_manager_blp.register_error_handler(InvalidQRContent, handle_invalid_qr_content)
+parking_manager_blp.register_error_handler(
+    InvalidTransactionStatus, handle_invalid_transaction_status
+)

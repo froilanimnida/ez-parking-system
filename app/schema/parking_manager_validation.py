@@ -135,3 +135,11 @@ class UpdateSlotSchema(CreateSlotSchema):  # pylint: disable=C0115
 
 class SlotCodeValidationQuerySchema(Schema):  # pylint: disable=C0115
     slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
+
+
+class ReservationValidationBaseSchema(Schema):  # pylint: disable=C0115
+    transaction_code = fields.Str(required=True, validate=validate.Length(min=3))
+
+
+class ValidateEntrySchema(ReservationValidationBaseSchema):  # pylint: disable=C0115
+    """Validation schema for entry validation."""

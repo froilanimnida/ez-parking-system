@@ -1,5 +1,7 @@
 """ Parking transaction module that represents the parking transaction database table. """
 
+# pylint: disable=R0401, R0801
+
 from typing import Literal
 
 from sqlalchemy import (
@@ -212,6 +214,38 @@ class UpdateTransaction:  # pylint: disable=R0903
         """
         Update a parking transaction entry in the database.
         """
+
+    @classmethod
+    def update_transaction_status(
+        cls, transaction_status: Literal["active", "completed"], transaction_uuid: str
+    ):
+        """
+        Update the status of a parking transaction in the database.
+        """
+        session = get_session()
+        try:
+            transaction_uuid_bin = bytes.fromhex(transaction_uuid)
+            session.execute(
+                update(ParkingTransaction)
+                .values(status=transaction_status)
+                .where(ParkingTransaction.uuid == transaction_uuid_bin)
+            )
+            transaction_slot = (
+                session.query(ParkingTransaction)
+                .filter(ParkingTransaction.uuid == transaction_uuid_bin)
+                .first()
+            )
+            session.execute(
+                update(Slot)
+                .values(slot_status="occupied")
+                .where(Slot.slot_id == transaction_slot.slot_id)  # type: ignore
+            )
+            session.commit()
+        except (DatabaseError, DataError, IntegrityError, OperationalError) as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
 
     @classmethod
     def cancel_transaction(cls, transaction_id):
