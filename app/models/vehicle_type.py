@@ -63,13 +63,12 @@ class VehicleType(Base):  # pylint: disable=R0903 disable=C0115
 class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
 
     @classmethod
-    def is_vehicle_type_exist(cls, vehicle_type):
+    def is_vehicle_type_exist(cls, vehicle_type_id: int):
         """
         Check if a vehicle type exists in the database based on its code.
 
         Parameters:
-        vehicle_type (VehicleType): An instance of VehicleType containing the code to check for
-        existence.
+        vehicle_type_id (int): The ID of the vehicle type to check.
 
         Returns:
         bool: True if the vehicle type exists, False otherwise.
@@ -82,10 +81,10 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         try:
             vehicle_type = (
                 session.query(VehicleType)
-                .filter(VehicleType.code == vehicle_type.code)
+                .filter(VehicleType.vehicle_id == vehicle_type_id)
                 .first()
             )
-            return bool(vehicle_type)
+            return vehicle_type is not None
         except (IntegrityError, OperationalError, DatabaseError, DataError) as e:
             raise e
         finally:

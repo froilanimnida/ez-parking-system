@@ -13,10 +13,8 @@ from sqlalchemy.exc import IntegrityError, DataError, OperationalError, Database
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException
 from app.models.user import User, OTPOperations
-from tests.models.user_conftest import (
-    mock_session,
-    valid_user_data,
-)
+from tests.models.config.config_test import mock_session
+from tests.models.valid_data import valid_user_data
 
 
 class TestGetOTPOperations:

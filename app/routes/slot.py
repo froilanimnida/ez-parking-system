@@ -1,12 +1,18 @@
 """ All routes related to slot retrieval, creation, and deletion. """
 
-from flask import Blueprint, request
+# pylint: disable=missing-function-docstring, missing-class-docstring
 
-from app.schema.slot_validation import SlotValidationSchema
+from flask_smorest import Blueprint
+from flask.views import MethodView
+
 from app.schema.query_validation import (
     EstablishmentQueryValidation,
     EstablishmentSlotTypeValidation,
 )
+from app.schema.slot_query_validation import (
+    SlotCodeValidationQuerySchema,
+)
+from app.schema.response_schema import ApiResponse
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenEstablishment,
@@ -24,59 +30,79 @@ from app.utils.error_handlers.slot_lookup_error_handlers import (
     handle_no_slots_found_in_the_given_vehicle_type,
 )
 
-slot = Blueprint("slot", __name__)
+slot_blp = Blueprint(
+    "slot",
+    __name__,
+    url_prefix="/api/v1/slot",
+    description="Slot API for EZ Parking System Frontend",
+)
 
-slot.register_error_handler(
+
+@slot_blp.route("/get-slots-by-establishment-id")
+class GetSlotsByEstablishmentID(MethodView):
+    @slot_blp.arguments(EstablishmentQueryValidation)
+    @slot_blp.response(200, ApiResponse)
+    @slot_blp.doc(
+        description="Get all slots by establishment id",
+        responses={
+            200: {"description": "Slots retrieved successfully"},
+            400: {"description": "Bad Request"},
+        },
+    )
+    def get(self, data):
+        slots = SlotService.get_all_slots(data.get("establishment_id"))
+        return set_response(200, {"slots": slots})
+
+
+@slot_blp.route("/get-slots-by-vehicle-type")
+class GetSlotsByVehicleType(MethodView):
+    """Get slots by vehicle type."""
+
+    @slot_blp.arguments(EstablishmentSlotTypeValidation)
+    @slot_blp.response(200, ApiResponse)
+    @slot_blp.doc(
+        description="Get all slots by vehicle type",
+        responses={
+            200: {"description": "Slots retrieved successfully"},
+            400: {"description": "Bad Request"},
+        },
+    )
+    def get(self, data):
+        vehicle_size = data.get("vehicle_size")
+        establishment_id = data.get("establishment_id")
+        slots = SlotService.get_slots_by_vehicle_type(vehicle_size, establishment_id)
+        return set_response(200, {"slots": slots})
+
+
+@slot_blp.route("/get-slots-by-slot-code")
+class GetSlotsBySlotCode(MethodView):
+    """Get slots by slot code."""
+
+    @slot_blp.arguments(SlotCodeValidationQuerySchema)
+    @slot_blp.response(200, ApiResponse)
+    @slot_blp.doc(
+        description="Get all slots by slot code",
+        responses={
+            200: {"description": "Slots retrieved successfully"},
+            400: {"description": "Bad Request"},
+        },
+    )
+    def get(self, data):
+        slot_code = data.get("slot_code")
+        slots = SlotService.get_slots_by_slot_code(slot_code)
+        return set_response(200, {"slots": slots})
+
+
+slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code
 )
-slot.register_error_handler(
+slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenEstablishment,
     handle_no_slots_found_in_the_given_establishment,
 )
-slot.register_error_handler(
+slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenVehicleType, handle_no_slots_found_in_the_given_vehicle_type
 )
-slot.register_error_handler(VehicleTypeDoesNotExist, handle_vehicle_type_does_not_exist)
-
-
-@slot.route("/v1/slot/get-slots-by-establishment-id", methods=["GET"])
-def get_all_slots():
-    """Get all slots."""
-    data = request.get_json()
-    query_validation_schema = EstablishmentQueryValidation()
-    validated_data = query_validation_schema.load(data)
-    slots = SlotService.get_all_slots(validated_data.get("establishment_id"))  # type: ignore
-    return set_response(200, {"slots": slots})
-
-
-@slot.route("/v1/slot/get-slots-by-vehicle-type", methods=["GET"])
-def get_slots_by_vehicle_type():
-    """Get slots by vehicle type."""
-    data = request.get_json()
-    slot_type_validation_schema = EstablishmentSlotTypeValidation()
-    validated_query_data = slot_type_validation_schema.load(data)
-    vehicle_size = validated_query_data.get("vehicle_size")  # type: ignore
-    establishment_id = validated_query_data.get("establishment_id")  # type: ignore
-    slots = SlotService.get_slots_by_vehicle_type(vehicle_size, establishment_id)  # type: ignore
-    return set_response(200, {'slots': slots})
-
-
-@slot.route("/v1/slot/get-slots-by-slot-code", methods=["GET"])
-def get_slots_by_slot_code():
-    """Get slots by slot code."""
-    data = request.get_json()
-    if not data:
-        return set_response(400, "Please provide slot code.")
-    slot_code = data.get("slot_code")
-    slots = SlotService.get_slots_by_slot_code(slot_code)
-    return set_response(200, {"slots": slots})
-
-
-@slot.route("/v1/slots/create", methods=["POST"])
-def create_slot():
-    """Create a new slot."""
-    data = request.get_json()
-    slot_validation_schema = SlotValidationSchema()
-    new_slot_data = slot_validation_schema.load(data)
-    SlotService.create_slot(new_slot_data)  # type: ignore
-    return set_response(201, "Slot created successfully.")
+slot_blp.register_error_handler(
+    VehicleTypeDoesNotExist, handle_vehicle_type_does_not_exist
+)

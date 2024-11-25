@@ -4,11 +4,9 @@ from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 
-# noinspection PyUnusedLocal
 class EstablishmentValidationSchema(Schema):
     """Class to handle parking establishment validation."""
 
-    manager_id = fields.Integer(required=True)
     name = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     address = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     contact_number = fields.Str(
@@ -62,7 +60,6 @@ class UpdateEstablishmentInfoSchema(Schema):
     """Class to handle update of parking establishment information."""
 
     establishment_id = fields.Integer(required=True)
-    manager_id = fields.Integer(required=True)
     name = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     address = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     contact_number = fields.Str(
@@ -102,3 +99,47 @@ class UpdateEstablishmentInfoSchema(Schema):
         """Validate opening and closing time."""
         if data["opening_time"] >= data["closing_time"]:
             raise ValidationError("Closing time must be greater than opening time.")
+
+
+class EstablishmentIdValidationSchema(Schema):
+    """Validation schema for establishment ID."""
+
+    establishment_id = fields.Int(required=True, validate=validate.Range(min=1))
+
+
+class CreateSlotSchema(Schema):  # pylint: disable=C0115
+    establishment_id = fields.Integer(required=True)
+    slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
+    vehicle_type_id = fields.Integer(required=True)
+    slot_status = fields.Str(
+        missing="open",
+        required=False,
+        validate=validate.OneOf(["open", "reserved", "occupied"]),
+    )
+    is_active = fields.Boolean(required=False, missing=True)
+
+
+class UpdateSlotSchema(CreateSlotSchema):  # pylint: disable=C0115
+    """Validation schema for update slot."""
+    vehicle_type_id = fields.Integer(required=False, missing=None)
+    slot_id = fields.Integer(required=True)
+    slot_status = fields.Str(
+        required=False,
+        missing=None,
+        validate=validate.OneOf(["open", "reserved", "occupied"]),
+    )
+    is_active = fields.Boolean(required=False, missing=None)
+    slot_code = fields.Str(required=False, missing=None, validate=validate.Length(min=3, max=45))
+
+
+
+class SlotCodeValidationQuerySchema(Schema):  # pylint: disable=C0115
+    slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
+
+
+class ReservationValidationBaseSchema(Schema):  # pylint: disable=C0115
+    transaction_code = fields.Str(required=True, validate=validate.Length(min=3))
+
+
+class ValidateEntrySchema(ReservationValidationBaseSchema):  # pylint: disable=C0115
+    """Validation schema for entry validation."""

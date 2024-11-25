@@ -28,7 +28,7 @@ from app.schema.auth_validation import (
     LoginWithEmailValidationSchema,
     SignUpValidationSchema,
 )
-from tests.models.user_conftest import mock_session
+from tests.models.config.config_test import mock_session
 
 
 class TestSignUpValidation:

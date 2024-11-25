@@ -1,25 +1,22 @@
 """ Test cases for establishment validation schema. """
 
-# pylint: disable=unused-import
-# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import, redefined-outer-name, R0401
 
 from datetime import time
 
 import pytest
 from marshmallow import ValidationError
 
-from app.schema.establishment_validation import (
+from app.schema.parking_manager_validation import (
     EstablishmentValidationSchema,
     UpdateEstablishmentInfoSchema,
 )
-from tests.models.user_conftest import mock_session
-
+from tests.models.config.config_test import mock_session
 
 @pytest.fixture
 def valid_establishment_data():
     """Return valid establishment data."""
     return {
-        "manager_id": 1,
         "name": "Test Parking",
         "address": "123 Test Street",
         "contact_number": "+1234567890",
@@ -41,7 +38,6 @@ class TestEstablishmentCreationSchema:
         result = schema.load(valid_establishment_data)
         # assert result == valid_establishment_data
         # compare each value since it returns python dictionary:
-        assert result.get("manager_id") == 1  # type: ignore
         assert result.get("name") == "Test Parking"  # type: ignore
         assert result.get("address") == "123 Test Street"  # type: ignore
         assert result.get("contact_number") == "+1234567890"  # type: ignore
@@ -55,7 +51,6 @@ class TestEstablishmentCreationSchema:
     @pytest.mark.parametrize(
         "field",
         [
-            "manager_id",
             "name",
             "address",
             "contact_number",
@@ -102,7 +97,6 @@ class TestEstablishmentCreationSchema:
     @pytest.mark.parametrize(
         "field,value,error_type",
         [
-            ("manager_id", "not_an_integer", "Not a valid integer."),
             ("hourly_rate", "not_a_float", "Not a valid number."),
             ("longitude", "not_a_float", "Not a valid number."),
             ("latitude", "not_a_float", "Not a valid number."),
@@ -196,7 +190,6 @@ class TestEstablishmentUpdateSchema:
         updated_data = valid_establishment_data.copy()
         # Add manager id to the existing valid_establishment_data
         updated_data["establishment_id"] = 1
-        updated_data["manager_id"] = 1
         updated_data["name"] = "Updated Name"
         updated_data["contact_number"] = "+123456789"
         updated_data["address"] = "Updated Address"
@@ -211,7 +204,6 @@ class TestEstablishmentUpdateSchema:
         assert str(result.get("opening_time")) == "14:00:00"  # type: ignore
         assert str(result.get("closing_time")) == "15:00:00"  # type: ignore
         assert result.get("is_24_hours") is False  # type: ignore
-        assert result.get("manager_id") == 1  # type: ignore
 
     def test_invalid_updated_data(self, valid_establishment_data):
         """Test invalid updated data."""
@@ -238,28 +230,6 @@ class TestEstablishmentUpdateSchema:
         with pytest.raises(ValidationError):
             schema.load(updated_data)
 
-    def test_invalid_manager_id(self, valid_establishment_data):
-        """Test invalid manager id."""
-        updated_data = valid_establishment_data.copy()
-        updated_data["manager_id"] = "not_an_integer"
-        updated_data["establishment_id"] = 1
-        schema = UpdateEstablishmentInfoSchema()
-        with pytest.raises(ValidationError) as exc:
-            schema.load(updated_data)
-        assert "manager_id" in exc.value.messages
-        assert "Not a valid integer" in str(exc.value.messages)
-
-    def test_missing_manager_id(self, valid_establishment_data):
-        """Test missing manager id."""
-        updated_data = valid_establishment_data.copy()
-        updated_data.pop("manager_id")
-        updated_data["establishment_id"] = 1
-        schema = UpdateEstablishmentInfoSchema()
-        with pytest.raises(ValidationError) as exc:
-            schema.load(updated_data)
-        assert "manager_id" in exc.value.messages
-        assert "Missing data for required field" in str(exc.value.messages)
-
     def test_missing_establishment_id(self, valid_establishment_data):
         """Test missing establishment id."""
         updated_data = valid_establishment_data.copy()
@@ -273,7 +243,6 @@ class TestEstablishmentUpdateSchema:
         """Test invalid establishment id."""
         updated_data = valid_establishment_data.copy()
         updated_data["establishment_id"] = "not_an_integer"
-        updated_data["manager_id"] = 1
         schema = UpdateEstablishmentInfoSchema()
         with pytest.raises(ValidationError) as exc:
             schema.load(updated_data)
@@ -284,7 +253,6 @@ class TestEstablishmentUpdateSchema:
         """Test invalid name."""
         updated_data = valid_establishment_data.copy()
         updated_data["establishment_id"] = 1
-        updated_data["manager_id"] = 1
         updated_data["name"] = "a" * 256
         schema = UpdateEstablishmentInfoSchema()
         with pytest.raises(ValidationError) as exc:
@@ -303,7 +271,6 @@ class TestEstablishmentUpdateSchema:
         updated_data = valid_establishment_data.copy()
         updated_data[field] = value
         updated_data["establishment_id"] = 1
-        updated_data["manager_id"] = 1
         schema = UpdateEstablishmentInfoSchema()
         with pytest.raises(ValidationError) as exc:
             schema.load(updated_data)
@@ -321,7 +288,6 @@ class TestEstablishmentUpdateSchema:
     def test_invalid_field_format(self, field, value, valid_establishment_data):
         """Test invalid field format."""
         updated_data = valid_establishment_data.copy()
-        updated_data["manager_id"] = 1
         updated_data["establishment_id"] = 1
         updated_data[field] = value
         schema = UpdateEstablishmentInfoSchema()
@@ -345,7 +311,6 @@ class TestEstablishmentUpdateSchema:
         updated_data["opening_time"] = opening_time
         updated_data["closing_time"] = closing_time
         updated_data["establishment_id"] = 1
-        updated_data["manager_id"] = 1
         schema = UpdateEstablishmentInfoSchema()
         with pytest.raises(ValidationError) as exc:
             schema.load(updated_data)
