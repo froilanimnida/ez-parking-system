@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from app.models.parking_establishment import ParkingEstablishment
 from app.models.slot import GettingSlotsOperations, SlotOperation
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
@@ -13,8 +14,8 @@ class SlotService:
     """Wraps the logic for getting the list of slots."""
 
     @staticmethod
-    def get_all_slots(establishment_id: int):  # pylint: disable=C0116
-        return GettingSlotsOperations.get_all_slots(establishment_id=establishment_id)
+    def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
+        return GetSlotService.get_all_slots(establishment_uuid)
 
     @staticmethod
     def get_slots_by_vehicle_type(
@@ -32,13 +33,22 @@ class SlotService:
     def create_slot(new_slot_data: dict):  # pylint: disable=C0116
         return ParkingManagerService.create_slot(new_slot_data)
 
+    @staticmethod
+    def get_specific_slot(slot_code: str):
+        """Get specific slot by slot code."""
+        return GetSlotService.get_specific_slot(slot_code)
+
 
 class GetSlotService:
     """Wraps the logic for getting the list of slots, calling the model layer classes."""
 
     @staticmethod
-    def get_all_slots(establishment_id: int):  # pylint: disable=C0116
-        return GettingSlotsOperations.get_all_slots(establishment_id=establishment_id)
+    def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
+        establishment_uuid_bytes = establishment_uuid.encode("utf-8")
+        establishment_id = ParkingEstablishment.get_establishment_id_by_uuid(
+            establishment_uuid_bytes
+        )
+        return GettingSlotsOperations.get_all_slots(establishment_id)  # type: ignore
 
     @staticmethod
     def get_slots_by_vehicle_type(
@@ -61,6 +71,10 @@ class GetSlotService:
                 "No slots found in the given slot code."
             )
         return slot
+
+    @staticmethod
+    def get_specific_slot(slot_code: str):  # pylint: disable=C0116
+        pass
 
 
 class ParkingManagerService:  # pylint: disable=R0903

@@ -9,7 +9,10 @@ from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentDoesNotExist,
     EstablishmentEditsNotAllowedException,
 )
-from app.schema.query_validation import EstablishmentQuerySchema
+from app.schema.query_validation import (
+    EstablishmentQuerySchema,
+    EstablishmentQueryValidation,
+)
 from app.schema.response_schema import EstablishmentResponseSchema
 from app.services.establishment_service import EstablishmentService
 from app.utils.error_handlers.establishment_error_handlers import (
@@ -46,6 +49,33 @@ class GetEstablishments(MethodView):
                 "code": "success",
                 "message": "Establishments retrieved successfully.",
                 "establishments": establishments,
+            },
+        )
+
+
+@establishment_blp.route("/get-establishment-info")
+class GetEstablishmentInfo(MethodView):
+    @establishment_blp.arguments(EstablishmentQueryValidation, location="query")
+    @establishment_blp.response(200, EstablishmentResponseSchema)
+    @establishment_blp.doc(
+        description="Get establishment information by uuid and all slots of the establishment",
+        responses={
+            200: "Establishment information retrieved successfully.",
+            400: "Bad Request",
+        },
+    )
+    def get(self, query_params):
+        print(query_params.get("establishment_uuid"))
+        establishment = EstablishmentService.get_establishment_info(
+            query_params.get("establishment_uuid")
+        )
+
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Establishment information retrieved successfully.",
+                "establishment": establishment,
             },
         )
 

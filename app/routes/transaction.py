@@ -49,7 +49,7 @@ def user_role_and_user_id_required():
     return wrapper
 
 
-@transactions_blp.route("/reservation/create", methods=["POST"])
+@transactions_blp.route("/reservation/create")
 class CreateReservation(MethodView):
 
     @jwt_required(False)
@@ -70,7 +70,7 @@ class CreateReservation(MethodView):
         return set_response(201, {"message": "Reservation created successfully."})
 
 
-@transactions_blp.route("/reservation/cancel", methods=["POST"])
+@transactions_blp.route("/reservation/cancel")
 @jwt_required(False)
 class CancelReservation(MethodView):
 

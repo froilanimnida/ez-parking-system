@@ -4,12 +4,11 @@
 
 from flask_smorest import Blueprint
 from flask.views import MethodView
+from flask_jwt_extended import jwt_required
 
 from app.schema.query_validation import (
     EstablishmentQueryValidation,
     EstablishmentSlotTypeValidation,
-)
-from app.schema.slot_query_validation import (
     SlotCodeValidationQuerySchema,
 )
 from app.schema.response_schema import ApiResponse
@@ -38,19 +37,21 @@ slot_blp = Blueprint(
 )
 
 
-@slot_blp.route("/get-slots-by-establishment-id")
+@slot_blp.route("/get-all-slots")
 class GetSlotsByEstablishmentID(MethodView):
+
     @slot_blp.arguments(EstablishmentQueryValidation)
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
-        description="Get all slots by establishment id",
+        description="Get all slots by establishment uuid",
         responses={
             200: {"description": "Slots retrieved successfully"},
             400: {"description": "Bad Request"},
         },
     )
+    @jwt_required(True)
     def get(self, data):
-        slots = SlotService.get_all_slots(data.get("establishment_id"))
+        slots = SlotService.get_all_slots(data.get("establishment_uuid"))
         return set_response(200, {"slots": slots})
 
 
@@ -67,6 +68,7 @@ class GetSlotsByVehicleType(MethodView):
             400: {"description": "Bad Request"},
         },
     )
+    @jwt_required(True)
     def get(self, data):
         vehicle_size = data.get("vehicle_size")
         establishment_id = data.get("establishment_id")
@@ -87,6 +89,7 @@ class GetSlotsBySlotCode(MethodView):
             400: {"description": "Bad Request"},
         },
     )
+    @jwt_required(True)
     def get(self, data):
         slot_code = data.get("slot_code")
         slots = SlotService.get_slots_by_slot_code(slot_code)

@@ -2,6 +2,8 @@
 
 from marshmallow import Schema, fields, validate, post_load
 
+from app.utils.uuid_utility import UUIDUtility
+
 
 class TransactionBaseValidationSchema(Schema):
     """Base schema for the transaction validation."""
@@ -11,7 +13,10 @@ class TransactionBaseValidationSchema(Schema):
     @post_load
     def remove_hyphen(self, data, **kwargs):  # pylint: disable=unused-argument
         """Remove hyphen from the UUID."""
-        data["transaction_uuid"] = data["transaction_uuid"].replace("-", "")
+        uuid_utility = UUIDUtility()
+        data["transaction_uuid"] = uuid_utility.remove_hyphens_from_uuid(
+            data["transaction_uuid"]
+        )
         return data
 
 

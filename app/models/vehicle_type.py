@@ -59,6 +59,20 @@ class VehicleType(Base):  # pylint: disable=R0903 disable=C0115
         cascade="all, delete-orphan",
     )
 
+    def to_dict(self):
+        """ Returns the data representation of the vehicle type object. """
+        return {
+            "vehicle_id": self.vehicle_id,
+            "code": self.code,
+            "name": self.name,
+            "description": self.description,
+            "size_category": self.size_category,
+            "base_rate_multiplier": self.base_rate_multiplier,
+            "is_active": self.is_active,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+
 
 class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
 

@@ -30,7 +30,9 @@ from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentEditsNotAllowedException,
 )
 from app.models.base import Base
+from app.models.vehicle_type import VehicleType
 from app.utils.engine import get_session
+from app.utils.uuid_utility import UUIDUtility
 
 
 class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
@@ -58,9 +60,10 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
 
     def to_dict(self):
         """Convert the ParkingEstablishment instance to a dictionary."""
+        uuid_utility = UUIDUtility()
         return {
             "establishment_id": self.establishment_id,
-            "uuid": self.uuid.hex(),
+            "uuid": uuid_utility.format_uuid(self.uuid.hex()),
             "name": self.name,
             "address": self.address,
             "contact_number": self.contact_number,
@@ -97,6 +100,23 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
             + func.sin(func.radians(latitude)) * func.sin(func.radians(cls.latitude))
         )
         return distance_formula.asc() if ascending else distance_formula.desc()
+
+    @classmethod
+    def get_establishment_id_by_uuid(cls, uuid: bytes):
+        """Get establishment ID by UUID"""
+        session = get_session()
+        try:
+            establishment = (
+                session.query(cls.establishment_id)
+                .filter(cls.uuid == uuid)
+                .with_entities(cls.establishment_id)
+                .first()
+            )
+            return establishment
+        except (OperationalError, DatabaseError) as err:
+            raise err
+        finally:
+            session.close()
 
 
 class GetEstablishmentOperations:
@@ -229,6 +249,63 @@ class GetEstablishmentOperations:
                 result.append(establishment_dict)
 
             return result
+
+        except (OperationalError, DatabaseError) as error:
+            raise error
+        finally:
+            session.close()
+
+    @staticmethod
+    def get_establishment_info(establishment_uuid: bytes) -> dict:
+        """
+        Get parking establishment information by its UUID.
+
+        Args:
+            establishment_uuid (bytes): The UUID of the parking establishment
+
+        Returns:
+            dict: Dictionary containing establishment and slot details
+
+        Raises:
+            OperationalError: If database operation fails
+            EstablishmentNotFound: If establishment doesn't exist
+        """
+        from app.models.slot import Slot
+
+        session = get_session()
+        try:
+            establishment = (
+                session.query(ParkingEstablishment)
+                .filter(ParkingEstablishment.uuid == establishment_uuid)
+                .first()
+            )
+
+            if not establishment:
+                raise EstablishmentDoesNotExist("Establishment not found")
+
+            slots = (
+                session.query(Slot, VehicleType)
+                .join(VehicleType, VehicleType.vehicle_id == Slot.vehicle_type_id)
+                .filter(Slot.establishment_id == establishment.establishment_id)
+                .all()
+            )
+
+            establishment_data = establishment.to_dict()
+
+            establishment_data["slots"] = [
+                {
+                    **slot.Slot.to_dict(),
+                    "vehicle_type": {
+                        "vehicle_id": slot.VehicleType.vehicle_id,
+                        "type_name": slot.VehicleType.name,
+                        "size_category": slot.VehicleType.size_category,
+                        "base_rate": float(slot.VehicleType.base_rate_multiplier),
+                    },
+                }
+                for slot in slots
+            ]
+
+            return establishment_data
 
         except (OperationalError, DatabaseError) as error:
             raise error

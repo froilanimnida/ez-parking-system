@@ -189,7 +189,7 @@ class DeleteSlot(MethodView):
         )
 
 
-@parking_manager_blp.route("/slot/update", methods=["POST"])
+@parking_manager_blp.route("/slot/update")
 class UpdateSlot(MethodView):
 
     @parking_manager_blp.arguments(UpdateSlotSchema)
