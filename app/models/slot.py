@@ -78,7 +78,7 @@ class Slot(Base):  # pylint: disable=R0903 disable=C0115
         return {
             "slot_id": self.slot_id,
             "establishment_id": self.establishment_id,
-            "slot_code": self.slot_code,
+            "slot_code": str(self.slot_code),
             "vehicle_type_id": self.vehicle_type_id,
             "slot_status": self.slot_status,
             "is_active": self.is_active,
@@ -246,22 +246,74 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             session.close()
 
     @staticmethod
-    def get_slots_by_slot_code(slot_code: str):
+    def get_slot_by_slot_code(slot_code: str, establishment_id: int):
         """Retrieves a single slot from the database by its slot code.
 
         Args:
             slot_code (str): The unique code identifier for the slot.
+            establishment_id (int): The ID of the parking establishment.
 
         Returns:
-            Slot: The slot object matching the provided code, or None if not found.
+            dict: Dictionary containing slot information and related data.
 
         Raises:
+            SlotNotFound: If the slot is not found.
             OperationalError: If there is a database operation error.
         """
+        from app.models.parking_establishment import ParkingEstablishment
+        from app.models.vehicle_type import VehicleType
+
         session = get_session()
         try:
-            slot = session.query(Slot).filter(Slot.slot_code == slot_code).first()
-            return slot
+            result = (
+                session.query(
+                    Slot,
+                    ParkingEstablishment.name,
+                    VehicleType.name,
+                    VehicleType.size_category,
+                    VehicleType.code,
+                    VehicleType.description,
+                )
+                .filter(
+                    and_(
+                        Slot.slot_code == slot_code,
+                        Slot.establishment_id == establishment_id,
+                    )
+                )
+                .join(
+                    ParkingEstablishment,
+                    Slot.establishment_id == ParkingEstablishment.establishment_id,
+                )
+                .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
+                .first()
+            )
+
+            if result is None:
+                raise SlotNotFound("Slot not found.")
+
+            slot = result[0]
+
+            slot_info = {
+                "slot_id": slot.slot_id,
+                "slot_code": slot.slot_code,
+                "establishment_id": slot.establishment_id,
+                "vehicle_type_id": slot.vehicle_type_id,
+                "status": slot.slot_status,
+                "created_at": slot.created_at,
+                "updated_at": slot.updated_at,
+            }
+
+            slot_info.update(
+                {
+                    "establishment_name": result[1],
+                    "vehicle_type_name": result[2],
+                    "size_category": result[3],
+                    "vehicle_type_code": result[4],
+                    "vehicle_type_description": result[5],
+                }
+            )
+
+            return slot_info
         except OperationalError as error:
             raise error
 

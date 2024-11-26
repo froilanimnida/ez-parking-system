@@ -76,11 +76,11 @@ class GetSlotsByVehicleType(MethodView):
         return set_response(200, {"slots": slots})
 
 
-@slot_blp.route("/get-slots-by-slot-code")
+@slot_blp.route("/get-slot-by-slot-code")
 class GetSlotsBySlotCode(MethodView):
     """Get slots by slot code."""
 
-    @slot_blp.arguments(SlotCodeValidationQuerySchema)
+    @slot_blp.arguments(SlotCodeValidationQuerySchema, location="query")
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
         description="Get all slots by slot code",
@@ -92,8 +92,10 @@ class GetSlotsBySlotCode(MethodView):
     @jwt_required(True)
     def get(self, data):
         slot_code = data.get("slot_code")
-        slots = SlotService.get_slots_by_slot_code(slot_code)
-        return set_response(200, {"slots": slots})
+        establishment_uuid = data.get("establishment_uuid")
+        print(slot_code)
+        slot = SlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
+        return set_response(200, {"slot": slot})
 
 
 slot_blp.register_error_handler(

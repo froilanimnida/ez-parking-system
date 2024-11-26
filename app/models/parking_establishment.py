@@ -112,7 +112,7 @@ class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
                 .with_entities(cls.establishment_id)
                 .first()
             )
-            return establishment
+            return establishment.establishment_id  # type: ignore
         except (OperationalError, DatabaseError) as err:
             raise err
         finally:
@@ -146,6 +146,35 @@ class GetEstablishmentOperations:
             )
         except (OperationalError, DatabaseError) as e:
             raise e
+        finally:
+            session.close()
+
+    @staticmethod
+    def get_establishment_id_by_uuid(establishment_uuid: bytes):
+        """
+        Retrieves the ID of a parking establishment from the database by its UUID.
+
+        Args:
+            establishment_uuid (bytes): The UUID of the parking establishment to retrieve.
+
+        Returns:
+            int: The ID of the parking establishment if found, None otherwise.
+
+        Raises:
+            OperationalError: If there is a database operation error.
+        """
+        session = get_session()
+        try:
+            establishment = (
+                session.query(ParkingEstablishment)
+                .filter(ParkingEstablishment.uuid == establishment_uuid)
+                .first()
+            )
+            if establishment is None:
+                raise EstablishmentDoesNotExist("Establishment does not exist")
+            return establishment.establishment_id
+        except OperationalError as err:
+            raise err
         finally:
             session.close()
 
@@ -304,6 +333,7 @@ class GetEstablishmentOperations:
                 }
                 for slot in slots
             ]
+            print(establishment_data)
 
             return establishment_data
 
