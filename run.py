@@ -29,23 +29,22 @@ ENVIRONMENT = getenv("ENVIRONMENT", "")
 
 IS_PRODUCTION = ENVIRONMENT == "production"
 
+URL = getenv("IS_PRODUCTION") and getenv("PRODUCTION_URL") or getenv("DEVELOPMENT_URL")
+
 app = create_app()
 CORS(
     app,
     supports_credentials=True,
-    origins=[
-        "https://127.0.0.1:5500",
-        "https://localhost:5173",
-        getenv("LIVE_FRONTEND_URL", ""),
-    ],
+    origins=URL,
+    allow_headers=["Content-Type", "X-CSRF-TOKEN", "Accept"],
+    expose_headers=["Set-Cookie", "Authorization"],
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 )
 
 if __name__ == "__main__":
     if IS_PRODUCTION:
-        # In production (e.g., on Render), we don't need SSL handling.
         app.run(host="0.0.0.0", port=5000)
     else:
-        # In development, run with SSL
         run_simple(
             hostname="localhost",
             ssl_context=create_ssl_context(),

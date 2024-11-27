@@ -141,7 +141,6 @@ class UserOTPService:
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """Function to verify an OTP for a user."""
         retrieved_otp, expiry, user_id, role = OTPOperations.get_otp(email=email)
-        print(retrieved_otp, expiry, user_id, role)
         if expiry is None or retrieved_otp is None:
             raise RequestNewOTPException("Please request for a new OTP.")
         if datetime.now() > expiry:

@@ -35,7 +35,6 @@ def refresh_expiring_jwts(response: Response) -> Response:
         target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
 
         if target_timestamp > exp_timestamp:
-            print("refresh  token")
             # Get identity from current token
             identity = get_jwt_identity()
             role = jwt_data["sub"].get("role")
@@ -45,7 +44,6 @@ def refresh_expiring_jwts(response: Response) -> Response:
             access_token, refresh_token = token_service.generate_jwt_csrf_token(
                 email=identity["email"], user_id=identity["user_id"], role=role
             )
-            print("refreshing token")
 
             # Set new tokens in cookies
             set_access_cookies(response, access_token)

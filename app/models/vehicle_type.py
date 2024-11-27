@@ -60,7 +60,7 @@ class VehicleType(Base):  # pylint: disable=R0903 disable=C0115
     )
 
     def to_dict(self):
-        """ Returns the data representation of the vehicle type object. """
+        """Returns the data representation of the vehicle type object."""
         return {
             "vehicle_id": self.vehicle_id,
             "code": self.code,
@@ -225,7 +225,7 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         Retrieve all vehicle types from the database.
 
         Returns:
-        list: A list of VehicleType objects representing all vehicle types in the database.
+        list: A list of dictionaries containing vehicle type information.
 
         Raises:
         OperationalError: If an error occurs during the database operation.
@@ -233,7 +233,8 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             vehicle_types = session.query(VehicleType).all()
-            return vehicle_types
+            # Convert each vehicle type object to dictionary
+            return [vehicle_type.to_dict() for vehicle_type in vehicle_types]
         except OperationalError as error:
             raise error
         finally:

@@ -470,3 +470,31 @@ class SlotOperation:  # pylint: disable=R0903
             raise error
         finally:
             session.close()
+
+
+class ParkingManagerOperations:
+    """Class for operations related to parking manager"""
+
+    @staticmethod
+    def get_all_slot_info(manager_id: int):
+        """Get all slot information"""
+        from app.models.parking_establishment import ParkingEstablishment
+
+        session = get_session()
+        try:
+            slots = (
+                session.query(Slot)
+                .join(
+                    ParkingEstablishment,
+                    Slot.establishment_id == ParkingEstablishment.establishment_id,
+                )
+                .where(ParkingEstablishment.manager_id == manager_id)
+            )
+            slots_list = []
+            for slot in slots:
+                slots_list.append(slot.to_dict())
+            return slots_list
+        except OperationalError as error:
+            raise error
+        finally:
+            session.close()

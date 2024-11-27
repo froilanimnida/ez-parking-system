@@ -10,6 +10,7 @@ from flask_smorest import Blueprint
 
 from app.routes.transaction import handle_invalid_transaction_status
 
+from app.services.parking_manager_service import ParkingManagerService
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import handle_invalid_qr_content
 
@@ -234,6 +235,36 @@ class EstablishmentEntry(MethodView):
         transaction_service.verify_reservation_code(data.get("transaction_code"))
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}
+        )
+
+
+@parking_manager_blp.route("/get-all-establishments-info")
+class GetAllEstablishmentsInfo(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description=(
+            "Get all establishments information "
+            "that is being managed by the parking manager "
+            "via their uuid identity in the jwt token."
+        ),
+        responses={
+            200: "Establishments information retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_required()
+    def get(self, manager_id):
+        data = ParkingManagerService.get_all_establishment_info(manager_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Establishments information retrieved successfully.",
+                "data": data,
+            },
         )
 
 

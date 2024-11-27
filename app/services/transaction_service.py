@@ -117,7 +117,6 @@ class TransactionVerification:
         """Verifies the entry transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
-        print(transaction_data)
         if transaction_data.get("status") != "reserved":  # type: ignore
             raise QRCodeError("Invalid transaction status.")
         return UpdateTransaction.update_transaction_status(
@@ -129,6 +128,5 @@ class TransactionVerification:
         """Verifies the exit transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
-        print(transaction_data)
         if transaction_data.get("status") != "active":  # type: ignore
             raise QRCodeError("Invalid transaction status.")

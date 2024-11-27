@@ -93,7 +93,6 @@ class GetSlotsBySlotCode(MethodView):
     def get(self, data):
         slot_code = data.get("slot_code")
         establishment_uuid = data.get("establishment_uuid")
-        print(slot_code)
         slot = SlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
         return set_response(200, {"slot": slot})
 

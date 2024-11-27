@@ -505,3 +505,23 @@ class DeleteEstablishmentOperations:  # pylint: disable=R0903
             raise err
         finally:
             session.close()
+
+
+class ParkingManagerOperations:  # pylint: disable=R0903
+    """Class for operations related to parking manager"""
+
+    @staticmethod
+    def get_all_slots(manager_id: int):
+        """Get all establishment information"""
+        session = get_session()
+        try:
+            establishment = (
+                session.query(ParkingEstablishment)
+                .filter(ParkingEstablishment.manager_id == manager_id)
+                .first()
+            )
+            return establishment.to_dict() # type: ignore
+        except (OperationalError, DatabaseError) as error:
+            raise error
+        finally:
+            session.close()

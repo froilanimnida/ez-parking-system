@@ -9,6 +9,9 @@ from flask_jwt_extended import (
     set_access_cookies,
     jwt_required,
     set_refresh_cookies,
+    unset_access_cookies,
+    unset_jwt_cookies,
+    unset_refresh_cookies,
 )
 
 from app.services.token_service import TokenService
@@ -87,9 +90,13 @@ class Login(MethodView):
     def post(self, login_data):
         auth_service = AuthService()
         auth_service.login_user(login_data)
-        return set_response(
+        response = set_response(
             200, {"code": "otp_sent", "message": "OTP sent successfully."}
         )
+        unset_jwt_cookies(response)
+        unset_access_cookies(response)
+        unset_refresh_cookies(response)
+        return response
 
 
 @auth_blp.route("/generate-otp")
@@ -138,7 +145,14 @@ class VerifyOTP(MethodView):
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me
         )
-        response = set_response(200, {"code": "success", "message": "OTP verified."})
+        response = set_response(
+            200,
+            {
+                "code": "success",
+                "message": "OTP verified.",
+                "role": role,
+            },
+        )
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response
@@ -186,7 +200,6 @@ class Logout(MethodView):
 
 
 @auth_blp.route("/verify-token")
-@jwt_required(False)
 class VerifyToken(MethodView):
     @auth_blp.response(200, ApiResponse)
     @auth_blp.doc(
@@ -197,6 +210,7 @@ class VerifyToken(MethodView):
             401: {"description": "Unauthorized"},
         },
     )
+    @jwt_required(False)
     def post(self):
         get_jwt()
         return set_response(
