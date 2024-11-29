@@ -23,9 +23,8 @@ from sqlalchemy.exc import DataError, IntegrityError, OperationalError, Database
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException
-
-from app.utils.engine import get_session
 from app.models.base import Base
+from app.utils.engine import get_session
 
 
 class User(Base):  # pylint: disable=R0903 disable=C0115
@@ -195,6 +194,32 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    @classmethod
+    def get_user_plate_number(cls, user_id: int):
+        """
+        Retrieves the plate number of a user identified by their user_id.
+
+        Parameters:
+        user_id (int): The user_id of the user whose plate number is to be retrieved.
+
+        Returns:
+        str: The plate number of the user.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        session = get_session()
+        try:
+            plate_number = session.execute(
+                select(User.plate_number).where(User.user_id == user_id)
+            ).scalar()
+            return plate_number
+        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             raise e
         finally:
             session.close()

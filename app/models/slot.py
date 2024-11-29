@@ -23,13 +23,13 @@ from sqlalchemy import (
     update,
     SMALLINT,
 )
-from sqlalchemy.orm import relationship
 from sqlalchemy.exc import OperationalError, DataError, IntegrityError, DatabaseError
+from sqlalchemy.orm import relationship
 
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
+from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.models.base import Base
 from app.models.vehicle_type import VehicleTypeOperations
-from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.utils.engine import get_session
 
 
@@ -115,6 +115,20 @@ class GettingSlotsOperations:  # pylint: disable=R0903
     """
 
     @staticmethod
+    def get_slot_status(slot_code: str):
+        """Get slot status by slot code."""
+        session = get_session()
+        try:
+            slot = session.query(Slot).filter(Slot.slot_code == slot_code).first()
+            if slot:
+                return slot.slot_status
+            return None
+        except OperationalError as error:
+            raise error
+        finally:
+            session.close()
+
+    @staticmethod
     def get_all_slots(establishment_id: int):
         """Retrieves all slots from the database.
 
@@ -150,6 +164,29 @@ class GettingSlotsOperations:  # pylint: disable=R0903
                 )
                 slots_list.append(slot_dict)
             return slots_list
+        except OperationalError as error:
+            raise error
+
+    @staticmethod
+    def get_slot_by_slot_id(slot_id: int):
+        """Retrieves a single slot from the database by its slot ID.
+
+        Args:
+            slot_id (int): The unique identifier of the slot.
+
+        Returns:
+            Slot: Slot object matching the slot ID.
+
+        Raises:
+            SlotNotFound: If the slot is not found.
+            OperationalError: If there is a database operation error.
+        """
+        session = get_session()
+        try:
+            slot = session.query(Slot).filter(Slot.slot_id == slot_id).first()
+            if slot is None:
+                raise SlotNotFound("Slot not found.")
+            return slot
         except OperationalError as error:
             raise error
 
@@ -375,13 +412,12 @@ class SlotOperation:  # pylint: disable=R0903
             session.close()
 
     @staticmethod
-    def delete_slot(slot_id: int, manager_id: int):
+    def delete_slot(slot_data: dict):
         """
         Deletes a parking slot from the database.
 
         Parameters:
-            slot_id (int): The ID of the slot to be deleted.
-            manager_id (int): The ID of the parking manager making the request.
+            slot_data (dict): Dictionary containing slot details including slot_id and manager_id.
 
         Raises:
             OperationalError: If there is a problem executing the database operation.
@@ -403,8 +439,8 @@ class SlotOperation:  # pylint: disable=R0903
                 )
                 .where(
                     and_(
-                        Slot.slot_id == slot_id,
-                        ParkingEstablishment.manager_id == manager_id,
+                        Slot.slot_id == slot_data.get("slot_id"),
+                        ParkingEstablishment.manager_id == slot_data.get("manager_id"),
                     )
                 )
             )
@@ -495,6 +531,82 @@ class ParkingManagerOperations:
                 slots_list.append(slot.to_dict())
             return slots_list
         except OperationalError as error:
+            raise error
+        finally:
+            session.close()
+
+
+class TransactionOperation:
+    """Class for operations related to parking transactions"""
+
+    @staticmethod
+    def get_slot_establishment_info(establishment_uuid: bytes, slot_code: str):
+        """Get slot and establishment information.
+
+        Args:
+            establishment_uuid (bytes): UUID of establishment in bytes
+            slot_code (str): Unique slot identifier
+
+        Returns:
+            dict: JSON-serializable dictionary with establishment and slot info
+
+        Raises:
+            OperationalError: Database operation error
+            DatabaseError: General database error
+        """
+        from app.models.parking_establishment import ParkingEstablishment
+
+        session = get_session()
+        try:
+            establishment_info = (
+                session.query(
+                    ParkingEstablishment.name,
+                    ParkingEstablishment.hourly_rate,
+                    ParkingEstablishment.address,
+                    ParkingEstablishment.longitude,
+                    ParkingEstablishment.latitude,
+                )
+                .where(ParkingEstablishment.uuid == establishment_uuid)
+                .first()
+            )
+
+            slot_info = (
+                session.query(
+                    Slot.slot_id,
+                    Slot.slot_code,
+                    Slot.is_premium,
+                    Slot.slot_features,
+                    Slot.floor_level,
+                    Slot.slot_multiplier,
+                    Slot.vehicle_type_id,
+                )
+                .where(Slot.slot_code == slot_code)
+                .first()
+            )
+
+            if not establishment_info or not slot_info:
+                raise ValueError("Establishment or slot not found")
+
+            # Convert to serializable dictionary
+            return {
+                "establishment_info": {
+                    "name": establishment_info[0],
+                    "hourly_rate": float(establishment_info[1]),
+                    "address": establishment_info[2],
+                    "longitude": float(establishment_info[3]),
+                    "latitude": float(establishment_info[4]),
+                },
+                "slot_info": {
+                    "slot_id": slot_info[0],
+                    "slot_code": slot_info[1],
+                    "is_premium": slot_info[2],
+                    "slot_features": slot_info[3],
+                    "floor_level": slot_info[4],
+                    "slot_multiplier": float(slot_info[5]),
+                    "vehicle_type_id": slot_info[6],
+                },
+            }
+        except (OperationalError, DatabaseError) as error:
             raise error
         finally:
             session.close()

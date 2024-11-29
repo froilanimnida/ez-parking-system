@@ -102,21 +102,28 @@ class ParkingTransactionOperation:
     """Class that provides operations for parking transactions in the database."""
 
     @classmethod
-    def get_transaction_by(
-        cls,
-        by=Literal[
-            "transaction_id",
-            "plate_number",
-            "entry_time",
-            "payment_status",
-            "vehicle_type_id",
-            "payment_status_paid",
-        ],
+    def get_transaction_by_plate_number(
+        cls, plate_number: str
     ):
         """
-        Retrieve a parking transaction from the database by its ID, plate number,
-        entry time, payment status, vehicle type ID, or payment status.
+        Retrieve a parking transaction from the database by the vehicle plate number.
+        Returns dictionary with transaction details including related slot and vehicle info.
         """
+        session = get_session()
+        try:
+            transaction = (
+                session.query(ParkingTransaction)
+                .where(ParkingTransaction.plate_number == plate_number)
+                .first()
+            )
+            if not transaction:
+                return {}
+            return transaction.to_dict()
+
+        except (DatabaseError, OperationalError) as error:
+            raise error
+        finally:
+            session.close()
 
     @classmethod
     def get_transaction(cls, transaction_uuid: str):

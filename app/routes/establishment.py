@@ -65,7 +65,6 @@ class GetEstablishmentInfo(MethodView):
         },
     )
     def get(self, query_params):
-        print(query_params.get("establishment_uuid"))
         establishment = EstablishmentService.get_establishment_info(
             query_params.get("establishment_uuid")
         )

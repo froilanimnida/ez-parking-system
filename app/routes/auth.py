@@ -3,7 +3,6 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
 from flask.views import MethodView
-from flask_smorest import Blueprint
 from flask_jwt_extended import (
     get_jwt,
     set_access_cookies,
@@ -13,8 +12,8 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
     unset_refresh_cookies,
 )
+from flask_smorest import Blueprint
 
-from app.services.token_service import TokenService
 from app.exceptions.authorization_exceptions import (
     BannedUserException,
     EmailNotFoundException,
@@ -25,6 +24,16 @@ from app.exceptions.authorization_exceptions import (
     IncorrectOTPException,
     RequestNewOTPException,
 )
+from app.schema.auth_validation import (
+    OTPGenerationSchema,
+    LoginWithEmailValidationSchema,
+    NicknameFormValidationSchema,
+    OTPSubmissionSchema,
+    SignUpValidationSchema,
+)
+from app.schema.response_schema import ApiResponse
+from app.services.auth_service import AuthService
+from app.services.token_service import TokenService
 from app.utils.error_handlers.auth_error_handlers import (
     handle_banned_user,
     handle_email_not_found,
@@ -35,16 +44,7 @@ from app.utils.error_handlers.auth_error_handlers import (
     handle_expired_otp,
     handle_request_new_otp,
 )
-from app.schema.auth_validation import (
-    OTPGenerationSchema,
-    LoginWithEmailValidationSchema,
-    NicknameFormValidationSchema,
-    OTPSubmissionSchema,
-    SignUpValidationSchema,
-)
-from app.schema.response_schema import ApiResponse
 from app.utils.response_util import set_response
-from app.services.auth_service import AuthService
 
 auth_blp = Blueprint(
     "auth",
@@ -172,7 +172,7 @@ class SetNickname(MethodView):
     @jwt_required(False)
     def patch(self, data):
         nickname = data.get("nickname")
-        user_id = get_jwt().get("sub").get("user_id")  # type: ignore
+        user_id = get_jwt().get("sub", {}).get("user_id")
         auth_service = AuthService()
         auth_service.set_nickname(user_id=user_id, nickname=nickname)
         return set_response(
@@ -191,11 +191,13 @@ class Logout(MethodView):
     )
     @jwt_required(False)
     def post(self):
+        get_jwt()
         response = set_response(
             200, {"code": "success", "message": "Logged out successfully."}
         )
-        set_access_cookies(response, "")
-        set_refresh_cookies(response, "")
+        unset_access_cookies(response)
+        unset_refresh_cookies(response)
+        unset_jwt_cookies(response)
         return response
 
 
@@ -212,10 +214,14 @@ class VerifyToken(MethodView):
     )
     @jwt_required(False)
     def post(self):
-        get_jwt()
+        role = get_jwt().get("role")
         return set_response(
             200,
-            {"code": "success", "message": "Token verified successfully."},
+            {
+                "code": "success",
+                "message": "Token verified successfully.",
+                "role": role,
+            },
         )
 
 

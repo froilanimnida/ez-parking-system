@@ -17,6 +17,9 @@ class EstablishmentQueryValidationBase(Schema):
         data["establishment_uuid"] = uuid_utility.remove_hyphens_from_uuid(
             data["establishment_uuid"]
         )
+        data["establishment_uuid"] = uuid_utility.uuid_to_binary(
+            data["establishment_uuid"]
+        )
         return data
 
 
@@ -44,7 +47,6 @@ class EstablishmentQuerySchema(Schema):
 
     longitude = fields.Float(required=False)
     latitude = fields.Float(required=False)
-    establishment_id = fields.Int(required=False, validate=validate.Range(min=1))
     establishment_name = fields.Str(required=False)
     vehicle_type_id = fields.Int(required=False, validate=validate.Range(min=1))
     is_24_hours = fields.Bool(required=False)

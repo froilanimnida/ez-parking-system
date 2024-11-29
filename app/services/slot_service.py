@@ -2,12 +2,12 @@
 
 from datetime import datetime
 
-from app.models.parking_establishment import ParkingEstablishment
-from app.models.slot import GettingSlotsOperations, SlotOperation
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenVehicleType,
 )
+from app.models.parking_establishment import ParkingEstablishment
+from app.models.slot import GettingSlotsOperations, SlotOperation
 from ..utils.uuid_utility import UUIDUtility
 
 
@@ -31,20 +31,20 @@ class SlotService:
         slot_code: str, establishment_uuid
     ):  # pylint: disable=C0116
         return GetSlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
-
     @staticmethod
     def create_slot(new_slot_data: dict):  # pylint: disable=C0116
         return ParkingManagerService.create_slot(new_slot_data)
-
+    @staticmethod
+    def delete_slot(slot_data):
+        """Delete a slot."""
+        return ParkingManagerService.delete_slot(slot_data)
     @staticmethod
     def get_specific_slot(slot_code: str):
         """Get specific slot by slot code."""
         return GetSlotService.get_specific_slot(slot_code)
 
-
 class GetSlotService:
     """Wraps the logic for getting the list of slots, calling the model layer classes."""
-
     @staticmethod
     def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
         establishment_uuid_bytes = establishment_uuid.encode("utf-8")
@@ -52,7 +52,6 @@ class GetSlotService:
             establishment_uuid_bytes
         )
         return GettingSlotsOperations.get_all_slots(establishment_id)  # type: ignore
-
     @staticmethod
     def get_slots_by_vehicle_type(
         vehicle_type_id: int, establishment_id: int
@@ -65,7 +64,6 @@ class GetSlotService:
                 "No slots found in the given vehicle type."
             )
         return slots
-
     @staticmethod
     def get_slot_by_slot_code(
         slot_code: str, establishment_uuid: str
@@ -83,17 +81,23 @@ class GetSlotService:
                 "No slots found in the given slot code."
             )
         return slot
-
     @staticmethod
     def get_specific_slot(slot_code: str):  # pylint: disable=C0116
         pass
 
-
 class ParkingManagerService:  # pylint: disable=R0903
     """Wraps the logic for creating a new slot."""
-
     @staticmethod
     def create_slot(new_slot_data: dict):  # pylint: disable=C0116
+        new_slot_data.update({
+            "establishment_id": ParkingEstablishment.get_establishment_id_by_uuid(
+                new_slot_data.get("establishment_uuid")
+            )
+        })
         new_slot_data["created_at"] = datetime.now()
         new_slot_data["updated_at"] = datetime.now()
         return SlotOperation.create_slot(new_slot_data)
+    @staticmethod
+    def delete_slot(slot_data):
+        """Delete a slot."""
+        return SlotOperation.delete_slot(slot_data)

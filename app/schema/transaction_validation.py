@@ -35,3 +35,19 @@ class ReservationCreationSchema(Schema):
     slot_id = fields.Integer(required=True, validate=validate.Range(min=1))
     plate_number = fields.String(required=True, validate=validate.Length(min=1, max=15))
     vehicle_type_id = fields.Integer(required=True, validate=validate.Range(min=1))
+
+
+class TransactionFormDetailsSchema(Schema):
+    """Schema for the transaction form details."""
+
+    establishment_uuid = fields.Str(required=True)
+    slot_code = fields.Str(required=True)
+
+    @post_load
+    def remove_hyphen(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Remove hyphen from the UUID."""
+        uuid_utility = UUIDUtility()
+        data["establishment_uuid"] = uuid_utility.remove_hyphens_from_uuid(
+            data["establishment_uuid"]
+        )
+        return data

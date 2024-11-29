@@ -9,7 +9,7 @@ from app.models.parking_establishment import (
     UpdateEstablishmentOperations,
     DeleteEstablishmentOperations,
 )
-from ..utils.uuid_utility import UUIDUtility
+from app.models.slot import GettingSlotsOperations
 
 
 class EstablishmentService:
@@ -21,34 +21,24 @@ class EstablishmentService:
         CreateEstablishmentService.create_new_parking_establishment(establishment_data)
 
     @classmethod
-    def get_establishments(
-        cls,
-        query_dict: dict,
-    ) -> list:
+    def get_establishments(cls, query_dict: dict) -> list:
         """
         Get establishments with optional filtering and sorting
         """
         return GetEstablishmentService.get_establishments(query_dict=query_dict)
 
     @classmethod
-    def get_establishment_by_id(cls, establishment_id: int):
-        """Get parking establishment by ID."""
-        return GetEstablishmentService.get_establishment_by_id(establishment_id)
-
-    @classmethod
-    def update_establishment(cls, establishment_id: int, establishment_data: dict):
+    def update_establishment(cls, establishment_data: dict):
         """Update parking establishment."""
-        UpdateEstablishmentService.update_establishment(
-            establishment_id, establishment_data
-        )
+        UpdateEstablishmentService.update_establishment(establishment_data)
 
     @classmethod
-    def delete_establishment(cls, establishment_id: int):
+    def delete_establishment(cls, establishment_uuid: bytes):
         """Delete parking establishment."""
-        DeleteEstablishmentService.delete_establishment(establishment_id)
+        DeleteEstablishmentService.delete_establishment(establishment_uuid)
 
     @classmethod
-    def get_establishment_info(cls, establishment_uuid: str):
+    def get_establishment_info(cls, establishment_uuid: bytes):
         """Get parking establishment information."""
         return GetEstablishmentService.get_establishment_info(establishment_uuid)
 
@@ -59,11 +49,10 @@ class CreateEstablishmentService:  # pylint: disable=R0903
     @classmethod
     def create_new_parking_establishment(cls, establishment_data: dict):
         """Create a new parking establishment."""
-        new_parking_establishment_uuid = uuid4().bytes
-        establishment_data["uuid"] = new_parking_establishment_uuid
+        establishment_data["uuid"] = uuid4().bytes
         establishment_data["created_at"] = datetime.now()
         establishment_data["updated_at"] = datetime.now()
-        CreateEstablishmentOperations.create_establishment(establishment_data)
+        return CreateEstablishmentOperations.create_establishment(establishment_data)
 
 
 class GetEstablishmentService:
@@ -77,27 +66,28 @@ class GetEstablishmentService:
         return GetEstablishmentOperations.get_establishments(query_dict)
 
     @classmethod
-    def get_establishment_by_id(cls, establishment_id: int):
-        """Get parking establishment by ID. This is the overview of the parking establishment."""
-        return GetEstablishmentOperations.get_establishment_by_id(establishment_id)
-
-    @classmethod
-    def get_establishment_info(cls, establishment_uuid: str):
+    def get_establishment_info(cls, establishment_uuid_bin: bytes):
         """Get parking establishment information."""
-        uuid_utils = UUIDUtility()
-        establishment_uuid_bin = uuid_utils.uuid_to_binary(establishment_uuid)
-        return GetEstablishmentOperations.get_establishment_info(establishment_uuid_bin)
-
+        establishment_info = GetEstablishmentOperations.get_establishment_info(
+            establishment_uuid_bin
+        )
+        establishment_slots = GettingSlotsOperations.get_all_slots(
+            establishment_info.get("establishment_id")
+        )
+        return {
+            "establishment_info": establishment_info,
+            "establishment_slots": establishment_slots
+        }
 
 class UpdateEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to updating parking establishment."""
 
     @classmethod
-    def update_establishment(cls, establishment_id: int, establishment_data: dict):
+    def update_establishment(cls, establishment_data: dict):
         """Update parking establishment."""
         establishment_data["updated_at"] = datetime.now()
         UpdateEstablishmentOperations.update_establishment(
-            establishment_id, establishment_data
+            establishment_data
         )
 
 
@@ -105,6 +95,6 @@ class DeleteEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to deleting parking establishment."""
 
     @classmethod
-    def delete_establishment(cls, establishment_id: int):
+    def delete_establishment(cls, establishment_uuid: bytes):
         """Delete parking establishment."""
-        DeleteEstablishmentOperations.delete_establishment(establishment_id)
+        DeleteEstablishmentOperations.delete_establishment(establishment_uuid)
