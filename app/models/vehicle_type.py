@@ -125,7 +125,7 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
                 .filter(VehicleType.vehicle_id == vehicle_type_id)
                 .first()
             )
-            return vehicle_type
+            return vehicle_type.to_dict()
         except OperationalError as error:
             raise error
         finally:

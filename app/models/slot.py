@@ -188,7 +188,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
             slot = session.query(Slot).filter(Slot.slot_id == slot_id).first()
             if slot is None:
                 raise SlotNotFound("Slot not found.")
-            return slot
+            return slot.to_dict()
         except OperationalError as error:
             raise error
 
@@ -505,6 +505,34 @@ class SlotOperation:  # pylint: disable=R0903
             session.commit()
         except (OperationalError, DataError, IntegrityError, DatabaseError) as error:
             session.rollback()
+            raise error
+        finally:
+            session.close()
+    @staticmethod
+    def get_slot_info(slot_code: str, establishment_id: int):
+        """ Get Slot info including the benefits and features """
+        from app.models.vehicle_type import VehicleType
+        session = get_session()
+        try:
+            slot_info = (
+                session.query(Slot)
+                .where(and_(Slot.slot_code == slot_code, Slot.establishment_id == establishment_id))
+                .first()
+            )
+            vehicle_type_info = (
+                session.query(VehicleType)
+                .where(VehicleType.vehicle_id == slot_info.vehicle_type_id)
+                .first()
+            )
+            if not slot_info:
+                raise ValueError("Slot not found")
+            info_dict = slot_info.to_dict()
+            type_info_dict = vehicle_type_info.to_dict()
+            return {
+                "slot_info": info_dict,
+                "vehicle_type_info": type_info_dict,
+            }
+        except (OperationalError, DatabaseError) as error:
             raise error
         finally:
             session.close()

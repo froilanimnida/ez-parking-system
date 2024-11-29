@@ -9,6 +9,10 @@ from flask_jwt_extended import get_jwt, jwt_required
 from flask_smorest import Blueprint
 
 from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
+from app.exceptions.transaction_exception import (
+    UserHasNoPlateNumberSetException,
+    HasExistingReservationException
+)
 from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import (
     CancelReservationSchema,
@@ -20,6 +24,9 @@ from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
     handle_invalid_qr_content,
     handle_invalid_transaction_status,
+)
+from app.utils.error_handlers.transaction_error_handlers import (
+    handle_user_has_no_plate_number_set, handle_has_existing_reservation
 )
 from app.utils.response_util import set_response
 
@@ -49,9 +56,8 @@ def user_role_and_user_id_required():
     return wrapper
 
 
-@transactions_blp.route("/reservation/create")
+@transactions_blp.route("/create")
 class CreateReservation(MethodView):
-
     @jwt_required(False)
     @user_role_and_user_id_required()
     @transactions_blp.arguments(ReservationCreationSchema)
@@ -98,7 +104,7 @@ class ViewTransaction(MethodView):
 
     @jwt_required(False)
     @user_role_and_user_id_required()
-    @transactions_blp.arguments(ViewTransactionSchema)
+    @transactions_blp.arguments(ViewTransactionSchema, location="query")
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.doc(
         description="View the transaction details.",
@@ -141,7 +147,6 @@ class TransactionOverview(MethodView):
 
 @transactions_blp.route("/all")
 class GetAllUserTransaction(MethodView):
-
     @jwt_required(False)
     @user_role_and_user_id_required()
     @transactions_blp.response(200, ApiResponse)
@@ -163,4 +168,10 @@ class GetAllUserTransaction(MethodView):
 transactions_blp.register_error_handler(InvalidQRContent, handle_invalid_qr_content)
 transactions_blp.register_error_handler(
     InvalidTransactionStatus, handle_invalid_transaction_status
+)
+transactions_blp.register_error_handler(
+    UserHasNoPlateNumberSetException,handle_user_has_no_plate_number_set
+)
+transactions_blp.register_error_handler(
+    HasExistingReservationException, handle_has_existing_reservation
 )

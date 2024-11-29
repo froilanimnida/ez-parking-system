@@ -19,8 +19,8 @@ from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, Operational
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
-from app.models.vehicle_type import VehicleType
 from app.utils.engine import get_session
+from app.utils.uuid_utility import UUIDUtility
 
 
 class ParkingTransaction(Base):  # pylint: disable=R0903
@@ -95,16 +95,53 @@ class ParkingTransactionOperation:
         Retrieve a parking transaction from the database by the vehicle plate number.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
+        from app.models.slot import Slot
+        from app.models.vehicle_type import VehicleType
         session = get_session()
         try:
-            transaction = (
+            uuid_utility = UUIDUtility()
+            transactions = (
                 session.query(ParkingTransaction)
-                .where(ParkingTransaction.plate_number == plate_number)
-                .first()
+                .join(Slot, Slot.slot_id == ParkingTransaction.slot_id)
+                .join(
+                    VehicleType,
+                    VehicleType.vehicle_id == ParkingTransaction.vehicle_type_id,
+                )
+                .filter(ParkingTransaction.plate_number == plate_number)
+                .all()
             )
-            if not transaction:
+            if not transactions:
                 return {}
-            return transaction.to_dict()
+            return {
+                "transactions": [
+                    {
+                        "uuid": uuid_utility.format_uuid(
+                            uuid_utility.binary_to_uuid(transaction.uuid)),
+                        "status": transaction.status,
+                        "payment_status": str(transaction.payment_status).capitalize(),
+                        "slot_details": {
+                            "slot_code": transaction.slot.slot_code,
+                            "slot_status": transaction.slot.slot_status,
+                            "slot_features": str(
+                                transaction.slot.slot_features
+                            ).capitalize(),
+                            "floor_level": transaction.slot.floor_level,
+                            "slot_multiplier": float(transaction.slot.slot_multiplier),
+                            "is_premium": transaction.slot.is_premium == 1
+                            and "Yes"
+                            or "No",
+                        },
+                        "vehicle_details": {
+                            "type_name": transaction.vehicle_type.name,
+                            "size_category": transaction.vehicle_type.size_category,
+                            "base_rate_multiplier": float(
+                                transaction.vehicle_type.base_rate_multiplier
+                            ),
+                        },
+                    }
+                    for transaction in transactions
+                ]
+            }
 
         except (DatabaseError, OperationalError) as error:
             raise error
@@ -112,15 +149,15 @@ class ParkingTransactionOperation:
             session.close()
 
     @classmethod
-    def get_transaction(cls, transaction_uuid: str):
+    def get_transaction(cls, transaction_uuid_bin: bytes):
         """
         Retrieve a parking transaction from the database by its UUID.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
         from app.models import Slot
+        from app.models.vehicle_type import VehicleType
         session = get_session()
         try:
-            transaction_uuid_bin = bytes.fromhex(transaction_uuid)
             transaction = (
                 session.query(ParkingTransaction)
                 .join(Slot, Slot.slot_id == ParkingTransaction.slot_id)
@@ -137,7 +174,8 @@ class ParkingTransactionOperation:
             transaction_dict = transaction.to_dict()
             transaction_dict.update(
                 {
-                    "uuid": transaction_uuid,
+                    "uuid": UUIDUtility().format_uuid(
+                        UUIDUtility().binary_to_uuid(transaction.uuid)),
                     "slot_details": {
                         "slot_code": transaction.slot.slot_code,
                         "slot_status": transaction.slot.slot_status,
