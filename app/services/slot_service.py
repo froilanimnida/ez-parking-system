@@ -6,9 +6,8 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenVehicleType,
 )
-from app.models.parking_establishment import ParkingEstablishment
+from app.models.parking_establishment import ParkingEstablishment, GetEstablishmentOperations
 from app.models.slot import GettingSlotsOperations, SlotOperation
-from ..utils.uuid_utility import UUIDUtility
 
 
 class SlotService:
@@ -28,7 +27,7 @@ class SlotService:
 
     @staticmethod
     def get_slot_by_slot_code(
-        slot_code: str, establishment_uuid
+        slot_code: str, establishment_uuid: bytes
     ):  # pylint: disable=C0116
         return GetSlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
     @staticmethod
@@ -66,21 +65,26 @@ class GetSlotService:
         return slots
     @staticmethod
     def get_slot_by_slot_code(
-        slot_code: str, establishment_uuid: str
-    ):  # pylint: disable=C0116
-        uuid_utility = UUIDUtility()
-        establishment_uuid_binary = uuid_utility.uuid_to_binary(establishment_uuid)
+        slot_code: str, establishment_uuid_binary: bytes
+    ):
+        """Get slot by slot code."""
         establishment_id = ParkingEstablishment.get_establishment_id_by_uuid(
             establishment_uuid_binary
         )
+        establishment_info = GetEstablishmentOperations.get_establishment_info(
+            establishment_uuid_binary
+        )
         slot = GettingSlotsOperations.get_slot_by_slot_code(
-            slot_code, establishment_id  # type: ignore
+            slot_code, establishment_id
         )
         if slot is None:
             raise NoSlotsFoundInTheGivenSlotCode(
                 "No slots found in the given slot code."
             )
-        return slot
+        return {
+            "slot_info": slot,
+            "establishment_info": establishment_info,
+        }
     @staticmethod
     def get_specific_slot(slot_code: str):  # pylint: disable=C0116
         pass

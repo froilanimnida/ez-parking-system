@@ -148,6 +148,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
                     VehicleType.code.label("vehicle_type_code"),
                     VehicleType.name.label("vehicle_type_name"),
                     VehicleType.size_category.label("size_category"),
+                    VehicleType.base_rate_multiplier.label('base_rate'),
                 )
                 .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
                 .where(Slot.establishment_id == establishment_id)
@@ -159,7 +160,8 @@ class GettingSlotsOperations:  # pylint: disable=R0903
                     {
                         "vehicle_type_code": slot[1],
                         "vehicle_type_name": slot[2],
-                        "size_category": slot[3],
+                        "vehicle_size_category": slot[3],
+                        "base_rate": slot[4],
                     }
                 )
                 slots_list.append(slot_dict)

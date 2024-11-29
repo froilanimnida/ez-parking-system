@@ -1,6 +1,6 @@
 """ Parking transaction module that represents the parking transaction database table. """
 
-# pylint: disable=R0401, R0801
+# pylint: disable=R0401, R0801, C0415
 
 from typing import Literal
 
@@ -18,7 +18,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, OperationalError
 from sqlalchemy.orm import relationship
 
-from app.models import Slot
 from app.models.base import Base
 from app.models.vehicle_type import VehicleType
 from app.utils.engine import get_session
@@ -61,19 +60,6 @@ class ParkingTransaction(Base):  # pylint: disable=R0903
 
     slot = relationship("Slot", back_populates="parking_transaction")
     vehicle_type = relationship("VehicleType", back_populates="parking_transaction")
-
-    def uuid_to_str(self):
-        """
-        Convert the UUID to a string format.
-        """
-        return self.uuid.hex()
-
-    def uuid_str_to_bytes(self, uuid_str):
-        """
-        Convert the UUID string to bytes.
-        """
-        return bytes.fromhex(uuid_str)
-
     def to_dict(self):
         """
         Convert the model instance to a dictionary.
@@ -131,6 +117,7 @@ class ParkingTransactionOperation:
         Retrieve a parking transaction from the database by its UUID.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
+        from app.models import Slot
         session = get_session()
         try:
             transaction_uuid_bin = bytes.fromhex(transaction_uuid)
@@ -185,6 +172,7 @@ class ParkingTransactionOperation:
         """
         Add a new parking transaction entry to the database.
         """
+        from app.models import Slot
         session = get_session()
         try:
             transaction = ParkingTransaction(
@@ -229,6 +217,7 @@ class UpdateTransaction:  # pylint: disable=R0903
         """
         Update the status of a parking transaction in the database.
         """
+        from app.models import Slot
         session = get_session()
         try:
             transaction_uuid_bin = bytes.fromhex(transaction_uuid)

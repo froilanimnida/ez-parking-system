@@ -68,6 +68,7 @@ class GetEstablishmentInfo(MethodView):
         establishment = EstablishmentService.get_establishment_info(
             query_params.get("establishment_uuid")
         )
+        print(establishment)
 
         return set_response(
             200,

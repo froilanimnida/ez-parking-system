@@ -2,7 +2,6 @@
 
 # pylint: disable=R0801
 
-
 from sqlalchemy import Column, Integer, VARCHAR, DateTime, Enum, ForeignKey, BINARY
 from sqlalchemy.exc import DatabaseError, DataError, IntegrityError, OperationalError
 from sqlalchemy.orm import relationship
@@ -22,7 +21,7 @@ class Audit(Base):  # pylint: disable=too-few-public-methods
     action_type = Column(Enum("CREATE", "UPDATE", "DELETE"), nullable=False)
     details = Column(VARCHAR(255), nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    admin = relationship("User", back_populates="audits")
+    user = relationship("User", back_populates="audit")
     def to_dict(self):  # pylint: disable=missing-function-docstring
         uuid_utility = UUIDUtility()
         return {

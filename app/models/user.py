@@ -54,6 +54,11 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
         cascade="all, delete-orphan",
         foreign_keys="BannedPlate.plate_number",
     )
+    audit = relationship(
+        "Audit",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115
