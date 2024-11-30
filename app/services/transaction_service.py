@@ -7,6 +7,8 @@ from uuid import uuid4
 
 import qrcode
 import qrcode.constants
+from qrcode.image.styledpil import StyledPilImage
+from qrcode.image.styles.moduledrawers import CircleModuleDrawer
 
 from app.exceptions.qr_code_exceptions import QRCodeError
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
@@ -111,14 +113,17 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
             }  # type: ignore
         )
         qr = qrcode.QRCode(
-            version=4,
+            version=10,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
             border=4,
         )
         qr.add_data(qr_data)
         qr.make(fit=True)
-        qr_image = qr.make_image(fill_color="black", back_color="white")
+        qr_image = qr.make_image(
+            fill_color="black", back_color="white",
+             image_factory=StyledPilImage, module_drawer=CircleModuleDrawer()
+        )
         img_byte_arr = io.BytesIO()
         qr_image.save(img_byte_arr, bitmap_format="png")  # type: ignore
         img_byte_arr = img_byte_arr.getvalue()

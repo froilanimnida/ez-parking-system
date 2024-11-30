@@ -154,8 +154,9 @@ class ParkingTransactionOperation:
         Retrieve a parking transaction from the database by its UUID.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
-        from app.models import Slot
+        from app.models.slot import Slot
         from app.models.vehicle_type import VehicleType
+        from app.models.parking_establishment import ParkingEstablishment
         session = get_session()
         try:
             transaction = (
@@ -166,6 +167,17 @@ class ParkingTransactionOperation:
                     VehicleType.vehicle_id == ParkingTransaction.vehicle_type_id,
                 )
                 .filter(ParkingTransaction.uuid == transaction_uuid_bin)
+                .first()
+            )
+            establishment_info = (
+                session.query(
+                    ParkingEstablishment.name,
+                    ParkingEstablishment.address,
+                    ParkingEstablishment.longitude,
+                    ParkingEstablishment.latitude,
+                    ParkingEstablishment.contact_number
+                ).join(Slot, Slot.establishment_id == ParkingEstablishment.establishment_id)
+                .filter(Slot.slot_id == transaction.slot_id)
                 .first()
             )
 
@@ -194,6 +206,13 @@ class ParkingTransactionOperation:
                         "base_rate_multiplier": float(
                             transaction.vehicle_type.base_rate_multiplier
                         ),
+                    },
+                    "establishment_info": {
+                        "name": establishment_info.name,
+                        "address": establishment_info.address,
+                        "longitude": establishment_info.longitude,
+                        "latitude": establishment_info.latitude,
+                        "contact_number": establishment_info.contact_number
                     },
                 }
             )
