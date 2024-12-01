@@ -18,14 +18,13 @@
 
 # pylint: disable=R0801
 
-from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update
+from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update, BOOLEAN
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException
-
-from app.utils.engine import get_session
 from app.models.base import Base
+from app.utils.engine import get_session
 
 
 class User(Base):  # pylint: disable=R0903 disable=C0115
@@ -42,6 +41,9 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
     otp_secret = Column(VARCHAR(6), nullable=True, unique=True)
     otp_expiry = Column(DATETIME, nullable=True)
     creation_date = Column(DATETIME, nullable=False)
+    is_verified = Column(BOOLEAN, nullable=False, default=False)
+    verification_token = Column(VARCHAR(175), nullable=True)
+    verification_expiry = Column(DATETIME, nullable=True)
 
     parking_establishment = relationship(
         "ParkingEstablishment",
@@ -54,6 +56,11 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
         back_populates="user",
         cascade="all, delete-orphan",
         foreign_keys="BannedPlate.plate_number",
+    )
+    audit = relationship(
+        "Audit",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
 
@@ -86,6 +93,9 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
                 phone_number=user_data.get("phone_number"),
                 role=user_data.get("role"),
                 creation_date=user_data.get("creation_date"),
+                verification_token=user_data.get("verification_token"),
+                verification_expiry=user_data.get("verification_expiry"),
+                is_verified=user_data.get("is_verified"),
             )
             session.add(new_user)
             session.commit()
@@ -191,6 +201,57 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
         try:
             session.execute(
                 update(User).where(User.user_id == user_id).values(nickname=nickname)
+            )
+            session.commit()
+        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    @classmethod
+    def get_user_plate_number(cls, user_id: int):
+        """
+        Retrieves the plate number of a user identified by their user_id.
+
+        Parameters:
+        user_id (int): The user_id of the user whose plate number is to be retrieved.
+
+        Returns:
+        str: The plate number of the user.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        session = get_session()
+        try:
+            plate_number = session.execute(
+                select(User.plate_number).where(User.user_id == user_id)
+            ).scalar()
+            return plate_number
+        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
+            raise e
+        finally:
+            session.close()
+    @classmethod
+    def verify_email(cls, token: str):
+        """
+        Verify the email of a user identified by their token.
+
+        Parameters:
+        token (str): The token of the user whose email is to be verified.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        session = get_session()
+        try:
+            session.execute(
+                update(User).where(User.verification_token == token).values(
+                    verification_token=None, verification_expiry=None, is_verified=True
+                )
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:

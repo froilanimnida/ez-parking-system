@@ -103,3 +103,11 @@ class NicknameFormValidationSchema(Schema):
         """Method to convert nickname to lowercase."""
         in_data["nickname"] = in_data["nickname"].lower()
         return in_data
+
+
+class EmailVerificationSchema(Schema):
+    """Class to handle email verification validation."""
+
+    verification_token = fields.Str(
+        required=True, validate=validate.Length(min=1, max=200)
+    )

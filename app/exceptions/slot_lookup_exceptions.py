@@ -41,3 +41,12 @@ class SlotNotFound(EzParkingBaseException):
     def __init__(self, message="Slot not found."):
         self.message = message
         super().__init__(message)
+
+class SlotStatusTaken(EzParkingBaseException):
+    """
+    Custom exception class to handle slot status taken.
+    """
+
+    def __init__(self, message="Slot status is taken."):
+        self.message = message
+        super().__init__(message)

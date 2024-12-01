@@ -3,15 +3,17 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
 from flask.views import MethodView
-from flask_smorest import Blueprint
 from flask_jwt_extended import (
     get_jwt,
     set_access_cookies,
     jwt_required,
     set_refresh_cookies,
+    unset_access_cookies,
+    unset_jwt_cookies,
+    unset_refresh_cookies,
 )
+from flask_smorest import Blueprint
 
-from app.services.token_service import TokenService
 from app.exceptions.authorization_exceptions import (
     BannedUserException,
     EmailNotFoundException,
@@ -22,6 +24,16 @@ from app.exceptions.authorization_exceptions import (
     IncorrectOTPException,
     RequestNewOTPException,
 )
+from app.schema.auth_validation import (
+    OTPGenerationSchema,
+    LoginWithEmailValidationSchema,
+    NicknameFormValidationSchema,
+    OTPSubmissionSchema,
+    SignUpValidationSchema, EmailVerificationSchema,
+)
+from app.schema.response_schema import ApiResponse
+from app.services.auth_service import AuthService
+from app.services.token_service import TokenService
 from app.utils.error_handlers.auth_error_handlers import (
     handle_banned_user,
     handle_email_not_found,
@@ -32,16 +44,7 @@ from app.utils.error_handlers.auth_error_handlers import (
     handle_expired_otp,
     handle_request_new_otp,
 )
-from app.schema.auth_validation import (
-    OTPGenerationSchema,
-    LoginWithEmailValidationSchema,
-    NicknameFormValidationSchema,
-    OTPSubmissionSchema,
-    SignUpValidationSchema,
-)
-from app.schema.response_schema import ApiResponse
 from app.utils.response_util import set_response
-from app.services.auth_service import AuthService
 
 auth_blp = Blueprint(
     "auth",
@@ -87,9 +90,13 @@ class Login(MethodView):
     def post(self, login_data):
         auth_service = AuthService()
         auth_service.login_user(login_data)
-        return set_response(
+        response = set_response(
             200, {"code": "otp_sent", "message": "OTP sent successfully."}
         )
+        unset_jwt_cookies(response)
+        unset_access_cookies(response)
+        unset_refresh_cookies(response)
+        return response
 
 
 @auth_blp.route("/generate-otp")
@@ -138,7 +145,14 @@ class VerifyOTP(MethodView):
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me
         )
-        response = set_response(200, {"code": "success", "message": "OTP verified."})
+        response = set_response(
+            200,
+            {
+                "code": "success",
+                "message": "OTP verified.",
+                "role": role,
+            },
+        )
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response
@@ -158,7 +172,7 @@ class SetNickname(MethodView):
     @jwt_required(False)
     def patch(self, data):
         nickname = data.get("nickname")
-        user_id = get_jwt().get("sub").get("user_id")  # type: ignore
+        user_id = get_jwt().get("sub", {}).get("user_id")
         auth_service = AuthService()
         auth_service.set_nickname(user_id=user_id, nickname=nickname)
         return set_response(
@@ -177,16 +191,17 @@ class Logout(MethodView):
     )
     @jwt_required(False)
     def post(self):
+        get_jwt()
         response = set_response(
             200, {"code": "success", "message": "Logged out successfully."}
         )
-        set_access_cookies(response, "")
-        set_refresh_cookies(response, "")
+        unset_access_cookies(response)
+        unset_refresh_cookies(response)
+        unset_jwt_cookies(response)
         return response
 
 
 @auth_blp.route("/verify-token")
-@jwt_required(False)
 class VerifyToken(MethodView):
     @auth_blp.response(200, ApiResponse)
     @auth_blp.doc(
@@ -197,11 +212,37 @@ class VerifyToken(MethodView):
             401: {"description": "Unauthorized"},
         },
     )
+    @jwt_required(False)
     def post(self):
-        get_jwt()
+        role = get_jwt().get("role")
         return set_response(
             200,
-            {"code": "success", "message": "Token verified successfully."},
+            {
+                "code": "success",
+                "message": "Token verified successfully.",
+                "role": role,
+            },
+        )
+@auth_blp.route("/verify-email")
+class VerifyEmail(MethodView):
+    @auth_blp.response(200, ApiResponse)
+    @auth_blp.arguments(EmailVerificationSchema)
+    @auth_blp.doc(
+        description="Verify the email.",
+        responses={
+            200: {"description": "Email verified successfully."},
+            400: {"description": "Bad Request"},
+        },
+    )
+    @jwt_required(True)
+    def patch(self, data):
+        AuthService.verify_email(data.get("verification_token"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Email verified successfully.",
+            },
         )
 
 

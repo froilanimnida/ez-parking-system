@@ -35,6 +35,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_COOKIE_SECURE = True
     JWT_SESSION_COOKIE = False
     JWT_COOKIE_CSRF_PROTECT = True
+    JWT_COOKIE_DOMAIN = "localhost"
     JWT_COOKIE_SAMESITE = "None"
     JWT_CSRF_CHECK_FORM = False
     JWT_CSRF_IN_COOKIES = True
@@ -46,3 +47,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
 
     LOGGING_LEVEL = "INFO"
     LOGGING_PATH = path.join(getcwd(), "logs", "authentication.log")
+    IS_PRODUCTION = getenv("ENVIRONMENT", "") == "production"
+
+    DEVELOPMENT_URL = getenv("DEVELOPMENT_URL", "http://localhost:5000")
+    PRODUCTION_URL = getenv("PRODUCTION_URL", "")

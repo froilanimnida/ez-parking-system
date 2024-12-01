@@ -2,9 +2,10 @@
 
 import base64
 import time
+from base64 import urlsafe_b64encode
 from datetime import datetime, timedelta
 from hashlib import sha256
-from os import getenv
+from os import getenv, urandom
 from uuid import uuid4
 
 from flask import render_template
@@ -45,6 +46,9 @@ class AuthService:
     @classmethod
     def set_nickname(cls, user_id, nickname):  # pylint: disable=C0116
         return UserProfileService.set_nickname(user_id=user_id, nickname=nickname)
+    @classmethod
+    def verify_email(cls, token: str):  # pylint: disable=C0116
+        return UserRegistrationService.verify_email(token=token)
 
 
 class UserRegistrationService:  # pylint: disable=R0903
@@ -62,6 +66,11 @@ class UserRegistrationService:  # pylint: disable=R0903
         if is_phone_number:
             raise PhoneNumberAlreadyTaken(message="Phone number already taken.")
         phone_number = user_data.get("phone_number")
+        verification_token = urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")
+        is_production = getenv("ENVIRONMENT") == "production"
+        base_url = getenv("PRODUCTION_URL") if is_production else getenv("DEVELOPMENT_URL")
+        verification_url = f"{base_url}/auth/verify-email/{verification_token}"
+        template = render_template("auth/onboarding.html", verification_url=verification_url)
 
         first_name = user_data.get("first_name")
         last_name = user_data.get("last_name")
@@ -74,9 +83,15 @@ class UserRegistrationService:  # pylint: disable=R0903
             "phone_number": phone_number,
             "role": user_data.get("role"),
             "creation_date": datetime.now(),
+            "verification_token": verification_token,
+            "verification_expiry": datetime.now() + timedelta(days=7),
+            "is_verified": False,
         }
-        return UserOperations.create_new_user(user_data=user_data)
-
+        UserOperations.create_new_user(user_data=user_data)
+        return send_mail(message=template, email=email, subject="Welcome to EZ Parking")
+    @classmethod
+    def verify_email(cls, token: str):  # pylint: disable=C0116
+        return UserOperations.verify_email(token=token)
 
 class UserLoginService:  # pylint: disable=R0903
     """Class to handle user login operations."""
@@ -141,7 +156,6 @@ class UserOTPService:
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """Function to verify an OTP for a user."""
         retrieved_otp, expiry, user_id, role = OTPOperations.get_otp(email=email)
-        print(retrieved_otp, expiry, user_id, role)
         if expiry is None or retrieved_otp is None:
             raise RequestNewOTPException("Please request for a new OTP.")
         if datetime.now() > expiry:

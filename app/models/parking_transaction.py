@@ -1,6 +1,6 @@
 """ Parking transaction module that represents the parking transaction database table. """
 
-# pylint: disable=R0401, R0801
+# pylint: disable=R0401, R0801, C0415
 
 from typing import Literal
 
@@ -18,10 +18,9 @@ from sqlalchemy import (
 from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, OperationalError
 from sqlalchemy.orm import relationship
 
-from app.models import Slot
 from app.models.base import Base
-from app.models.vehicle_type import VehicleType
 from app.utils.engine import get_session
+from app.utils.uuid_utility import UUIDUtility
 
 
 class ParkingTransaction(Base):  # pylint: disable=R0903
@@ -61,19 +60,6 @@ class ParkingTransaction(Base):  # pylint: disable=R0903
 
     slot = relationship("Slot", back_populates="parking_transaction")
     vehicle_type = relationship("VehicleType", back_populates="parking_transaction")
-
-    def uuid_to_str(self):
-        """
-        Convert the UUID to a string format.
-        """
-        return self.uuid.hex()
-
-    def uuid_str_to_bytes(self, uuid_str):
-        """
-        Convert the UUID string to bytes.
-        """
-        return bytes.fromhex(uuid_str)
-
     def to_dict(self):
         """
         Convert the model instance to a dictionary.
@@ -102,31 +88,77 @@ class ParkingTransactionOperation:
     """Class that provides operations for parking transactions in the database."""
 
     @classmethod
-    def get_transaction_by(
-        cls,
-        by=Literal[
-            "transaction_id",
-            "plate_number",
-            "entry_time",
-            "payment_status",
-            "vehicle_type_id",
-            "payment_status_paid",
-        ],
+    def get_transaction_by_plate_number(
+        cls, plate_number: str
     ):
         """
-        Retrieve a parking transaction from the database by its ID, plate number,
-        entry time, payment status, vehicle type ID, or payment status.
+        Retrieve a parking transaction from the database by the vehicle plate number.
+        Returns dictionary with transaction details including related slot and vehicle info.
         """
+        from app.models.slot import Slot
+        from app.models.vehicle_type import VehicleType
+        session = get_session()
+        try:
+            uuid_utility = UUIDUtility()
+            transactions = (
+                session.query(ParkingTransaction)
+                .join(Slot, Slot.slot_id == ParkingTransaction.slot_id)
+                .join(
+                    VehicleType,
+                    VehicleType.vehicle_id == ParkingTransaction.vehicle_type_id,
+                )
+                .filter(ParkingTransaction.plate_number == plate_number)
+                .all()
+            )
+            if not transactions:
+                return {}
+            return {
+                "transactions": [
+                    {
+                        "uuid": uuid_utility.format_uuid(
+                            uuid_utility.binary_to_uuid(transaction.uuid)),
+                        "status": transaction.status,
+                        "payment_status": str(transaction.payment_status).capitalize(),
+                        "slot_details": {
+                            "slot_code": transaction.slot.slot_code,
+                            "slot_status": transaction.slot.slot_status,
+                            "slot_features": str(
+                                transaction.slot.slot_features
+                            ).capitalize(),
+                            "floor_level": transaction.slot.floor_level,
+                            "slot_multiplier": float(transaction.slot.slot_multiplier),
+                            "is_premium": transaction.slot.is_premium == 1
+                            and "Yes"
+                            or "No",
+                        },
+                        "vehicle_details": {
+                            "type_name": transaction.vehicle_type.name,
+                            "size_category": transaction.vehicle_type.size_category,
+                            "base_rate_multiplier": float(
+                                transaction.vehicle_type.base_rate_multiplier
+                            ),
+                        },
+                    }
+                    for transaction in transactions
+                ]
+            }
+
+        except (DatabaseError, OperationalError) as error:
+            raise error
+        finally:
+            session.close()
 
     @classmethod
-    def get_transaction(cls, transaction_uuid: str):
+    def get_transaction(cls, transaction_uuid_bin: bytes):
         """
         Retrieve a parking transaction from the database by its UUID.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
+        from app.models.slot import Slot
+        from app.models.vehicle_type import VehicleType
+        from app.models.parking_establishment import ParkingEstablishment
         session = get_session()
         try:
-            transaction_uuid_bin = bytes.fromhex(transaction_uuid)
             transaction = (
                 session.query(ParkingTransaction)
                 .join(Slot, Slot.slot_id == ParkingTransaction.slot_id)
@@ -137,13 +169,25 @@ class ParkingTransactionOperation:
                 .filter(ParkingTransaction.uuid == transaction_uuid_bin)
                 .first()
             )
+            establishment_info = (
+                session.query(
+                    ParkingEstablishment.name,
+                    ParkingEstablishment.address,
+                    ParkingEstablishment.longitude,
+                    ParkingEstablishment.latitude,
+                    ParkingEstablishment.contact_number
+                ).join(Slot, Slot.establishment_id == ParkingEstablishment.establishment_id)
+                .filter(Slot.slot_id == transaction.slot_id)
+                .first()
+            )
 
             if not transaction:
                 return {}
             transaction_dict = transaction.to_dict()
             transaction_dict.update(
                 {
-                    "uuid": transaction_uuid,
+                    "uuid": UUIDUtility().format_uuid(
+                        UUIDUtility().binary_to_uuid(transaction.uuid)),
                     "slot_details": {
                         "slot_code": transaction.slot.slot_code,
                         "slot_status": transaction.slot.slot_status,
@@ -163,6 +207,13 @@ class ParkingTransactionOperation:
                             transaction.vehicle_type.base_rate_multiplier
                         ),
                     },
+                    "establishment_info": {
+                        "name": establishment_info.name,
+                        "address": establishment_info.address,
+                        "longitude": establishment_info.longitude,
+                        "latitude": establishment_info.latitude,
+                        "contact_number": establishment_info.contact_number
+                    },
                 }
             )
 
@@ -178,6 +229,7 @@ class ParkingTransactionOperation:
         """
         Add a new parking transaction entry to the database.
         """
+        from app.models import Slot
         session = get_session()
         try:
             transaction = ParkingTransaction(
@@ -222,6 +274,7 @@ class UpdateTransaction:  # pylint: disable=R0903
         """
         Update the status of a parking transaction in the database.
         """
+        from app.models import Slot
         session = get_session()
         try:
             transaction_uuid_bin = bytes.fromhex(transaction_uuid)

@@ -3,6 +3,29 @@
 from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
+from app.utils.uuid_utility import UUIDUtility
+
+
+class EstablishmentValidationBaseSchema(Schema):
+    """
+    Barebones schema for establishment validation.
+    (only the uuid that will be converted to binary)
+    """
+    establishment_uuid = fields.Str(required=True)
+    @post_load
+    def normalize_uuid_to_binary(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Normalize the establishment_uuid to binary."""
+        uuid_utility = UUIDUtility()
+        in_data["establishment_uuid"] = uuid_utility.remove_hyphens_from_uuid(
+            in_data["establishment_uuid"]
+        )
+        in_data["establishment_uuid"] = uuid_utility.uuid_to_binary(
+            in_data["establishment_uuid"]
+        )
+        return in_data
+
+class DeleteEstablishmentSchema(EstablishmentValidationBaseSchema):
+    """Validation schema for deleting establishment."""
 
 class EstablishmentValidationSchema(Schema):
     """Class to handle parking establishment validation."""
@@ -56,10 +79,9 @@ class EstablishmentValidationSchema(Schema):
         return in_data
 
 
-class UpdateEstablishmentInfoSchema(Schema):
+class UpdateEstablishmentInfoSchema(EstablishmentValidationBaseSchema):
     """Class to handle update of parking establishment information."""
 
-    establishment_id = fields.Integer(required=True)
     name = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     address = fields.Str(required=True, validate=validate.Length(min=3, max=255))
     contact_number = fields.Str(
@@ -101,14 +123,9 @@ class UpdateEstablishmentInfoSchema(Schema):
             raise ValidationError("Closing time must be greater than opening time.")
 
 
-class EstablishmentIdValidationSchema(Schema):
-    """Validation schema for establishment ID."""
 
-    establishment_id = fields.Int(required=True, validate=validate.Range(min=1))
-
-
-class CreateSlotSchema(Schema):  # pylint: disable=C0115
-    establishment_id = fields.Integer(required=True)
+class CreateSlotSchema(EstablishmentValidationBaseSchema):
+    """Validation schema for create slot."""
     slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
     vehicle_type_id = fields.Integer(required=True)
     slot_status = fields.Str(
@@ -131,15 +148,14 @@ class UpdateSlotSchema(CreateSlotSchema):  # pylint: disable=C0115
     is_active = fields.Boolean(required=False, missing=None)
     slot_code = fields.Str(required=False, missing=None, validate=validate.Length(min=3, max=45))
 
-
+class DeleteSlotSchema(EstablishmentValidationBaseSchema):  # pylint: disable=C0115
+    slot_id = fields.Integer(required=True)
 
 class SlotCodeValidationQuerySchema(Schema):  # pylint: disable=C0115
     slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
 
-
 class ReservationValidationBaseSchema(Schema):  # pylint: disable=C0115
     transaction_code = fields.Str(required=True, validate=validate.Length(min=3))
-
 
 class ValidateEntrySchema(ReservationValidationBaseSchema):  # pylint: disable=C0115
     """Validation schema for entry validation."""

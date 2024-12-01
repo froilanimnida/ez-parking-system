@@ -5,21 +5,28 @@
 from functools import wraps
 
 from flask.views import MethodView
-from flask_smorest import Blueprint
 from flask_jwt_extended import get_jwt, jwt_required
-
-from app.utils.error_handlers.qr_code_error_handlers import (
-    handle_invalid_qr_content,
-    handle_invalid_transaction_status,
-)
+from flask_smorest import Blueprint
 
 from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
-from app.services.transaction_service import TransactionService
+from app.exceptions.transaction_exception import (
+    UserHasNoPlateNumberSetException,
+    HasExistingReservationException
+)
 from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import (
     CancelReservationSchema,
     ReservationCreationSchema,
+    TransactionFormDetailsSchema,
     ViewTransactionSchema,
+)
+from app.services.transaction_service import TransactionService
+from app.utils.error_handlers.qr_code_error_handlers import (
+    handle_invalid_qr_content,
+    handle_invalid_transaction_status,
+)
+from app.utils.error_handlers.transaction_error_handlers import (
+    handle_user_has_no_plate_number_set, handle_has_existing_reservation
 )
 from app.utils.response_util import set_response
 
@@ -49,9 +56,8 @@ def user_role_and_user_id_required():
     return wrapper
 
 
-@transactions_blp.route("/reservation/create", methods=["POST"])
+@transactions_blp.route("/create")
 class CreateReservation(MethodView):
-
     @jwt_required(False)
     @user_role_and_user_id_required()
     @transactions_blp.arguments(ReservationCreationSchema)
@@ -70,7 +76,7 @@ class CreateReservation(MethodView):
         return set_response(201, {"message": "Reservation created successfully."})
 
 
-@transactions_blp.route("/reservation/cancel", methods=["POST"])
+@transactions_blp.route("/reservation/cancel")
 @jwt_required(False)
 class CancelReservation(MethodView):
 
@@ -98,7 +104,7 @@ class ViewTransaction(MethodView):
 
     @jwt_required(False)
     @user_role_and_user_id_required()
-    @transactions_blp.arguments(ViewTransactionSchema)
+    @transactions_blp.arguments(ViewTransactionSchema, location="query")
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.doc(
         description="View the transaction details.",
@@ -115,7 +121,57 @@ class ViewTransaction(MethodView):
         return set_response(200, {"code": "success", "transaction": transaction})
 
 
+@transactions_blp.route("/transaction-form-details")
+class TransactionOverview(MethodView):
+
+    @jwt_required(False)
+    @user_role_and_user_id_required()
+    @transactions_blp.response(200, ApiResponse)
+    @transactions_blp.arguments(TransactionFormDetailsSchema, location="query")
+    @transactions_blp.doc(
+        description="Get the transaction details.",
+        responses={
+            200: "Transaction details fetched successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    def get(self, data, user_id):  # pylint: disable=unused-argument
+        transaction_service = TransactionService()
+        transaction = transaction_service.get_transaction_form_details(
+            data.get("establishment_uuid"), data.get("slot_code")
+        )
+        return set_response(200, {"code": "success", "transaction": transaction})
+
+
+@transactions_blp.route("/all")
+class GetAllUserTransaction(MethodView):
+    @jwt_required(False)
+    @user_role_and_user_id_required()
+    @transactions_blp.response(200, ApiResponse)
+    @transactions_blp.doc(
+        description="Get all the transactions of the user.",
+        responses={
+            200: "Transactions fetched successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    def get(self, user_id):
+        transaction_service = TransactionService()
+        transactions = transaction_service.get_all_user_transactions(user_id)
+        return set_response(200, {"code": "success", "transactions": transactions})
+
+
 transactions_blp.register_error_handler(InvalidQRContent, handle_invalid_qr_content)
 transactions_blp.register_error_handler(
     InvalidTransactionStatus, handle_invalid_transaction_status
+)
+transactions_blp.register_error_handler(
+    UserHasNoPlateNumberSetException,handle_user_has_no_plate_number_set
+)
+transactions_blp.register_error_handler(
+    HasExistingReservationException, handle_has_existing_reservation
 )

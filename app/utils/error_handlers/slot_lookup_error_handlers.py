@@ -5,6 +5,7 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType,
     SlotNotFound,
+    SlotStatusTaken,
 )
 from app.utils.error_handlers.base_error_handler import handle_error
 
@@ -55,3 +56,15 @@ def handle_slot_not_found(error):
             "Slot not found.",
         )
     raise error
+
+
+def handle_slot_taken(error):
+    """This function handles slot taken exceptions."""
+    if isinstance(error, SlotStatusTaken):
+        return handle_error(
+            error,
+            400,
+            "slot_status_taken",
+            "Slot status is taken.",
+        )
+    return error

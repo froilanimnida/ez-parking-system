@@ -32,9 +32,9 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError, OperationalError, DatabaseError, DataError
 from sqlalchemy.orm import relationship
 
+from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.models.base import Base
 from app.utils.engine import get_session
-from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 
 
 class VehicleType(Base):  # pylint: disable=R0903 disable=C0115
@@ -58,6 +58,20 @@ class VehicleType(Base):  # pylint: disable=R0903 disable=C0115
         back_populates="vehicle_type",
         cascade="all, delete-orphan",
     )
+
+    def to_dict(self):
+        """Returns the data representation of the vehicle type object."""
+        return {
+            "vehicle_id": self.vehicle_id,
+            "code": self.code,
+            "name": self.name,
+            "description": self.description,
+            "size_category": self.size_category,
+            "base_rate_multiplier": self.base_rate_multiplier,
+            "is_active": self.is_active,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
 
 
 class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
@@ -87,6 +101,33 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
             return vehicle_type is not None
         except (IntegrityError, OperationalError, DatabaseError, DataError) as e:
             raise e
+        finally:
+            session.close()
+
+    @classmethod
+    def get_vehicle_type_by_id(cls, vehicle_type_id: int):
+        """
+        Retrieve a vehicle type from the database by its ID.
+
+        Parameters:
+        vehicle_type_id (int): The unique identifier of the vehicle type to retrieve.
+
+        Returns:
+        VehicleType: The vehicle type object if found, otherwise None.
+
+        Raises:
+        OperationalError: If an error occurs during the database operation.
+        """
+        session = get_session()
+        try:
+            vehicle_type = (
+                session.query(VehicleType)
+                .filter(VehicleType.vehicle_id == vehicle_type_id)
+                .first()
+            )
+            return vehicle_type.to_dict()
+        except OperationalError as error:
+            raise error
         finally:
             session.close()
 
@@ -211,7 +252,7 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         Retrieve all vehicle types from the database.
 
         Returns:
-        list: A list of VehicleType objects representing all vehicle types in the database.
+        list: A list of dictionaries containing vehicle type information.
 
         Raises:
         OperationalError: If an error occurs during the database operation.
@@ -219,51 +260,9 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             vehicle_types = session.query(VehicleType).all()
-            return vehicle_types
+            # Convert each vehicle type object to dictionary
+            return [vehicle_type.to_dict() for vehicle_type in vehicle_types]
         except OperationalError as error:
-            raise error
-        finally:
-            session.close()
-
-
-class DeleteVehicleType:  # pylint: disable=too-few-public-methods
-    """
-    Class for managing vehicle type deletion operations in the database.
-
-    Methods:
-        delete_vehicle_type(vehicle_id): Deletes a vehicle type record by its ID.
-
-    Raises:
-        VehicleTypeDoesNotExist: If the specified vehicle type is not found.
-        OperationalError: If there is a database operation error.
-    """
-
-    @classmethod
-    def delete_vehicle_type(cls, vehicle_id: int):
-        """
-        Deletes a vehicle type from the database by its ID.
-
-        Args:
-            vehicle_id (int): The ID of the vehicle type to delete.
-
-        Raises:
-            VehicleTypeDoesNotExist: If the vehicle type with given ID does not exist.
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            vehicle_type = (
-                session.query(VehicleType)
-                .filter(VehicleType.vehicle_id == vehicle_id)
-                .first()
-            )
-            if vehicle_type:
-                session.delete(vehicle_type)
-                session.commit()
-            else:
-                raise VehicleTypeDoesNotExist("Vehicle type does not exist.")
-        except OperationalError as error:
-            session.rollback()
             raise error
         finally:
             session.close()

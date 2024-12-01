@@ -8,24 +8,22 @@ from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
-from app.routes.transaction import handle_invalid_transaction_status
-
-from app.services.transaction_service import TransactionService
-from app.utils.error_handlers.qr_code_error_handlers import handle_invalid_qr_content
-
 from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
+from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import (
     CreateSlotSchema,
-    EstablishmentIdValidationSchema,
     EstablishmentValidationSchema,
     UpdateEstablishmentInfoSchema,
     UpdateSlotSchema,
-    ValidateEntrySchema,
+    ValidateEntrySchema, DeleteEstablishmentSchema, DeleteSlotSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
+from app.services.parking_manager_service import ParkingManagerService
 from app.services.slot_service import SlotService
+from app.services.transaction_service import TransactionService
+from app.utils.error_handlers.qr_code_error_handlers import handle_invalid_qr_content
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
 
@@ -43,13 +41,14 @@ def parking_manager_required():
         def decorator(*args, **kwargs):
             jwt_data = get_jwt()
             is_parking_manager = jwt_data.get("role") == "parking_manager"
-            if not is_parking_manager:
+            is_admin = jwt_data.get("role") == "admin"
+            if not is_parking_manager or not is_admin:
                 return set_response(
                     401,
-                    {"code": "unauthorized", "message": "Parking manager required."},
+                    {"code": "unauthorized", "message": "Parking manager or admin required."},
                 )
-            manager_id = jwt_data.get("sub", {}).get("user_id")
-            return fn(*args, manager_id=manager_id, **kwargs)
+            user_id = jwt_data.get("sub", {}).get("user_id")
+            return fn(*args, user_id=user_id, **kwargs)
 
         return decorator
 
@@ -85,7 +84,7 @@ class CreateEstablishment(MethodView):
 
 @parking_manager_blp.route("/establishment/delete")
 class DeleteEstablishment(MethodView):
-    @parking_manager_blp.arguments(EstablishmentIdValidationSchema)
+    @parking_manager_blp.arguments(DeleteEstablishmentSchema)
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
@@ -98,9 +97,8 @@ class DeleteEstablishment(MethodView):
     )
     @jwt_required(False)
     @parking_manager_required()
-    def delete(self, request):
-        establishment_id = request.get("establishment_id")
-        EstablishmentService.delete_establishment(establishment_id)
+    def delete(self, data):
+        EstablishmentService.delete_establishment(data.get("establishment_uuid"))
         return set_response(
             200,
             {
@@ -125,16 +123,8 @@ class UpdateEstablishment(MethodView):
     )
     @jwt_required(False)
     @parking_manager_required()
-    def patch(self, establishment_data):
-        current_user = get_jwt()
-        if current_user.get("role") not in ["parking_manager", "admin"]:
-            return {"code": "error", "message": "Unauthorized"}, 401
-
-        establishment_id = establishment_data.pop("establishment_id", None)
-        EstablishmentService.update_establishment(
-            establishment_id=establishment_id, establishment_data=establishment_data
-        )
-
+    def patch(self, establishment_data, user_id):  # pylint: disable=unused-argument
+        EstablishmentService.update_establishment(establishment_data)
         return set_response(
             200,
             {
@@ -168,7 +158,7 @@ class CreateSlot(MethodView):
 
 @parking_manager_blp.route("/slot/delete")
 class DeleteSlot(MethodView):
-    @parking_manager_blp.arguments(EstablishmentIdValidationSchema)
+    @parking_manager_blp.arguments(DeleteSlotSchema)
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
@@ -181,15 +171,15 @@ class DeleteSlot(MethodView):
     )
     @parking_manager_required()
     @jwt_required(False)
-    def delete(self, request, manager_id):
-        data = request.get_json()
-        print(data, manager_id)
+    def delete(self, data, manager_id):
+        data.update({"manager_id": manager_id})
+        SlotService.delete_slot(data)
         return set_response(
             200, {"code": "success", "message": "Slot deleted successfully."}
         )
 
 
-@parking_manager_blp.route("/slot/update", methods=["POST"])
+@parking_manager_blp.route("/slot/update")
 class UpdateSlot(MethodView):
 
     @parking_manager_blp.arguments(UpdateSlotSchema)
@@ -234,6 +224,36 @@ class EstablishmentEntry(MethodView):
         transaction_service.verify_reservation_code(data.get("transaction_code"))
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}
+        )
+
+
+@parking_manager_blp.route("/get-all-establishments-info")
+class GetAllEstablishmentsInfo(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description=(
+            "Get all establishments information "
+            "that is being managed by the parking manager "
+            "via their uuid identity in the jwt token."
+        ),
+        responses={
+            200: "Establishments information retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_required()
+    def get(self, manager_id):
+        data = ParkingManagerService.get_all_establishment_info(manager_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Establishments information retrieved successfully.",
+                "data": data,
+            },
         )
 
 
