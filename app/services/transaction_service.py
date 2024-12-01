@@ -1,24 +1,18 @@
 """This module contains the services for the transaction operations."""
 
-import io
-from base64 import b64encode
 from datetime import datetime
 from uuid import uuid4
 
-import qrcode
-import qrcode.constants
-from qrcode.image.styledpil import StyledPilImage
-from qrcode.image.styles.moduledrawers import CircleModuleDrawer
-
 from app.exceptions.qr_code_exceptions import QRCodeError
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
+from app.models.audit import UUIDUtility
 from app.models.parking_establishment import GetEstablishmentOperations
 from app.models.parking_transaction import (
     ParkingTransactionOperation,
     UpdateTransaction,
 )
 from app.models.slot import GettingSlotsOperations, SlotOperation
-from app.models.user import UserOperations
+from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
 
 
@@ -31,9 +25,9 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         return SlotActionsService.reserve_slot(reservation_data)
 
     @staticmethod
-    def verify_reservation_code(reservation_code):
+    def verify_reservation_code(qr_content: str):
         """Verifies the reservation code for a user."""
-        return TransactionVerification.verify_entry_transaction(reservation_code)
+        return TransactionVerification.verify_entry_transaction(qr_content)
 
     @staticmethod
     def verify_exit_code(exit_code):
@@ -52,6 +46,13 @@ class TransactionService:  # pylint: disable=too-few-public-methods
     def cancel_transaction(transaction_id):
         """Cancels the transaction for a user."""
         return SlotActionsService.cancel_transaction(transaction_id)
+
+    @staticmethod
+    def get_transaction_details_from_qr_code(qr_code_data):
+        """Get the transaction details from a QR code."""
+        return TransactionVerification.get_transaction_details_from_qr_code(
+            qr_code_data
+        )
 
     @staticmethod
     def view_transaction(transaction_uuid: bytes):
@@ -112,24 +113,8 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
                 "plate_number": transaction_data.get("plate_number"),
             }  # type: ignore
         )
-        qr = qrcode.QRCode(
-            version=10,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(qr_data)
-        qr.make(fit=True)
-        qr_image = qr.make_image(
-            fill_color="black", back_color="white",
-             image_factory=StyledPilImage, module_drawer=CircleModuleDrawer()
-        )
-        img_byte_arr = io.BytesIO()
-        qr_image.save(img_byte_arr, bitmap_format="png")  # type: ignore
-        img_byte_arr = img_byte_arr.getvalue()
-        base64_image = b64encode(img_byte_arr).decode()
+        base64_image = qr_code_utils.generate_qr_code(qr_data)
         return {"transaction_data": transaction_data, "qr_code": base64_image}
-
 
 
 class TransactionVerification:
@@ -153,6 +138,26 @@ class TransactionVerification:
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
         if transaction_data.get("status") != "active":  # type: ignore
             raise QRCodeError("Invalid transaction status.")
+
+    @staticmethod
+    def get_transaction_details_from_qr_code(qr_code_data):
+        """Get the transaction details from a QR code."""
+        qr_code_utils = QRCodeUtils()
+        uuid_utils = UUIDUtility()
+        transaction_data = qr_code_utils.verify_qr_content(qr_code_data)
+        transaction_uuid = transaction_data.get("uuid")  # type: ignore
+        transaction_uuid_bin = uuid_utils.uuid_to_binary(transaction_uuid)  # type: ignore
+        transaction_data = ParkingTransactionOperation.get_transaction(
+            transaction_uuid_bin
+        )
+        user_info = UserRepository.get_by_plate_number(
+            plate_number=transaction_data.get("plate_number"),  # type: ignore
+        )
+        return {
+            "transaction_uuid": transaction_uuid,
+            "user_info": user_info,
+            "transaction_data": transaction_data,
+        }
 
 
 class TransactionFormDetails:  # pylint: disable=too-few-public-methods
@@ -182,9 +187,7 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
             establishment_uuid_bin
         )
 
-        slot_info = SlotOperation.get_slot_info(
-            slot_code, establishment_id
-        )
+        slot_info = SlotOperation.get_slot_info(slot_code, establishment_id)
         return {
             "establishment_info": establishment_info,
             "slot_info": slot_info,
@@ -197,6 +200,7 @@ class Transaction:  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
+        user_plate_number = UserRepository.get_by_id(user_id).get("plate_number")
         return ParkingTransactionOperation.get_transaction_by_plate_number(
-            UserOperations.get_user_plate_number(user_id)
+            user_plate_number
         )

@@ -8,7 +8,11 @@ from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
-from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
+from app.exceptions.qr_code_exceptions import (
+    InvalidQRContent,
+    InvalidTransactionStatus,
+    QRCodeExpired,
+)
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import (
@@ -16,14 +20,19 @@ from app.schema.parking_manager_validation import (
     EstablishmentValidationSchema,
     UpdateEstablishmentInfoSchema,
     UpdateSlotSchema,
-    ValidateEntrySchema, DeleteEstablishmentSchema, DeleteSlotSchema,
+    ValidateEntrySchema,
+    DeleteEstablishmentSchema,
+    DeleteSlotSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
 from app.services.parking_manager_service import ParkingManagerService
 from app.services.slot_service import SlotService
 from app.services.transaction_service import TransactionService
-from app.utils.error_handlers.qr_code_error_handlers import handle_invalid_qr_content
+from app.utils.error_handlers.qr_code_error_handlers import (
+    handle_invalid_qr_content,
+    handle_qr_code_expired,
+)
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
 
@@ -45,7 +54,10 @@ def parking_manager_required():
             if not is_parking_manager or not is_admin:
                 return set_response(
                     401,
-                    {"code": "unauthorized", "message": "Parking manager or admin required."},
+                    {
+                        "code": "unauthorized",
+                        "message": "Parking manager or admin required.",
+                    },
                 )
             user_id = jwt_data.get("sub", {}).get("user_id")
             return fn(*args, user_id=user_id, **kwargs)
@@ -221,9 +233,36 @@ class EstablishmentEntry(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
     def patch(self, data, manager_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService
-        transaction_service.verify_reservation_code(data.get("transaction_code"))
+        transaction_service.verify_reservation_code(data.get("qr_content"))
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}
+        )
+
+
+@parking_manager_blp.route("/qr-content/overview")
+class GetQRContentOverview(MethodView):
+    @parking_manager_blp.arguments(ValidateEntrySchema)
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get the QR content overview.",
+        responses={
+            200: "QR content overview retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_required()
+    def get(self, qr_content, manager_id):  # pylint: disable=unused-argument
+        data = TransactionService.get_transaction_details_from_qr_code(qr_content)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "QR content overview retrieved successfully.",
+                "data": data,
+            },
         )
 
 
@@ -262,3 +301,4 @@ parking_manager_blp.register_error_handler(InvalidQRContent, handle_invalid_qr_c
 parking_manager_blp.register_error_handler(
     InvalidTransactionStatus, handle_invalid_transaction_status
 )
+parking_manager_blp.register_error_handler(QRCodeExpired, handle_qr_code_expired)

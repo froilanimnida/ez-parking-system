@@ -32,6 +32,40 @@ class SignUpValidationSchema(Schema):
         required=True,
         validate=validate.OneOf(["User", "Parking Manager", "Admin"]),
     )
+    nickname = fields.Str(
+        required=True,
+        validate=validate.Length(min=1, max=24),
+    )
+    plate_number = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=6, max=8),
+            validate.Regexp(
+                regex=r"^(?:"
+                r"[A-Z]{2,3}[\s-]?\d{3,4}|"
+                r"CD[\s-]?\d{4}|"
+                r"[A-Z]{3}[\s-]?\d{3}|"
+                r"\d{4}"
+                r")$",
+                error=(
+                    "Invalid plate number format. Please use one of these formats:\n"
+                    "• Private vehicles: ABC 123 or ABC 1234\n"
+                    "• Diplomatic: CD 1234\n"
+                    "• Government: SFP 123\n"
+                    "• Special: 1234"
+                ),
+            ),
+        ],
+    )
+
+    @post_load
+    def normalize_plate_number(
+        self, in_data, **kwargs
+    ):  # pylint: disable=unused-argument
+        """Normalize plate number format by removing spaces and converting to uppercase"""
+        if "plate_number" in in_data:
+            in_data["plate_number"] = in_data["plate_number"].upper().replace(" ", "")
+        return in_data
 
     @post_load
     def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument
@@ -41,8 +75,8 @@ class SignUpValidationSchema(Schema):
 
     @post_load
     def normalize_first_name(
-        self, in_data, **kwargs
-    ):  # pylint: disable=unused-argument
+        self, in_data, **kwargs  # pylint: disable=unused-argument
+    ):
         """Method to convert first name to lowercase."""
         in_data["first_name"] = in_data["first_name"].capitalize()
         return in_data
@@ -90,18 +124,6 @@ class OTPSubmissionSchema(Schema):
     def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Method to convert email to lowercase."""
         in_data["email"] = in_data["email"].lower()
-        return in_data
-
-
-class NicknameFormValidationSchema(Schema):
-    """Class to handle nickname validation."""
-
-    nickname = fields.Str(required=True, validate=validate.Length(min=1, max=75))
-
-    @post_load
-    def normalize_nickname(self, in_data, **kwargs):  # pylint: disable=unused-argument
-        """Method to convert nickname to lowercase."""
-        in_data["nickname"] = in_data["nickname"].lower()
         return in_data
 
 

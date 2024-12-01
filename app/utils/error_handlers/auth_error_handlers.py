@@ -145,6 +145,6 @@ def handle_account_not_verified(error):
             error,
             403,
             "account_not_verified",
-            "Your account is not verified. Please verify your account, click the link we've sent you.",
+            "Your account is not verified. Please check you inbox for the verification email.",
         )
     raise error

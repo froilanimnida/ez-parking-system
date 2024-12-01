@@ -6,7 +6,6 @@
     - SignUpValidationSchema
     - OTPGenerationSchema
     - OTPSubmissionSchema
-    - NicknameFormValidationSchema
     - LoginWithEmailValidationSchema
 
     The tests are written to ensure that the schema correctly validates
@@ -24,7 +23,6 @@ from marshmallow import ValidationError
 from app.schema.auth_validation import (
     OTPGenerationSchema,
     OTPSubmissionSchema,
-    NicknameFormValidationSchema,
     LoginWithEmailValidationSchema,
     SignUpValidationSchema,
 )
@@ -253,45 +251,3 @@ class TestOTPSubmissionFormValidation:
         schema = OTPSubmissionSchema()
         result = schema.load(valid_data)
         assert result.get("email") == "user@example.com"  # type: ignore
-
-
-class TestNicknameFormValidation:
-    """Tests for NicknameFormValidation schema."""
-
-    @pytest.fixture
-    def valid_data(self):
-        """Represents valid nickname data."""
-        return {"nickname": "UserNickname"}
-
-    def test_valid_data(self, valid_data):
-        """Test that valid data passes validation."""
-        schema = NicknameFormValidationSchema()
-        result = schema.load(valid_data)
-        assert result.get("nickname") == "usernickname"  # type: ignore
-
-    def test_missing_nickname(self, valid_data):
-        """Test that missing nickname raises ValidationError."""
-        schema = NicknameFormValidationSchema()
-        valid_data.pop("nickname")
-        with pytest.raises(ValidationError) as exc_info:
-            schema.load(valid_data)
-        assert "nickname" in exc_info.value.messages
-
-    def test_invalid_nickname_length(self, valid_data):
-        """Test that nickname with invalid length raises ValidationError."""
-        schema = NicknameFormValidationSchema()
-        valid_data.update({"nickname": ""})  # Less than 1 character
-        with pytest.raises(ValidationError) as exc_info:
-            schema.load(valid_data)
-        assert "nickname" in exc_info.value.messages
-
-        valid_data.update({"nickname": "a" * 76})  # More than 75 characters
-        with pytest.raises(ValidationError) as exc_info:
-            schema.load(valid_data)
-        assert "nickname" in exc_info.value.messages
-
-    def test_normalize_nickname(self, valid_data):
-        """Test that nickname is normalized to lowercase."""
-        schema = NicknameFormValidationSchema()
-        result = schema.load(valid_data)
-        assert result.get("nickname") == "usernickname"  # type: ignore

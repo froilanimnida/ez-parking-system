@@ -28,3 +28,14 @@ class InvalidTransactionStatus(EzParkingBaseException):
     def __init__(self, message="Invalid transaction status."):
         self.message = message
         super().__init__(message)
+
+
+class QRCodeExpired(EzParkingBaseException):
+    """Raised when QR code has expired."""
+
+    def __init__(
+        self,
+        message="QR code has expired. Please instruct the user to refresh the transaction page.",
+    ):
+        self.message = message
+        super().__init__(message)
