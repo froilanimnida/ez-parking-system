@@ -12,6 +12,7 @@ from app.exceptions.authorization_exceptions import (
     IncorrectOTPException,
     ExpiredOTPException,
     RequestNewOTPException,
+    AccountIsNotVerifiedException
 )
 
 from app.utils.error_handlers.base_error_handler import handle_error
@@ -133,5 +134,17 @@ def handle_banned_user(error):
             403,
             "banned_user",
             "You are banned from using the service.",
+        )
+    raise error
+
+
+def handle_account_not_verified(error):
+    """This function handles account not verified exceptions."""
+    if isinstance(error, AccountIsNotVerifiedException):
+        return handle_error(
+            error,
+            403,
+            "account_not_verified",
+            "Your account is not verified.",
         )
     raise error

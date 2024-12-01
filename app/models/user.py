@@ -18,12 +18,23 @@
 
 # pylint: disable=R0801
 
-from sqlalchemy import DATETIME, Column, Integer, VARCHAR, BINARY, Enum, select, update, BOOLEAN
+from sqlalchemy import (
+    DATETIME,
+    Column,
+    Integer,
+    VARCHAR,
+    BINARY,
+    Enum,
+    select,
+    update,
+    BOOLEAN,
+)
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException
 from app.models.base import Base
+from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.engine import get_session
 
 
@@ -128,6 +139,8 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             ).scalar()
             if user is None:
                 raise EmailNotFoundException("Email not found.")
+            if user.is_verified is False:
+                raise AccountIsNotVerifiedException("Account is not verified.")
             return user.email
         except (OperationalError, DatabaseError) as e:
             raise e
@@ -234,6 +247,7 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             raise e
         finally:
             session.close()
+
     @classmethod
     def verify_email(cls, token: str):
         """
@@ -249,7 +263,9 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.verification_token == token).values(
+                update(User)
+                .where(User.verification_token == token)
+                .values(
                     verification_token=None, verification_expiry=None, is_verified=True
                 )
             )
