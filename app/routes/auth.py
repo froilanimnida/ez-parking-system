@@ -29,7 +29,7 @@ from app.schema.auth_validation import (
     LoginWithEmailValidationSchema,
     NicknameFormValidationSchema,
     OTPSubmissionSchema,
-    SignUpValidationSchema,
+    SignUpValidationSchema, EmailVerificationSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.auth_service import AuthService
@@ -221,6 +221,28 @@ class VerifyToken(MethodView):
                 "code": "success",
                 "message": "Token verified successfully.",
                 "role": role,
+            },
+        )
+    
+@auth_blp.route("/verify-email")
+class VerifyEmail(MethodView):
+    @auth_blp.response(200, ApiResponse)
+    @auth_blp.arguments(EmailVerificationSchema)
+    @auth_blp.doc(
+        description="Verify the email.",
+        responses={
+            200: {"description": "Email verified successfully."},
+            400: {"description": "Bad Request"},
+        },
+    )
+    @jwt_required(True)
+    def patch(self, data):
+        AuthService.verify_email(data.get("verification_token"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Email verified successfully.",
             },
         )
 
