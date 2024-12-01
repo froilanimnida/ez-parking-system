@@ -74,7 +74,7 @@ class CreateNewAccount(MethodView):
         auth_service = AuthService()
         auth_service.create_new_user(sign_up_data)
         return set_response(
-            201, {"code": "success", "message": "User created successfully."}
+            201, {"code": "success", "message": "Check your email for verification."}
         )
 
 

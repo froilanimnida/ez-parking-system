@@ -10,8 +10,8 @@ from marshmallow import Schema, fields, validate, post_load
 class SignUpValidationSchema(Schema):
     """Class to handle user registration validation."""
 
-    first_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
-    last_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    first_name = fields.Str(required=True, validate=validate.Length(min=2, max=100))
+    last_name = fields.Str(required=True, validate=validate.Length(min=2, max=100))
     email = fields.Email(
         required=True,
         validate=[
