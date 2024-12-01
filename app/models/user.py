@@ -234,7 +234,6 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
             raise e
         finally:
             session.close()
-            
     @classmethod
     def verify_email(cls, token: str):
         """
@@ -250,7 +249,9 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
         session = get_session()
         try:
             session.execute(
-                update(User).where(User.verification_token == token).values(verification_token=None, verification_expiry=None, is_verified=True)
+                update(User).where(User.verification_token == token).values(
+                    verification_token=None, verification_expiry=None, is_verified=True
+                )
             )
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:

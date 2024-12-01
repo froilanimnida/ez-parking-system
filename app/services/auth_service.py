@@ -46,9 +46,8 @@ class AuthService:
     @classmethod
     def set_nickname(cls, user_id, nickname):  # pylint: disable=C0116
         return UserProfileService.set_nickname(user_id=user_id, nickname=nickname)
-    
     @classmethod
-    def verify_email(cls, token: str):
+    def verify_email(cls, token: str):  # pylint: disable=C0116
         return UserRegistrationService.verify_email(token=token)
 
 
@@ -67,12 +66,11 @@ class UserRegistrationService:  # pylint: disable=R0903
         if is_phone_number:
             raise PhoneNumberAlreadyTaken(message="Phone number already taken.")
         phone_number = user_data.get("phone_number")
-        
         verification_token = urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")
         is_production = getenv("ENVIRONMENT") == "production"
         base_url = getenv("PRODUCTION_URL") if is_production else getenv("DEVELOPMENT_URL")
         verification_url = f"{base_url}/auth/verify-email/{verification_token}"
-        template = render_template(template_name_or_list="auth/onboarding.html", verification_url=verification_url)
+        template = render_template("auth/onboarding.html", verification_url=verification_url)
 
         first_name = user_data.get("first_name")
         last_name = user_data.get("last_name")
@@ -91,11 +89,9 @@ class UserRegistrationService:  # pylint: disable=R0903
         }
         UserOperations.create_new_user(user_data=user_data)
         return send_mail(message=template, email=email, subject="Welcome to EZ Parking")
-        
     @classmethod
-    def verify_email(cls, token: str):
+    def verify_email(cls, token: str):  # pylint: disable=C0116
         return UserOperations.verify_email(token=token)
-
 
 class UserLoginService:  # pylint: disable=R0903
     """Class to handle user login operations."""

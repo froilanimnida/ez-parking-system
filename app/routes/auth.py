@@ -223,7 +223,6 @@ class VerifyToken(MethodView):
                 "role": role,
             },
         )
-    
 @auth_blp.route("/verify-email")
 class VerifyEmail(MethodView):
     @auth_blp.response(200, ApiResponse)
