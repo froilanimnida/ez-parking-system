@@ -100,3 +100,13 @@ class BannedUserException(EzParkingBaseException):
     def __init__(self, message="User is banned."):
         self.message = message
         super().__init__(message)
+
+
+class AccountIsNotVerifiedException(EzParkingBaseException):
+    """
+        This error is for error that the user tries to log in with an unverified account.
+    """
+
+    def __init__(self, message="Account is not verified."):
+        self.message = message
+        super().__init__(message)

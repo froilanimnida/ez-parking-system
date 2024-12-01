@@ -15,6 +15,7 @@ from flask_jwt_extended import (
 from flask_smorest import Blueprint
 
 from app.exceptions.authorization_exceptions import (
+    AccountIsNotVerifiedException,
     BannedUserException,
     EmailNotFoundException,
     InvalidPhoneNumberException,
@@ -29,12 +30,14 @@ from app.schema.auth_validation import (
     LoginWithEmailValidationSchema,
     NicknameFormValidationSchema,
     OTPSubmissionSchema,
-    SignUpValidationSchema, EmailVerificationSchema,
+    SignUpValidationSchema,
+    EmailVerificationSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.auth_service import AuthService
 from app.services.token_service import TokenService
 from app.utils.error_handlers.auth_error_handlers import (
+    handle_account_not_verified,
     handle_banned_user,
     handle_email_not_found,
     handle_email_already_taken,
@@ -223,6 +226,8 @@ class VerifyToken(MethodView):
                 "role": role,
             },
         )
+
+
 @auth_blp.route("/verify-email")
 class VerifyEmail(MethodView):
     @auth_blp.response(200, ApiResponse)
@@ -258,3 +263,6 @@ auth_blp.register_error_handler(
 auth_blp.register_error_handler(ExpiredOTPException, handle_expired_otp)
 auth_blp.register_error_handler(IncorrectOTPException, handle_incorrect_otp)
 auth_blp.register_error_handler(RequestNewOTPException, handle_request_new_otp)
+auth_blp.register_error_handler(
+    AccountIsNotVerifiedException, handle_account_not_verified
+)
