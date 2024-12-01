@@ -12,7 +12,7 @@ from app.exceptions.authorization_exceptions import (
     IncorrectOTPException,
     ExpiredOTPException,
     RequestNewOTPException,
-    AccountIsNotVerifiedException
+    AccountIsNotVerifiedException,
 )
 
 from app.utils.error_handlers.base_error_handler import handle_error
@@ -145,6 +145,6 @@ def handle_account_not_verified(error):
             error,
             403,
             "account_not_verified",
-            "Your account is not verified.",
+            "Your account is not verified. Please verify your account, click the link we've sent you.",
         )
     raise error
