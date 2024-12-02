@@ -23,6 +23,7 @@ from app.schema.parking_manager_validation import (
     ValidateEntrySchema,
     DeleteEstablishmentSchema,
     DeleteSlotSchema,
+    ValidateNewScheduleSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
@@ -51,7 +52,7 @@ def parking_manager_required():
             jwt_data = get_jwt()
             is_parking_manager = jwt_data.get("role") == "parking_manager"
             is_admin = jwt_data.get("role") == "admin"
-            if not is_parking_manager or not is_admin:
+            if not is_parking_manager and not is_admin:
                 return set_response(
                     401,
                     {
@@ -183,8 +184,8 @@ class DeleteSlot(MethodView):
     )
     @parking_manager_required()
     @jwt_required(False)
-    def delete(self, data, manager_id):
-        data.update({"manager_id": manager_id})
+    def delete(self, data, user_id):
+        data.update({"manager_id": user_id})
         SlotService.delete_slot(data)
         return set_response(
             200, {"code": "success", "message": "Slot deleted successfully."}
@@ -207,8 +208,8 @@ class UpdateSlot(MethodView):
     )
     @parking_manager_required()
     @jwt_required(False)
-    def post(self, request, manager_id):
-        print(manager_id, request)
+    def post(self, request, user_id):
+        print(user_id, request)
         return set_response(
             200, {"code": "success", "message": "Slot updated successfully."}
         )
@@ -231,7 +232,7 @@ class EstablishmentEntry(MethodView):
     )
     @parking_manager_blp.arguments(ValidateEntrySchema)
     @parking_manager_blp.response(200, ApiResponse)
-    def patch(self, data, manager_id):  # pylint: disable=unused-argument
+    def patch(self, data, user_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService
         transaction_service.verify_reservation_code(data.get("qr_content"))
         return set_response(
@@ -254,7 +255,7 @@ class GetQRContentOverview(MethodView):
     )
     @jwt_required(False)
     @parking_manager_required()
-    def get(self, qr_content, manager_id):  # pylint: disable=unused-argument
+    def get(self, qr_content, user_id):  # pylint: disable=unused-argument
         data = TransactionService.get_transaction_details_from_qr_code(qr_content)
         return set_response(
             200,
@@ -284,14 +285,67 @@ class GetAllEstablishmentsInfo(MethodView):
     )
     @jwt_required(False)
     @parking_manager_required()
-    def get(self, manager_id):
-        data = ParkingManagerService.get_all_establishment_info(manager_id)
+    def get(self, user_id):
+        data = ParkingManagerService.get_all_establishment_info(user_id)
         return set_response(
             200,
             {
                 "code": "success",
                 "message": "Establishments information retrieved successfully.",
                 "data": data,
+            },
+        )
+
+
+@parking_manager_blp.route("/get-schedule-hours")
+class GetScheduleHours(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get the schedule hours of the establishment.",
+        responses={
+            200: "Schedule hours retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_required()
+    def get(self, user_id):
+        data = EstablishmentService.get_schedule_hours(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Schedule hours retrieved successfully.",
+                "data": data,
+            },
+        )
+
+
+@parking_manager_blp.route("/update-schedule-hours")
+class UpdateScheduleHours(MethodView):
+
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.arguments(ValidateNewScheduleSchema)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update the schedule hours of the establishment.",
+        responses={
+            200: "Schedule hours updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_required()
+    def patch(self, data, user_id):
+        EstablishmentService.update_establishment_schedule(user_id, data)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Schedule hours updated successfully.",
             },
         )
 
