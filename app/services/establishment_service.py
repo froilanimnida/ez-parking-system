@@ -42,6 +42,18 @@ class EstablishmentService:
         """Get parking establishment information."""
         return GetEstablishmentService.get_establishment_info(establishment_uuid)
 
+    @classmethod
+    def get_schedule_hours(cls, manager_id: int):
+        """Get parking establishment schedule."""
+        return GetEstablishmentService.get_schedule_hours(manager_id)
+
+    @classmethod
+    def update_establishment_schedule(cls, manager_id: int, schedule_data: dict):
+        """Update parking establishment schedule."""
+        return UpdateEstablishmentService.update_establishment_schedule(
+            manager_id, schedule_data
+        )
+
 
 class CreateEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to creating parking establishment."""
@@ -76,8 +88,14 @@ class GetEstablishmentService:
         )
         return {
             "establishment_info": establishment_info,
-            "establishment_slots": establishment_slots
+            "establishment_slots": establishment_slots,
         }
+
+    @classmethod
+    def get_schedule_hours(cls, manager_id: int):
+        """Get parking establishment schedule."""
+        return GetEstablishmentOperations.get_establishment_schedule(manager_id)
+
 
 class UpdateEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to updating parking establishment."""
@@ -86,9 +104,12 @@ class UpdateEstablishmentService:  # pylint: disable=R0903
     def update_establishment(cls, establishment_data: dict):
         """Update parking establishment."""
         establishment_data["updated_at"] = datetime.now()
-        UpdateEstablishmentOperations.update_establishment(
-            establishment_data
-        )
+        UpdateEstablishmentOperations.update_establishment(establishment_data)
+
+    @classmethod
+    def update_establishment_schedule(cls, manager_id: int, schedule_data: dict):
+        """Update parking establishment schedule."""
+        return UpdateEstablishmentOperations.update_hours(manager_id, schedule_data)
 
 
 class DeleteEstablishmentService:  # pylint: disable=R0903

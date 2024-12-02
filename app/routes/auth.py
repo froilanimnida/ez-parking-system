@@ -1,6 +1,6 @@
 """ This module contains the routes for the authentication endpoints. """
 
-# pylint: disable=missing-function-docstring, missing-class-docstring
+# pylint: disable=missing-function-docstring, missing-class-docstring, R0401
 
 from flask.views import MethodView
 from flask_jwt_extended import (
@@ -28,7 +28,6 @@ from app.exceptions.authorization_exceptions import (
 from app.schema.auth_validation import (
     OTPGenerationSchema,
     LoginWithEmailValidationSchema,
-    NicknameFormValidationSchema,
     OTPSubmissionSchema,
     SignUpValidationSchema,
     EmailVerificationSchema,
@@ -74,7 +73,7 @@ class CreateNewAccount(MethodView):
         auth_service = AuthService()
         auth_service.create_new_user(sign_up_data)
         return set_response(
-            201, {"code": "success", "message": "User created successfully."}
+            201, {"code": "success", "message": "Check your email for verification."}
         )
 
 
@@ -159,28 +158,6 @@ class VerifyOTP(MethodView):
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response
-
-
-@auth_blp.route("/set-nickname")
-class SetNickname(MethodView):
-    @auth_blp.arguments(NicknameFormValidationSchema)
-    @auth_blp.response(200, ApiResponse)
-    @auth_blp.doc(
-        description="Set the nickname of the user.",
-        responses={
-            200: {"description": "Nickname set successfully."},
-            404: {"description": "Not Found"},
-        },
-    )
-    @jwt_required(False)
-    def patch(self, data):
-        nickname = data.get("nickname")
-        user_id = get_jwt().get("sub", {}).get("user_id")
-        auth_service = AuthService()
-        auth_service.set_nickname(user_id=user_id, nickname=nickname)
-        return set_response(
-            200, {"code": "success", "message": "Nickname set successfully."}
-        )
 
 
 @auth_blp.route("/logout")

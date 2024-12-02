@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from app.models.audit import AuditOperations
-from app.models.vehicle_type import VehicleTypeOperations
+from app.models.vehicle_type import VehicleRepository, VehicleTypeOperations
 from app.utils.uuid_utility import UUIDUtility
 
 
@@ -25,7 +25,7 @@ class GetVehicleType:  # pylint: disable=R0903
     @staticmethod
     def get_all_vehicle_types():
         """Get all vehicle types."""
-        return VehicleTypeOperations.get_all_vehicle_types()
+        return VehicleRepository.get_all_vehicle_types()
 
 
 class CreateNewVehicleType:  # pylint: disable=R0903

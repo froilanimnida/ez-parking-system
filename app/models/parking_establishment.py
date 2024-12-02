@@ -315,6 +315,34 @@ class GetEstablishmentOperations:
         finally:
             session.close()
 
+    @staticmethod
+    def get_establishment_schedule(manager_id: int):
+        """Get the schedule hours of the establishment"""
+        session = get_session()
+        try:
+            schedule = (
+                session.query(
+                    ParkingEstablishment.opening_time,
+                    ParkingEstablishment.closing_time,
+                    ParkingEstablishment.is_24_hours,
+                )
+                .where(ParkingEstablishment.manager_id == manager_id)
+                .first()
+            )
+            return (
+                {}
+                if not schedule
+                else {
+                    "opening_time": str(schedule.opening_time),
+                    "closing_time": str(schedule.closing_time),
+                    "is_24_hours": bool(schedule.is_24_hours),
+                }
+            )
+        except (OperationalError, DatabaseError) as error:
+            raise error
+        finally:
+            session.close()
+
 
 class CreateEstablishmentOperations:  # pylint: disable=R0903
     """
@@ -394,7 +422,7 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
         try:
             is_establishment_exists = (
                 GetEstablishmentOperations.is_establishment_exists(
-                    establishment_data.get('establishment_uuid')
+                    establishment_data.get("establishment_uuid")
                 )
             )
             if not is_establishment_exists:
@@ -402,7 +430,8 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
             is_allowed_to_make_edits = (
                 session.query(ParkingEstablishment).filter(
                     and_(
-                        ParkingEstablishment.uuid == establishment_data.get("establishment_uuid"),
+                        ParkingEstablishment.uuid
+                        == establishment_data.get("establishment_uuid"),
                         ParkingEstablishment.manager_id
                         == establishment_data.get("manager_id"),
                     )
@@ -416,7 +445,8 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
                 update(ParkingEstablishment)
                 .where(
                     and_(
-                        ParkingEstablishment.uuid == establishment_data.get("establishment_uuid"),
+                        ParkingEstablishment.uuid
+                        == establishment_data.get("establishment_uuid"),
                         ParkingEstablishment.manager_id
                         == establishment_data.get("manager_id"),
                     )
@@ -440,6 +470,28 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
         except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
             session.rollback()
             raise err
+        finally:
+            session.close()
+
+    @staticmethod
+    def update_hours(manager_id: int, data: dict):
+        """Update the schedule hours of the establishment"""
+        session = get_session()
+        try:
+            session.execute(
+                update(ParkingEstablishment)
+                .where(ParkingEstablishment.manager_id == manager_id)
+                .values(
+                    {
+                        "opening_time": data.get("opening_time"),
+                        "closing_time": data.get("closing_time"),
+                        "is_24_hours": data.get("is_24_hours"),
+                    }
+                )
+            )
+            session.commit()
+        except (OperationalError, DatabaseError) as error:
+            raise error
         finally:
             session.close()
 
@@ -495,8 +547,12 @@ class ParkingManagerOperations:  # pylint: disable=R0903
                 .filter(ParkingEstablishment.manager_id == manager_id)
                 .first()
             )
-            return establishment.to_dict() # type: ignore
+            return establishment.to_dict()  # type: ignore
         except (OperationalError, DatabaseError) as error:
             raise error
         finally:
             session.close()
+
+
+class ParkingEstablishmentRepository:  # pylint: disable=R0903
+    """Class for operations related to parking establishment"""

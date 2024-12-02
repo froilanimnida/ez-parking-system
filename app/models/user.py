@@ -33,6 +33,7 @@ from sqlalchemy.exc import DataError, IntegrityError, OperationalError, Database
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException
+from app.models.audit import UUIDUtility
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.engine import get_session
@@ -42,7 +43,7 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
     __tablename__: str = "user"
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(BINARY(16), unique=True, nullable=False)
-    nickname = Column(VARCHAR(75), unique=True, nullable=True)
+    nickname = Column(VARCHAR(24), nullable=True)
     first_name = Column(VARCHAR(100), nullable=False)
     last_name = Column(VARCHAR(100), nullable=False)
     email = Column(VARCHAR(75), unique=True, nullable=False)
@@ -74,6 +75,27 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
         cascade="all, delete-orphan",
     )
 
+    def to_dict(self):
+        """Converts the user object to a dictionary."""
+        uuid_utility = UUIDUtility()
+        return {
+            "user_id": self.user_id,
+            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "nickname": self.nickname,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.email,
+            "phone_number": self.phone_number,
+            "role": self.role,
+            "plate_number": self.plate_number,
+            "otp_secret": self.otp_secret,
+            "otp_expiry": self.otp_expiry,
+            "creation_date": self.creation_date,
+            "is_verified": self.is_verified,
+            "verification_token": self.verification_token,
+            "verification_expiry": self.verification_expiry,
+        }
+
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115
 
@@ -100,6 +122,8 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
                 uuid=user_data.get("uuid"),
                 first_name=user_data.get("first_name"),
                 last_name=user_data.get("last_name"),
+                nickname=user_data.get("nickname"),
+                plate_number=user_data.get("plate_number"),
                 email=user_data.get("email"),
                 phone_number=user_data.get("phone_number"),
                 role=user_data.get("role"),
@@ -192,57 +216,6 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
                 select(User).where(User.phone_number == phone_number)
             ).scalar()
             return user is not None
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            raise e
-        finally:
-            session.close()
-
-    @classmethod
-    def set_nickname(cls, user_id: int, nickname: str):
-        """
-        Updates the nickname of a user identified by their user_id.
-
-        Parameters:
-        user_id (int): The user_id of the user whose nickname is to be updated.
-        nickname (str): The new nickname to be set for the user.
-
-        Raises:
-        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
-        during the database operation, the session is rolled back and the exception is raised.
-        """
-        session = get_session()
-        try:
-            session.execute(
-                update(User).where(User.user_id == user_id).values(nickname=nickname)
-            )
-            session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
-
-    @classmethod
-    def get_user_plate_number(cls, user_id: int):
-        """
-        Retrieves the plate number of a user identified by their user_id.
-
-        Parameters:
-        user_id (int): The user_id of the user whose plate number is to be retrieved.
-
-        Returns:
-        str: The plate number of the user.
-
-        Raises:
-        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
-        during the database operation.
-        """
-        session = get_session()
-        try:
-            plate_number = session.execute(
-                select(User.plate_number).where(User.user_id == user_id)
-            ).scalar()
-            return plate_number
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             raise e
         finally:
@@ -367,6 +340,37 @@ class OTPOperations:
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
+            raise e
+        finally:
+            session.close()
+
+
+class UserRepository:
+    """Repository pattern for user operations"""
+
+    @classmethod
+    def get_by_plate_number(cls, plate_number: str) -> dict:
+        """Get user by plate number"""
+        return cls._execute_query(User.plate_number == plate_number)
+
+    @classmethod
+    def get_by_uuid(cls, uuid_bin: bytes) -> dict:
+        """Get user by UUID"""
+        return cls._execute_query(User.uuid == uuid_bin)
+
+    @classmethod
+    def get_by_id(cls, user_id: int) -> dict:
+        """Get user by user_id"""
+        return cls._execute_query(User.user_id == user_id)
+
+    @classmethod
+    def _execute_query(cls, filter_condition) -> dict:
+        """Execute query"""
+        session = get_session()
+        try:
+            user_info = session.execute(select(User).where(filter_condition)).scalar()
+            return {} if user_info is None else user_info.to_dict()
+        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             raise e
         finally:
             session.close()

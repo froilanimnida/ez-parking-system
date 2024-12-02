@@ -29,7 +29,7 @@ ENVIRONMENT = getenv("ENVIRONMENT", "")
 
 IS_PRODUCTION = ENVIRONMENT == "production"
 
-URL = getenv("IS_PRODUCTION") and getenv("PRODUCTION_URL") or getenv("DEVELOPMENT_URL")
+URL = IS_PRODUCTION and getenv("PRODUCTION_URL") or getenv("DEVELOPMENT_URL")
 
 app = create_app()
 CORS(

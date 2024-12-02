@@ -98,7 +98,8 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
                 .filter(VehicleType.vehicle_id == vehicle_type_id)
                 .first()
             )
-            return vehicle_type is not None
+            if vehicle_type is None:
+                raise VehicleTypeDoesNotExist("Vehicle type does not exist.")
         except (IntegrityError, OperationalError, DatabaseError, DataError) as e:
             raise e
         finally:
@@ -125,7 +126,7 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
                 .filter(VehicleType.vehicle_id == vehicle_type_id)
                 .first()
             )
-            return vehicle_type.to_dict()
+            return {} if vehicle_type is None else vehicle_type.to_dict()
         except OperationalError as error:
             raise error
         finally:
@@ -241,28 +242,23 @@ class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
                 .first()
             )
             return vehicle_type
-        except OperationalError as error:
+        except (OperationalError, DatabaseError) as error:
             raise error
         finally:
             session.close()
 
+
+class VehicleRepository:  # pylint: disable=R0903
+    """Class for vehicle repository operations."""
+
     @classmethod
     def get_all_vehicle_types(cls):
-        """
-        Retrieve all vehicle types from the database.
-
-        Returns:
-        list: A list of dictionaries containing vehicle type information.
-
-        Raises:
-        OperationalError: If an error occurs during the database operation.
-        """
+        """Get all vehicle types from the database."""
         session = get_session()
         try:
             vehicle_types = session.query(VehicleType).all()
-            # Convert each vehicle type object to dictionary
             return [vehicle_type.to_dict() for vehicle_type in vehicle_types]
-        except OperationalError as error:
+        except (OperationalError, DatabaseError) as error:
             raise error
         finally:
             session.close()
