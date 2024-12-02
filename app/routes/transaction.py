@@ -11,7 +11,7 @@ from flask_smorest import Blueprint
 from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
 from app.exceptions.transaction_exception import (
     UserHasNoPlateNumberSetException,
-    HasExistingReservationException
+    HasExistingReservationException,
 )
 from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import (
@@ -26,7 +26,8 @@ from app.utils.error_handlers.qr_code_error_handlers import (
     handle_invalid_transaction_status,
 )
 from app.utils.error_handlers.transaction_error_handlers import (
-    handle_user_has_no_plate_number_set, handle_has_existing_reservation
+    handle_user_has_no_plate_number_set,
+    handle_has_existing_reservation,
 )
 from app.utils.response_util import set_response
 
@@ -77,7 +78,6 @@ class CreateReservation(MethodView):
 
 
 @transactions_blp.route("/reservation/cancel")
-@jwt_required(False)
 class CancelReservation(MethodView):
 
     @jwt_required(False)
@@ -93,7 +93,7 @@ class CancelReservation(MethodView):
             404: "Not Found",
         },
     )
-    def post(self, data):
+    def patch(self, data, user_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService()
         transaction_service.cancel_transaction(data.get("transaction_uuid"))
         return set_response(200, {"message": "Reservation canceled successfully."})
@@ -170,7 +170,7 @@ transactions_blp.register_error_handler(
     InvalidTransactionStatus, handle_invalid_transaction_status
 )
 transactions_blp.register_error_handler(
-    UserHasNoPlateNumberSetException,handle_user_has_no_plate_number_set
+    UserHasNoPlateNumberSetException, handle_user_has_no_plate_number_set
 )
 transactions_blp.register_error_handler(
     HasExistingReservationException, handle_has_existing_reservation

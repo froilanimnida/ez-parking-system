@@ -60,6 +60,7 @@ class ParkingTransaction(Base):  # pylint: disable=R0903
 
     slot = relationship("Slot", back_populates="parking_transaction")
     vehicle_type = relationship("VehicleType", back_populates="parking_transaction")
+
     def to_dict(self):
         """
         Convert the model instance to a dictionary.
@@ -88,15 +89,14 @@ class ParkingTransactionOperation:
     """Class that provides operations for parking transactions in the database."""
 
     @classmethod
-    def get_transaction_by_plate_number(
-        cls, plate_number: str
-    ):
+    def get_transaction_by_plate_number(cls, plate_number: str):
         """
         Retrieve a parking transaction from the database by the vehicle plate number.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
         from app.models.slot import Slot
         from app.models.vehicle_type import VehicleType
+
         session = get_session()
         try:
             uuid_utility = UUIDUtility()
@@ -116,7 +116,8 @@ class ParkingTransactionOperation:
                 "transactions": [
                     {
                         "uuid": uuid_utility.format_uuid(
-                            uuid_utility.binary_to_uuid(transaction.uuid)),
+                            uuid_utility.binary_to_uuid(transaction.uuid)
+                        ),
                         "status": transaction.status,
                         "payment_status": str(transaction.payment_status).capitalize(),
                         "slot_details": {
@@ -157,6 +158,7 @@ class ParkingTransactionOperation:
         from app.models.slot import Slot
         from app.models.vehicle_type import VehicleType
         from app.models.parking_establishment import ParkingEstablishment
+
         session = get_session()
         try:
             transaction = (
@@ -175,8 +177,11 @@ class ParkingTransactionOperation:
                     ParkingEstablishment.address,
                     ParkingEstablishment.longitude,
                     ParkingEstablishment.latitude,
-                    ParkingEstablishment.contact_number
-                ).join(Slot, Slot.establishment_id == ParkingEstablishment.establishment_id)
+                    ParkingEstablishment.contact_number,
+                )
+                .join(
+                    Slot, Slot.establishment_id == ParkingEstablishment.establishment_id
+                )
                 .filter(Slot.slot_id == transaction.slot_id)
                 .first()
             )
@@ -187,7 +192,8 @@ class ParkingTransactionOperation:
             transaction_dict.update(
                 {
                     "uuid": UUIDUtility().format_uuid(
-                        UUIDUtility().binary_to_uuid(transaction.uuid)),
+                        UUIDUtility().binary_to_uuid(transaction.uuid)
+                    ),
                     "slot_details": {
                         "slot_code": transaction.slot.slot_code,
                         "slot_status": transaction.slot.slot_status,
@@ -212,7 +218,7 @@ class ParkingTransactionOperation:
                         "address": establishment_info.address,
                         "longitude": establishment_info.longitude,
                         "latitude": establishment_info.latitude,
-                        "contact_number": establishment_info.contact_number
+                        "contact_number": establishment_info.contact_number,
                     },
                 }
             )
@@ -230,6 +236,7 @@ class ParkingTransactionOperation:
         Add a new parking transaction entry to the database.
         """
         from app.models import Slot
+
         session = get_session()
         try:
             transaction = ParkingTransaction(
@@ -275,6 +282,7 @@ class UpdateTransaction:  # pylint: disable=R0903
         Update the status of a parking transaction in the database.
         """
         from app.models import Slot
+
         session = get_session()
         try:
             transaction_uuid_bin = bytes.fromhex(transaction_uuid)
@@ -301,7 +309,7 @@ class UpdateTransaction:  # pylint: disable=R0903
             session.close()
 
     @classmethod
-    def cancel_transaction(cls, transaction_id):
+    def cancel_transaction(cls, transaction_uuid: bytes):
         """
         Cancel a parking transaction in the database.
         """
@@ -310,7 +318,7 @@ class UpdateTransaction:  # pylint: disable=R0903
             session.execute(
                 update(ParkingTransaction)
                 .values(status="cancelled")
-                .where(ParkingTransaction.transaction_id == transaction_id)
+                .where(ParkingTransaction.uuid == transaction_uuid)
             )
             session.commit()
         except (DatabaseError, DataError, IntegrityError, OperationalError) as e:

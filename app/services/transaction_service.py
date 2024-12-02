@@ -43,9 +43,9 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         """Releases the slot for a user."""
 
     @staticmethod
-    def cancel_transaction(transaction_id):
+    def cancel_transaction(transaction_uuid: bytes):
         """Cancels the transaction for a user."""
-        return SlotActionsService.cancel_transaction(transaction_id)
+        return SlotActionsService.cancel_transaction(transaction_uuid)
 
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data):
@@ -95,9 +95,9 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         """Releases the slot for a user."""
 
     @staticmethod
-    def cancel_transaction(transaction_id):
+    def cancel_transaction(transaction_uuid: bytes):
         """Cancels the transaction for a user."""
-        return UpdateTransaction.cancel_transaction(transaction_id)
+        return UpdateTransaction.cancel_transaction(transaction_uuid)
 
     @staticmethod
     def view_transaction(transaction_id: bytes):

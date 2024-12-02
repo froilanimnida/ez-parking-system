@@ -1,5 +1,7 @@
 """ QR Code generation and verification utilities for parking transactions. """
 
+# pylint: disable=R0914
+
 from os import urandom
 from re import match
 from io import BytesIO
@@ -70,7 +72,9 @@ class QRCodeUtils:
         return urlsafe_b64encode(dumps(payload).encode()).decode()
 
     @staticmethod
-    def verify_qr_content(qr_content: str) -> dict[str, str] | None:
+    def verify_qr_content(
+        qr_content: str,
+    ) -> dict[str, str] | None:
         """
         Verify the QR content signature and status.
 
@@ -107,7 +111,6 @@ class QRCodeUtils:
             expires_at = decoded["expires_at"]
             version = decoded["version"]
             nonce = decoded["nonce"]
-            print(decoded)
 
             fields_to_verify = [
                 uuid,
