@@ -173,7 +173,7 @@ class ReservationValidationBaseSchema(Schema):  # pylint: disable=C0115
 class ValidateEntrySchema(Schema):  # pylint: disable=C0115
     """Validation schema for entry validation."""
 
-    qr_content = fields.Str(required=True, validate=validate.Length(min=124, max=132))
+    qr_content = fields.Str(required=True, validate=validate.Length(min=100, max=1024))
 
 
 class ValidateNewScheduleSchema(Schema):

@@ -40,13 +40,13 @@ class QRCodeUtils:
         status = data.get("status")
         if status not in self.VALID_STATUSES:
             raise InvalidTransactionStatus(f"Invalid status: {status}")
-
+        current_time = datetime.now(timezone.utc)
         payload = {
             "uuid": data.get("uuid"),
             "status": status,
             "plate": data.get("plate_number"),
-            "timestamp": datetime.utcnow().isoformat(),
-            "expires_at": (datetime.utcnow() + timedelta(minutes=15)).isoformat(),
+            "timestamp": current_time.isoformat(),
+            "expires_at": (current_time + timedelta(minutes=15)).isoformat(),
             "version": "1.0",
             "nonce": urlsafe_b64encode(urandom(8)).decode(),
         }
@@ -88,7 +88,7 @@ class QRCodeUtils:
             raise InvalidQRContent("Invalid base64 format")
 
         try:
-            if len(qr_content) < 124 or len(qr_content) > 132:
+            if len(qr_content) < 100 or len(qr_content) > 1024:
                 raise InvalidQRContent("Invalid QR content length")
 
             decoded = loads(urlsafe_b64decode(qr_content.encode()))
@@ -107,12 +107,26 @@ class QRCodeUtils:
             expires_at = decoded["expires_at"]
             version = decoded["version"]
             nonce = decoded["nonce"]
+            print(decoded)
 
-            payload_str = f"{uuid}:{status}:{plate}:{timestamp}"
+            fields_to_verify = [
+                uuid,
+                status,
+                plate,
+                timestamp,
+                expires_at,
+                version,
+                nonce,
+            ]
+
+            payload_str = ":".join(fields_to_verify)
 
             expected_sig = hmac.new(
                 BaseConfig.ENCRYPTION_KEY.encode(), payload_str.encode(), sha256
             ).hexdigest()
+
+            expires_at_dt = datetime.fromisoformat(expires_at)
+            current_time = datetime.now(timezone.utc)
 
             if not hmac.compare_digest(decoded["signature"], expected_sig):
                 raise InvalidQRContent("Invalid signature")
@@ -120,13 +134,13 @@ class QRCodeUtils:
             if decoded["status"] not in QRCodeUtils.VALID_STATUSES:
                 raise InvalidQRContent("Invalid transaction status")
 
-            if datetime.now(timezone.utc) > datetime.fromisoformat(expires_at):
+            if current_time > expires_at_dt:
                 raise QRCodeExpired("QR code has expired")
 
             if version != "1.0":
                 raise InvalidQRContent("Invalid version")
 
-            if not match(r"^[A-Za-z0-9_-]{11}$", nonce):
+            if not match(r"^[A-Za-z0-9_-]{11,12}=*$", nonce):
                 raise InvalidQRContent("Invalid nonce")
 
             return decoded

@@ -242,7 +242,7 @@ class EstablishmentEntry(MethodView):
 
 @parking_manager_blp.route("/qr-content/overview")
 class GetQRContentOverview(MethodView):
-    @parking_manager_blp.arguments(ValidateEntrySchema)
+    @parking_manager_blp.arguments(ValidateEntrySchema, location="query")
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
@@ -255,8 +255,10 @@ class GetQRContentOverview(MethodView):
     )
     @jwt_required(False)
     @parking_manager_required()
-    def get(self, qr_content, user_id):  # pylint: disable=unused-argument
-        data = TransactionService.get_transaction_details_from_qr_code(qr_content)
+    def get(self, data, user_id):  # pylint: disable=unused-argument
+        data = TransactionService.get_transaction_details_from_qr_code(
+            data.get("qr_content")
+        )
         return set_response(
             200,
             {
