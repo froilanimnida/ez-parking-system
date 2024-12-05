@@ -3,6 +3,7 @@
 # pylint: disable=R0401, R0801, C0415
 
 from typing import Literal
+from enum import Enum as PyEnum
 
 from sqlalchemy import (
     VARCHAR,
@@ -13,7 +14,13 @@ from sqlalchemy import (
     DateTime,
     BINARY,
     DECIMAL,
+    TIMESTAMP,
+    text,
+    Numeric,
+    UUID,
     update,
+    func,
+    String
 )
 from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, OperationalError
 from sqlalchemy.orm import relationship
@@ -23,40 +30,38 @@ from app.utils.engine import get_session
 from app.utils.uuid_utility import UUIDUtility
 
 
-class ParkingTransaction(Base):  # pylint: disable=R0903
-    """
-    SQLAlchemy model representing a parking transaction record.
+# Define custom Enum types for 'payment_status' and 'transaction_status'
+class PaymentStatusEnum(str, PyEnum):
+    pending = "pending"
+    completed = "completed"
+    failed = "failed"
 
-    Contains details about a parking event including vehicle info, timing,
-    slot allocation, payment status and associated relationships with
-    slot and vehicle type tables.
-    """
+class TransactionStatusEnum(str, PyEnum):
+    reserved = "reserved"
+    active = "active"
+    completed = "completed"
+    cancelled = "cancelled"
 
+class ParkingTransaction(Base):
     __tablename__ = "parking_transaction"
-
-    transaction_id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(BINARY(16), nullable=False)
-    slot_id = Column(Integer, ForeignKey("slot.slot_id"), nullable=False)
-    vehicle_type_id = Column(
-        Integer, ForeignKey("vehicle_type.vehicle_id"), nullable=False
+    
+    transaction_id = Column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        server_default=text("nextval('parking_transaction_transaction_id_seq'::regclass)")
     )
-    plate_number = Column(VARCHAR(15), nullable=False)
-    entry_time = Column(DateTime, nullable=True)
-    exit_time = Column(DateTime, nullable=True)
-    amount_due = Column(DECIMAL(9, 2), nullable=True)
-    payment_status = Column(
-        Enum("pending", "partially_paid", "paid", "overdue"),
-        nullable=False,
-        default="pending",
-    )
-    status = Column(
-        Enum("reserved", "active", "completed", "cancelled"),
-        nullable=False,
-        default="reserved",
-    )
-
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
+    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False)
+    slot_id = Column(Integer, ForeignKey("parking_slot.slot_id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+    vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+    plate_number = Column(String(15), nullable=False)
+    entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
+    exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
+    payment_status = Column(Enum(PaymentStatusEnum), nullable=False, server_default=text("'pending'::payment_status"))
+    status = Column(Enum(TransactionStatusEnum), nullable=False, server_default=text("'reserved'::transaction_status"))
+    amount_due = Column(Numeric(9, 2), nullable=True)
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=func.now(), onupdate=func.now())
 
     slot = relationship("Slot", back_populates="parking_transaction")
     vehicle_type = relationship("VehicleType", back_populates="parking_transaction")

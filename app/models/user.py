@@ -18,45 +18,68 @@
 
 # pylint: disable=R0801
 
+from enum import Enum as PyEnum
+from datetime import datetime
+from uuid import uuid4
+
 from sqlalchemy import (
-    DATETIME,
     Column,
     Integer,
-    VARCHAR,
-    BINARY,
     Enum,
     select,
     update,
-    BOOLEAN,
+    CheckConstraint,
+    UniqueConstraint,
+    UUID,
+    String,
+    DateTime,
+    Boolean,
 )
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
-from app.exceptions.authorization_exceptions import EmailNotFoundException
+from app.exceptions.authorization_exceptions import EmailNotFoundException, EmailAlreadyTaken, PhoneNumberAlreadyTaken
 from app.models.audit import UUIDUtility
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
+from app.utils.db import session_scope
 from app.utils.engine import get_session
 
 
-class User(Base):  # pylint: disable=R0903 disable=C0115
-    __tablename__: str = "user"
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(BINARY(16), unique=True, nullable=False)
-    nickname = Column(VARCHAR(24), nullable=True)
-    first_name = Column(VARCHAR(100), nullable=False)
-    last_name = Column(VARCHAR(100), nullable=False)
-    email = Column(VARCHAR(75), unique=True, nullable=False)
-    phone_number = Column(VARCHAR(15), unique=True, nullable=False)
-    role = Column(Enum("user", "parking_manager", "admin", "cashier"), nullable=False)
-    plate_number = Column(VARCHAR(10), nullable=True, unique=True)
-    otp_secret = Column(VARCHAR(6), nullable=True, unique=True)
-    otp_expiry = Column(DATETIME, nullable=True)
-    creation_date = Column(DATETIME, nullable=False)
-    is_verified = Column(BOOLEAN, nullable=False, default=False)
-    verification_token = Column(VARCHAR(175), nullable=True)
-    verification_expiry = Column(DATETIME, nullable=True)
 
+class UserRole(PyEnum):
+    user = 'user'
+    parking_manager = 'parking_manager'
+    admin = 'admin'
+
+class User(Base):
+    __tablename__ = 'user'
+    
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
+    nickname = Column(String(24), nullable=True)
+    first_name = Column(String(100), nullable=False)
+    middle_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=False)
+    suffix = Column(String(5), nullable=True)
+    email = Column(String(75), nullable=False, unique=True)
+    phone_number = Column(String(15), nullable=False, unique=True)
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.user)
+    plate_number = Column(String(10), nullable=True, unique=True)
+    otp_secret = Column(String(6), nullable=True)
+    otp_expiry = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    verification_token = Column(String(175), nullable=True)
+    verification_expiry = Column(DateTime, nullable=True)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    
+    __table_args__ = (
+        UniqueConstraint('email', name='user_email_key'),
+        UniqueConstraint('phone_number', name='user_phone_number_key'),
+        UniqueConstraint('plate_number', name='user_plate_number_key'),
+        UniqueConstraint('uuid', name='user_uuid_key'),
+        CheckConstraint("role IN ('user', 'parking_manager', 'admin')", name="valid_role"),
+    )
     parking_establishment = relationship(
         "ParkingEstablishment",
         back_populates="user",
@@ -74,6 +97,9 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    files = relationship(
+        "ParkingManagerFile", back_populates="manager", cascade="all, delete-orphan"
+    )
 
     def to_dict(self):
         """Converts the user object to a dictionary."""
@@ -90,11 +116,90 @@ class User(Base):  # pylint: disable=R0903 disable=C0115
             "plate_number": self.plate_number,
             "otp_secret": self.otp_secret,
             "otp_expiry": self.otp_expiry,
-            "creation_date": self.creation_date,
             "is_verified": self.is_verified,
             "verification_token": self.verification_token,
             "verification_expiry": self.verification_expiry,
+            "created_at": self.created_at,
         }
+    
+class UserRepository:
+    """Repository pattern for user operations"""
+    
+    @staticmethod
+    def create_user(user_data: dict):
+        """
+        Creates a new user in the database with the provided user data.
+
+        Parameters:
+        user_data (dict): A dictionary containing user information.
+                        Expected keys are 'uuid', 'first_name', 'last_name',
+                        'email', 'phone_number', 'role', and 'creation_date'.
+
+        Returns:
+        int: The ID of the newly created user.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation, the session is rolled back and the exception is raised.
+        """
+        with session_scope() as session:
+            new_user = User(
+                first_name=user_data.get("first_name"),
+                last_name=user_data.get("last_name"),
+                nickname=user_data.get("nickname"),
+                plate_number=user_data.get("plate_number"),
+                email=user_data.get("email"),
+                phone_number=user_data.get("phone_number"),
+                role=user_data.get("role"),
+                created_at=user_data.get("created_at"),
+                verification_token=user_data.get("verification_token"),
+                verification_expiry=user_data.get("verification_expiry"),
+                is_verified=user_data.get("is_verified"),
+            )
+            session.add(new_user)
+            return new_user.user_id
+    
+    
+    @staticmethod
+    def is_field_taken(field_name: str, value: str, exception):
+        """
+        Checks if a field value is already associated with an existing user.
+    
+        Parameters:
+        field_name (str): The name of the field to check.
+        value (str): The value to search for.
+        exception: The exception to raise if the field is already taken.
+    
+        Raises:
+        exception: If the field value already exists.
+        """
+        with session_scope() as session:
+            filter_condition = {field_name: value}
+            user = session.execute(select(User).filter_by(**filter_condition)).scalar()
+            if user:
+                raise exception(f"{field_name} already taken.")
+            
+    @staticmethod
+    def verify_email(token: str):
+        """
+        Verify the email of a user identified by their token.
+
+        Parameters:
+        token (str): The token of the user whose email is to be verified.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            session.execute(
+                update(User)
+                .where(User.verification_token == token)
+                .values(
+                    verification_token=None, verification_expiry=None, is_verified=True
+                )
+            )
+    
 
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115
@@ -127,7 +232,7 @@ class UserOperations:  # pylint: disable=R0903 disable=C0115
                 email=user_data.get("email"),
                 phone_number=user_data.get("phone_number"),
                 role=user_data.get("role"),
-                creation_date=user_data.get("creation_date"),
+                created_at=user_data.get("created_at"),
                 verification_token=user_data.get("verification_token"),
                 verification_expiry=user_data.get("verification_expiry"),
                 is_verified=user_data.get("is_verified"),

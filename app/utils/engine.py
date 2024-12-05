@@ -19,13 +19,14 @@ logger.setLevel(logging.WARNING)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-IS_PRODUCTION = getenv("ENVIRONMENT") == "production"
+IS_PRODUCTION = getenv("FLASK_ENV") == "production"
 
 DATABASE_URL = (
     IS_PRODUCTION and getenv("DATABASE_LIVE_URL") or getenv("DATABASE_DEV_URL")
 )
 
 engine = create_engine(DATABASE_URL)  # type: ignore
+print(DATABASE_URL)
 
 session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 

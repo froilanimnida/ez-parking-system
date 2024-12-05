@@ -4,6 +4,108 @@ from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from app.utils.uuid_utility import UUIDUtility
+from app.schema.user_auth_schema import RegistrationBaseSchema
+
+
+class PaymentMethodsSchema(Schema):
+    """Schema for payment methods."""
+
+    cash = fields.Boolean(required=True)
+    mobile = fields.Boolean(required=True)
+    other = fields.Boolean(required=True)
+    otherText = fields.Str(required=False, validate=validate.Length(min=3, max=255))
+
+
+class ManagerAccountRegistrationBaseSchema(Schema):
+    """Base schema for parking manager account registration."""
+
+    owner_type = fields.Str(
+        required=True, validate=validate.OneOf(["individual", "company"])
+    )
+    first_name = fields.Str(required=True, validate=validate.Length(min=2, max=50))
+    last_name = fields.Str(required=True, validate=validate.Length(min=2, max=50))
+    middle_name = fields.Str(
+        required=False, missing=None, validate=validate.Length(min=2, max=50)
+    )
+    suffix = fields.Str(
+        required=False, missing=None, validate=validate.Length(min=2, max=10)
+    )
+    street = fields.Str(required=True, validate=validate.Length(min=3, max=255))
+    barangay = fields.Str(required=True, validate=validate.Length(min=3, max=100))
+    city = fields.Str(required=True, validate=validate.Length(min=3, max=100))
+    province = fields.Str(required=False, validate=validate.Length(min=3, max=100))
+    postal_code = fields.Str(required=True, validate=validate.Length(min=4, max=4))
+    longitude = fields.Float(required=True)
+    latitude = fields.Float(required=True)
+    landmarks = fields.Str(
+        required=False, missing=None, validate=validate.Length(min=3, max=255)
+    )
+    payment_methods = fields.Nested(PaymentMethodsSchema, required=True)
+    pricing = fields.Dict(
+        keys=fields.Str(validate=validate.OneOf(["hourly", "daily", "monthly"])),
+        values=fields.Nested(
+            Schema.from_dict(
+                {
+                    "enabled": fields.Boolean(required=True),
+                    "rate": fields.Float(required=True, validate=validate.Range(min=0)),
+                }
+            )
+        ),
+        required=True,
+    )
+    operating_hours = fields.Dict(
+        keys=fields.Str(
+            validate=validate.OneOf(
+                [
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday",
+                ]
+            )
+        ),
+        values=fields.Nested(
+            Schema.from_dict(
+                {
+                    "enabled": fields.Boolean(required=True),
+                    "open": fields.Time(required=True),
+                    "close": fields.Time(required=True),
+                }
+            )
+        ),
+        required=True,
+    )
+    access_information = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            ["Gate Code", "Security Check", "Key Pickup", "No Special Access", "Other"]
+        ),
+    )
+    custom_access = fields.Str(required=False, validate=validate.Length(min=3, max=255))
+    security_features = fields.Str(
+        required=False,
+    )
+    accessibility_features = fields.Str(required=False)
+    nearby_facilities = fields.Str(required=False)
+
+
+class CompanyAccountRegistrationSchema(ManagerAccountRegistrationBaseSchema):
+    business_name = fields.Str(required=True, validate=validate.Length(min=2, max=255))
+    company_registration_number = fields.Str(
+        required=False, missing=None, validate=validate.Length(min=2, max=50)
+    )
+    tax_identification_number = fields.Str(
+        required=False, missing=None, validate=validate.Length(min=2, max=20)
+    )
+
+
+class IndividualAccountRegistrationSchema(ManagerAccountRegistrationBaseSchema):
+    """Schema for individual account registration."""
+
+    pass
 
 
 class EstablishmentValidationBaseSchema(Schema):
@@ -212,3 +314,7 @@ class ValidateNewScheduleSchema(Schema):
             # If the time is provided and the 24 hours is true flip it to false:
             in_data["is_24_hours"] = False
         return in_data
+
+
+class FileUploadSchema(Schema):
+    file = fields.Field(required=True)

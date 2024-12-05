@@ -3,7 +3,14 @@
     and other authentication related validation methods
 """
 
-from marshmallow import Schema, fields, validate, post_load
+from marshmallow import (
+    Schema,
+    ValidationError,
+    fields,
+    validate,
+    post_load,
+    validates_schema,
+)
 
 
 # noinspection PyUnusedLocal
@@ -133,3 +140,106 @@ class EmailVerificationSchema(Schema):
     verification_token = fields.Str(
         required=True, validate=validate.Length(min=1, max=200)
     )
+
+
+class IndividualOwnerSchema(Schema):
+    """Schema for individual owner details."""
+
+    first_name = fields.Str(required=True, validate=validate.Length(min=2, max=100))
+    middle_name = fields.Str(allow_none=True)
+    last_name = fields.Str(required=True, validate=validate.Length(min=2, max=100))
+    suffix = fields.Str(allow_none=True)
+
+
+class CompanyOwnerSchema(Schema):
+    """Schema for company owner details."""
+
+    business_name = fields.Str(required=True, validate=validate.Length(min=2, max=255))
+    company_reg_number = fields.Str(required=True)
+
+
+class OperatingHoursSchema(Schema):
+    """Schema for operating hours."""
+
+    open_time = fields.Time(required=True)
+    close_time = fields.Time(required=True)
+    is_open = fields.Bool(required=True)
+
+
+class PricingSchema(Schema):
+    """Schema for pricing information."""
+
+    hourly_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
+    daily_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
+    monthly_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
+
+
+class ParkingManagerAccountCreationSchema(Schema):
+    """Class to handle parking manager account creation validation."""
+
+    owner_type = fields.Str(
+        required=True, validate=validate.OneOf(["Individual", "Company"])
+    )
+    individual_details = fields.Nested(IndividualOwnerSchema, required=False)
+    company_details = fields.Nested(CompanyOwnerSchema, required=False)
+
+    contact_number = fields.Str(
+        required=True, validate=validate.Regexp(r"^\+?[0-9]{10,15}$")
+    )
+    email = fields.Email(required=True)
+    tin = fields.Str(required=True, validate=validate.Regexp(r"^\d{9,12}$"))
+
+    # Location details
+    street_address = fields.Str(required=True)
+    barangay = fields.Str(required=True)
+    city = fields.Str(required=True)
+    province = fields.Str(allow_none=True)
+    postal_code = fields.Str(required=True, validate=validate.Regexp(r"^\d{4}$"))
+    landmarks = fields.Str(allow_none=True)
+
+    space_type = fields.Str(
+        required=True,
+        validate=validate.OneOf(["Indoor", "Outdoor", "Covered", "Uncovered"]),
+    )
+    space_layout = fields.Str(required=True)
+    space_dimensions = fields.Str(required=True)
+
+    # Operating hours for each day
+    operating_hours = fields.Dict(
+        keys=fields.Str(), values=fields.Nested(OperatingHoursSchema), required=True
+    )
+
+    # Facilities
+    lighting_security = fields.Str(required=True)
+    accessibility_options = fields.Str(required=True)
+    nearby_facilities = fields.Str(required=True)
+
+    # Pricing
+    pricing = fields.Nested(PricingSchema, required=True)
+    payment_methods = fields.List(fields.Str(), required=True)
+
+    # Legal compliance
+    zoning_compliance = fields.Bool(required=True)
+
+    @validates_schema
+    def validate_owner_details(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Validate that appropriate owner details are provided."""
+        if data["owner_type"] == "Individual" and not data.get("individual_details"):
+            raise ValidationError(
+                "Individual details required for individual owner type"
+            )
+        if data["owner_type"] == "Company" and not data.get("company_details"):
+            raise ValidationError("Company details required for company owner type")
+
+    @validates_schema
+    def validate_pricing(self, data, **kwargs):
+        """Validate that at least one pricing option is provided."""
+        pricing = data.get("pricing", {})
+        if not any(
+            [
+                pricing.get("hourly_rate"),
+                pricing.get("daily_rate"),
+                pricing.get("monthly_rate"),
+            ]
+        ):
+            raise ValidationError("At least one pricing rate must be provided")

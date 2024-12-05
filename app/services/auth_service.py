@@ -22,7 +22,7 @@ from app.exceptions.authorization_exceptions import (
     PhoneNumberAlreadyTaken,
     RequestNewOTPException,
 )
-from app.models.user import UserOperations, OTPOperations
+from app.models.user import UserOperations, OTPOperations, UserRepository
 from app.utils.email_utility import send_mail
 
 
@@ -31,7 +31,6 @@ class AuthService:
 
     @classmethod
     def create_new_user(cls, registration_data: dict):  # pylint: disable=C0116
-        return UserRegistrationService.register_user(user_data=registration_data)
 
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
@@ -47,57 +46,6 @@ class AuthService:
 
     @classmethod
     def verify_email(cls, token: str):  # pylint: disable=C0116
-        return UserRegistrationService.verify_email(token=token)
-
-
-class UserRegistrationService:  # pylint: disable=R0903
-    """Class to handle user registration operations."""
-
-    @classmethod
-    def register_user(cls, user_data: dict):  # pylint: disable=C0116
-        email = user_data.get("email")
-        is_email_taken: bool = UserOperations.is_email_taken(email=email)  # type: ignore
-        if is_email_taken:
-            raise EmailAlreadyTaken(message="Email already taken.")
-        is_phone_number = UserOperations.is_phone_number_taken(
-            phone_number=user_data.get("phone_number")  # type: ignore
-        )
-        if is_phone_number:
-            raise PhoneNumberAlreadyTaken(message="Phone number already taken.")
-        phone_number = user_data.get("phone_number")
-        verification_token = urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")
-        is_production = getenv("ENVIRONMENT") == "production"
-        base_url = (
-            getenv("PRODUCTION_URL") if is_production else getenv("DEVELOPMENT_URL")
-        )
-        verification_url = f"{base_url}/auth/verify-email/{verification_token}"
-        template = render_template(
-            "auth/onboarding.html", verification_url=verification_url
-        )
-
-        first_name = user_data.get("first_name")
-        last_name = user_data.get("last_name")
-        uuid: bytes = uuid4().bytes
-        user_data = {
-            "uuid": uuid,
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email,
-            "phone_number": phone_number,
-            "plate_number": user_data.get("plate_number"),
-            "nickname": user_data.get("nickname"),
-            "role": user_data.get("role"),
-            "creation_date": datetime.now(),
-            "verification_token": verification_token,
-            "verification_expiry": datetime.now() + timedelta(days=7),
-            "is_verified": False,
-        }
-        UserOperations.create_new_user(user_data=user_data)
-        return send_mail(message=template, email=email, subject="Welcome to EZ Parking")
-
-    @classmethod
-    def verify_email(cls, token: str):  # pylint: disable=C0116
-        return UserOperations.verify_email(token=token)
 
 
 class UserLoginService:  # pylint: disable=R0903

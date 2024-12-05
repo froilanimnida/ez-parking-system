@@ -13,7 +13,9 @@ from app.utils.error_handlers.system_wide_error_handler import (
 )
 from app.utils.jwt_helpers import add_jwt_after_request_handler
 from app.utils.logger import setup_logging
+from app.utils.celery_utils import make_celery
 
+celery = None
 
 def create_app():
     """Factory function to create the Flask app instance."""
@@ -21,6 +23,9 @@ def create_app():
 
     app = Flask(__name__, template_folder=template_dir)
     app.config.from_object(DevelopmentConfig)
+
+    global celery
+    celery = make_celery(app)
 
     api.init_app(app)
     JWTManager(app)

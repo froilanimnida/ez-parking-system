@@ -148,7 +148,7 @@ class GettingSlotsOperations:  # pylint: disable=R0903
                     VehicleType.code.label("vehicle_type_code"),
                     VehicleType.name.label("vehicle_type_name"),
                     VehicleType.size_category.label("size_category"),
-                    VehicleType.base_rate_multiplier.label('base_rate'),
+                    VehicleType.base_rate_multiplier.label("base_rate"),
                 )
                 .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
                 .where(Slot.establishment_id == establishment_id)
@@ -508,15 +508,22 @@ class SlotOperation:  # pylint: disable=R0903
             raise error
         finally:
             session.close()
+
     @staticmethod
     def get_slot_info(slot_code: str, establishment_id: int):
-        """ Get Slot info including the benefits and features """
+        """Get Slot info including the benefits and features"""
         from app.models.vehicle_type import VehicleType
+
         session = get_session()
         try:
             slot_info = (
                 session.query(Slot)
-                .where(and_(Slot.slot_code == slot_code, Slot.establishment_id == establishment_id))
+                .where(
+                    and_(
+                        Slot.slot_code == slot_code,
+                        Slot.establishment_id == establishment_id,
+                    )
+                )
                 .first()
             )
             vehicle_type_info = (

@@ -7,6 +7,7 @@ from app.models.parking_transaction import ParkingTransaction
 from app.models.slot import Slot
 from app.models.user import User
 from app.models.vehicle_type import VehicleType
+from app.models.parking_manager_file import ParkingManagerFile
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "ParkingTransaction",
     "BannedPlate",
     "Audit",
+    "ParkingManagerFile",
 ]

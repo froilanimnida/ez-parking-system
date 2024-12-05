@@ -51,3 +51,6 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
 
     DEVELOPMENT_URL = getenv("DEVELOPMENT_URL", "http://localhost:5000")
     PRODUCTION_URL = getenv("PRODUCTION_URL", "")
+
+    CELERY_BROKER_URL = getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND = getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")

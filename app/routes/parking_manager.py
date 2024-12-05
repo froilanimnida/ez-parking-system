@@ -68,36 +68,55 @@ def parking_manager_required():
     return wrapper
 
 
-@parking_manager_blp.route("/establishment/create")
-class CreateEstablishment(MethodView):
+@parking_manager_blp.route("/account/create")
+class CreateParkingManagerAccount(MethodView):
     @parking_manager_blp.arguments(EstablishmentValidationSchema)
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
-        description="Create a new parking establishment.",
+        description="Parking Manager Account Creation",
         responses={
-            201: "Establishment created successfully.",
+            201: "Parking manager account created successfully.",
             400: "Bad Request",
-            401: "Unauthorized",
+            422: "Unprocessable Entity",
         },
     )
-    @jwt_required(True)
-    @parking_manager_required()
-    def post(self, new_establishment_data, manager_id):
-        new_establishment_data["manager_id"] = manager_id
-        EstablishmentService.create_new_parking_establishment(new_establishment_data)
+    @jwt_required(False)
+    def post(self, new_establishment_data):
+        
         return set_response(
             201,
             {
                 "code": "success",
-                "message": "Parking establishment created successfully.",
+                "message": "Parking manager account created successfully.",
+            },
+        )
+    
+@parking_manager_blp.route("/account/login")
+class LoginParkingManagerAccount(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Parking Manager Account Login",
+        responses={
+            200: "Parking manager account login successful.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    def patch(self):
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Parking manager account login successful.",
             },
         )
 
 
-@parking_manager_blp.route("/establishment/delete")
+@parking_manager_blp.route("/account/delete")
 class DeleteEstablishment(MethodView):
-    @parking_manager_blp.arguments(DeleteEstablishmentSchema)
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
@@ -111,7 +130,6 @@ class DeleteEstablishment(MethodView):
     @jwt_required(False)
     @parking_manager_required()
     def delete(self, data):
-        EstablishmentService.delete_establishment(data.get("establishment_uuid"))
         return set_response(
             200,
             {

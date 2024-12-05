@@ -7,6 +7,8 @@
 
 # pylint: disable=E1102, C0415
 
+from uuid import uuid4
+
 from sqlalchemy import (
     VARCHAR,
     Boolean,
@@ -14,13 +16,15 @@ from sqlalchemy import (
     Integer,
     BINARY,
     TIME,
+    Text,
+    UUID,
     DECIMAL,
     and_,
     func,
     update,
     ForeignKey,
     TIMESTAMP,
-    case,
+    case, CheckConstraint, String,
 )
 from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
@@ -34,46 +38,66 @@ from app.utils.engine import get_session
 from app.utils.uuid_utility import UUIDUtility
 
 
-class ParkingEstablishment(Base):  # pylint: disable=R0903 disable=C0115
-    __tablename__ = "parking_establishment"
 
-    establishment_id = Column(Integer, primary_key=True)
-    manager_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
-    uuid = Column(BINARY(16), nullable=False)
-    name = Column(VARCHAR(255), nullable=False)
-    address = Column(VARCHAR(255), nullable=False)
-    contact_number = Column(VARCHAR(25), nullable=False)
-    opening_time = Column(TIME, nullable=False)
-    closing_time = Column(TIME, nullable=False)
-    is_24_hours = Column(Boolean, nullable=False)
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-    hourly_rate = Column(DECIMAL(8, 2), nullable=False)
-    longitude = Column(DECIMAL(9, 6), nullable=False)
-    latitude = Column(DECIMAL(9, 6), nullable=False)
-
-    slot = relationship(
-        "Slot", back_populates="parking_establishment", cascade="all, delete-orphan"
+class ParkingEstablishment(Base):
+    __tablename__ = 'parking_establishment'
+    
+    establishment_id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(UUID, default=uuid4, unique=True)
+    profile_id = Column(Integer, ForeignKey('business_profile.profile_id'), nullable=False)
+    name = Column(String(255), nullable=False)
+    space_type = Column(String(20), nullable=False)
+    space_layout = Column(String(20), nullable=False)
+    custom_layout = Column(Text)
+    dimensions = Column(Text)
+    is_24_hours = Column(Boolean, default=False)
+    access_info = Column(Text)
+    custom_access = Column(Text)
+    status = Column(String(20), default='pending')
+    created_at = Column(TIMESTAMP, default=func.current_timestamp())
+    updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    
+    # Constraints (Space Layout, Space Type, and Status check constraints)
+    __table_args__ = (
+        CheckConstraint(
+            "space_layout IN ('parallel', 'perpendicular', 'angled', 'custom')",
+            name='parking_establishment_space_layout_check'
+        ),
+        CheckConstraint(
+            "space_type IN ('Indoor', 'Outdoor', 'Both')",
+            name='parking_establishment_space_type_check'
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected')",
+            name='parking_establishment_status_check'
+        ),
     )
-    user = relationship("User", back_populates="parking_establishment")
+    
+    # Relationship
+    business_profile = relationship("BusinessProfile", backref="parking_establishments")
+    
+    def __repr__(self):
+        return f"<ParkingEstablishment(establishment_id={self.establishment_id}, uuid={self.uuid}, space_type={self.space_type}, status={self.status})>"
+
 
     def to_dict(self):
         """Convert the ParkingEstablishment instance to a dictionary."""
         uuid_utility = UUIDUtility()
         return {
             "establishment_id": self.establishment_id,
-            "uuid": uuid_utility.format_uuid(self.uuid.hex()),
+            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "profile_id": self.profile_id,
             "name": self.name,
-            "address": self.address,
-            "contact_number": self.contact_number,
-            "opening_time": str(self.opening_time),
-            "closing_time": str(self.closing_time),
+            "space_type": self.space_type,
+            "space_layout": self.space_layout,
+            "custom_layout": self.custom_layout,
+            "dimensions": self.dimensions,
             "is_24_hours": self.is_24_hours,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "hourly_rate": float(self.hourly_rate),  # type: ignore
-            "longitude": float(self.longitude),  # type: ignore
-            "latitude": float(self.latitude),  # type: ignore
+            "access_info": self.access_info,
+            "custom_access": self.custom_access,
+            "status": self.status,
+            "created_at": str(self.created_at),
+            "updated_at": str(self.updated_at),
         }
 
     def calculate_distance_from(self, latitude: float, longitude: float) -> float:

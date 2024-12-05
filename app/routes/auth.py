@@ -29,6 +29,7 @@ from app.schema.auth_validation import (
     OTPGenerationSchema,
     LoginWithEmailValidationSchema,
     OTPSubmissionSchema,
+    ParkingManagerAccountCreationSchema,
     SignUpValidationSchema,
     EmailVerificationSchema,
 )
@@ -224,6 +225,27 @@ class VerifyEmail(MethodView):
             {
                 "code": "success",
                 "message": "Email verified successfully.",
+            },
+        )
+
+
+@auth_blp.route("/owner/register")
+class ParkingManagerRegistration(MethodView):
+    """Handles parking manager registration."""
+
+    @auth_blp.arguments(ParkingManagerAccountCreationSchema)
+    @auth_blp.response(201, ApiResponse)
+    def post(self, registration_data):
+        """Register a new parking manager account."""
+        # TODO: Add service call here
+        # result = ParkingManagerService.register_manager(registration_data)
+
+        return set_response(
+            201,
+            {
+                "code": "registration_success",
+                "message": "Parking manager registration successful",
+                # "data": result
             },
         )
 
