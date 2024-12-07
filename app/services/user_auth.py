@@ -6,7 +6,10 @@ from os import getenv, urandom
 
 from flask import render_template
 
-from app.exceptions.authorization_exceptions import EmailAlreadyTaken, PhoneNumberAlreadyTaken
+from app.exceptions.authorization_exceptions import (
+    EmailAlreadyTaken,
+    PhoneNumberAlreadyTaken,
+)
 from app.models.user import UserRepository
 from app.tasks import send_mail
 
@@ -18,13 +21,13 @@ class UserAuth:
     def create_new_user(sign_up_data: dict):
         """Create a new user account."""
         return UserRegistration.create_new_user(sign_up_data)
-    
+
     @staticmethod
-    def verify_email(cls, token: str):  # pylint: disable=C0116
+    def verify_email(token: str):  # pylint: disable=C0116
         return EmailVerification.verify_email(token=token)
-    
-    
-class UserRegistration:
+
+
+class UserRegistration:  # pylint: disable=R0903
     """User Registration Service"""
 
     @staticmethod
@@ -32,8 +35,10 @@ class UserRegistration:
         """Create a new user account."""
         user_email = sign_up_data.get("email")
         role = sign_up_data.get("role")
-        UserRepository.is_field_taken('email', user_email, EmailAlreadyTaken)
-        UserRepository.is_field_taken('phone_number', sign_up_data.get("phone_number"), PhoneNumberAlreadyTaken)
+        UserRepository.is_field_taken("email", user_email, EmailAlreadyTaken)
+        UserRepository.is_field_taken(
+            "phone_number", sign_up_data.get("phone_number"), PhoneNumberAlreadyTaken
+        )
         verification_token = urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")
         is_production = getenv("ENVIRONMENT") == "production"
         base_url = (
@@ -43,23 +48,25 @@ class UserRegistration:
         template = render_template(
             "auth/onboarding.html", verification_url=verification_url
         )
-        sign_up_data.update({
-            "is_verified": False,
-            "created_at": datetime.now(),
-            "verification_token": verification_token,
-            "verification_expiry": datetime.now() + timedelta(days=7),
-        })
+        sign_up_data.update(
+            {
+                "is_verified": False,
+                "created_at": datetime.now(),
+                "verification_token": verification_token,
+                "verification_expiry": datetime.now() + timedelta(days=7),
+            }
+        )
         user_id = UserRepository.create_user(sign_up_data)
         if role == "parking_manager":
             owner_type = sign_up_data.get("owner_type")
             if owner_type == "individual":
                 pass
-            elif owner_type == "business":
+            elif owner_type == "company":
                 pass
         return send_mail(user_email, template, "Welcome to EZ Parking")
-    
-    
-class EmailVerification:
+
+
+class EmailVerification:  # pylint: disable=R0903
     """Email Verification Service"""
 
     @staticmethod

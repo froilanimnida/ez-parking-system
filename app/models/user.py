@@ -37,24 +37,25 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
-
-from app.exceptions.authorization_exceptions import EmailNotFoundException, EmailAlreadyTaken, PhoneNumberAlreadyTaken
 from app.models.audit import UUIDUtility
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.db import session_scope
+from app.exceptions.authorization_exceptions import EmailNotFoundException
 from app.utils.engine import get_session
 
 
+class UserRole(PyEnum):  # pylint: disable=C0115
+    USER = "user"
+    PARKING_MANAGER = "parking_manager"
+    ADMIN = "admin"
 
-class UserRole(PyEnum):
-    user = 'user'
-    parking_manager = 'parking_manager'
-    admin = 'admin'
 
 class User(Base):
-    __tablename__ = 'user'
-    
+    """Represents a user in the database."""
+
+    __tablename__ = "user"
+
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
     nickname = Column(String(24), nullable=True)
@@ -64,7 +65,7 @@ class User(Base):
     suffix = Column(String(5), nullable=True)
     email = Column(String(75), nullable=False, unique=True)
     phone_number = Column(String(15), nullable=False, unique=True)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.user)
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.USER)
     plate_number = Column(String(10), nullable=True, unique=True)
     otp_secret = Column(String(6), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
@@ -72,33 +73,41 @@ class User(Base):
     verification_token = Column(String(175), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
-    
-    __table_args__ = (
-        UniqueConstraint('email', name='user_email_key'),
-        UniqueConstraint('phone_number', name='user_phone_number_key'),
-        UniqueConstraint('plate_number', name='user_plate_number_key'),
-        UniqueConstraint('uuid', name='user_uuid_key'),
-        CheckConstraint("role IN ('user', 'parking_manager', 'admin')", name="valid_role"),
-    )
-    parking_establishment = relationship(
-        "ParkingEstablishment",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
 
-    banned_plate = relationship(
-        "BannedPlate",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        foreign_keys="BannedPlate.plate_number",
+    __table_args__ = (
+        UniqueConstraint("email", name="user_email_key"),
+        UniqueConstraint("phone_number", name="user_phone_number_key"),
+        UniqueConstraint("plate_number", name="user_plate_number_key"),
+        UniqueConstraint("uuid", name="user_uuid_key"),
+        CheckConstraint(
+            "role IN ('user', 'parking_manager', 'admin')", name="valid_role"
+        ),
     )
-    audit = relationship(
-        "Audit",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
+    # parking_establishment = relationship(
+    #     "ParkingEstablishment",
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    # )
+
+    # banned_plate = relationship(
+    #     "BannedPlate",
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    #     foreign_keys="BannedPlate.plate_number",
+    # )
+    # audit = relationship(
+    #     "Audit",
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    # )
     files = relationship(
         "ParkingManagerFile", back_populates="manager", cascade="all, delete-orphan"
+    )
+    company_profile = relationship(
+        "CompanyProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     def to_dict(self):
@@ -121,10 +130,11 @@ class User(Base):
             "verification_expiry": self.verification_expiry,
             "created_at": self.created_at,
         }
-    
+
+
 class UserRepository:
     """Repository pattern for user operations"""
-    
+
     @staticmethod
     def create_user(user_data: dict):
         """
@@ -158,18 +168,17 @@ class UserRepository:
             )
             session.add(new_user)
             return new_user.user_id
-    
-    
+
     @staticmethod
     def is_field_taken(field_name: str, value: str, exception):
         """
         Checks if a field value is already associated with an existing user.
-    
+
         Parameters:
         field_name (str): The name of the field to check.
         value (str): The value to search for.
         exception: The exception to raise if the field is already taken.
-    
+
         Raises:
         exception: If the field value already exists.
         """
@@ -178,7 +187,7 @@ class UserRepository:
             user = session.execute(select(User).filter_by(**filter_condition)).scalar()
             if user:
                 raise exception(f"{field_name} already taken.")
-            
+
     @staticmethod
     def verify_email(token: str):
         """
@@ -199,7 +208,6 @@ class UserRepository:
                     verification_token=None, verification_expiry=None, is_verified=True
                 )
             )
-    
 
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115
@@ -445,37 +453,6 @@ class OTPOperations:
             session.commit()
         except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             session.rollback()
-            raise e
-        finally:
-            session.close()
-
-
-class UserRepository:
-    """Repository pattern for user operations"""
-
-    @classmethod
-    def get_by_plate_number(cls, plate_number: str) -> dict:
-        """Get user by plate number"""
-        return cls._execute_query(User.plate_number == plate_number)
-
-    @classmethod
-    def get_by_uuid(cls, uuid_bin: bytes) -> dict:
-        """Get user by UUID"""
-        return cls._execute_query(User.uuid == uuid_bin)
-
-    @classmethod
-    def get_by_id(cls, user_id: int) -> dict:
-        """Get user by user_id"""
-        return cls._execute_query(User.user_id == user_id)
-
-    @classmethod
-    def _execute_query(cls, filter_condition) -> dict:
-        """Execute query"""
-        session = get_session()
-        try:
-            user_info = session.execute(select(User).where(filter_condition)).scalar()
-            return {} if user_info is None else user_info.to_dict()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
             raise e
         finally:
             session.close()

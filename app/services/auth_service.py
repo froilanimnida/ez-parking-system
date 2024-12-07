@@ -31,6 +31,7 @@ class AuthService:
 
     @classmethod
     def create_new_user(cls, registration_data: dict):  # pylint: disable=C0116
+        pass
 
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
@@ -46,6 +47,7 @@ class AuthService:
 
     @classmethod
     def verify_email(cls, token: str):  # pylint: disable=C0116
+        pass
 
 
 class UserLoginService:  # pylint: disable=R0903

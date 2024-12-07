@@ -29,9 +29,9 @@ class BannedPlate(Base):  # pylint: disable=R0903
     )
     banned_by = Column(Integer, ForeignKey("user.user_id"), nullable=False)
 
-    user = relationship(
-        "User", back_populates="banned_plate", foreign_keys=[plate_number]
-    )
+    # user = relationship(
+    #     "User", back_populates="banned_plate", foreign_keys=[plate_number]
+    # )
 
 
 class BannedPlateOperations:

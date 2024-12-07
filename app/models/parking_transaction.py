@@ -20,7 +20,7 @@ from sqlalchemy import (
     UUID,
     update,
     func,
-    String
+    String,
 )
 from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, OperationalError
 from sqlalchemy.orm import relationship
@@ -36,35 +36,66 @@ class PaymentStatusEnum(str, PyEnum):
     completed = "completed"
     failed = "failed"
 
+
 class TransactionStatusEnum(str, PyEnum):
     reserved = "reserved"
     active = "active"
     completed = "completed"
     cancelled = "cancelled"
 
-class ParkingTransaction(Base):
+
+class ParkingTransaction(
+    Base
+):  # pylint: disable=too-few-public-methods, missing-class-docstring
     __tablename__ = "parking_transaction"
-    
+
     transaction_id = Column(
         Integer,
         primary_key=True,
         autoincrement=True,
-        server_default=text("nextval('parking_transaction_transaction_id_seq'::regclass)")
+        server_default=text(
+            "nextval('parking_transaction_transaction_id_seq'::regclass)"
+        ),
     )
     uuid = Column(UUID(as_uuid=True), unique=True, nullable=False)
-    slot_id = Column(Integer, ForeignKey("parking_slot.slot_id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+    slot_id = Column(
+        Integer,
+        ForeignKey("parking_slot.slot_id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    vehicle_type_id = Column(
+        Integer,
+        ForeignKey(
+            "vehicle_type.vehicle_type_id", onupdate="CASCADE", ondelete="CASCADE"
+        ),
+        nullable=False,
+    )
     plate_number = Column(String(15), nullable=False)
     entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
     exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    payment_status = Column(Enum(PaymentStatusEnum), nullable=False, server_default=text("'pending'::payment_status"))
-    status = Column(Enum(TransactionStatusEnum), nullable=False, server_default=text("'reserved'::transaction_status"))
+    payment_status = Column(
+        Enum(PaymentStatusEnum),
+        nullable=False,
+        server_default=text("'pending'::payment_status"),
+    )
+    status = Column(
+        Enum(TransactionStatusEnum),
+        nullable=False,
+        server_default=text("'reserved'::transaction_status"),
+    )
     amount_due = Column(Numeric(9, 2), nullable=True)
-    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=func.now())
-    updated_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=func.now(), onupdate=func.now())
+    created_at = Column(
+        TIMESTAMP(timezone=False), nullable=False, server_default=func.now()
+    )
+    updated_at = Column(
+        TIMESTAMP(timezone=False),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
-    slot = relationship("Slot", back_populates="parking_transaction")
-    vehicle_type = relationship("VehicleType", back_populates="parking_transaction")
+    vehicle_type = relationship("VehicleType", back_populates="transactions")
+    parking_slot = relationship("ParkingSlot", back_populates="transactions")
 
     def to_dict(self):
         """

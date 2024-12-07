@@ -44,7 +44,7 @@ class Slot(Base):  # pylint: disable=R0903 disable=C0115
     slot_code = Column(VARCHAR(45), nullable=False)
     vehicle_type_id = Column(
         Integer,
-        ForeignKey("vehicle_type.vehicle_id"),
+        ForeignKey("vehicle_type.vehicle_type_id"),
     )
     slot_status = Column(
         Enum("open", "reserved", "occupied"), nullable=False, default="open"

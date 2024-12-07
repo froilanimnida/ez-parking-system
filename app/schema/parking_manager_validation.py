@@ -4,7 +4,6 @@ from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from app.utils.uuid_utility import UUIDUtility
-from app.schema.user_auth_schema import RegistrationBaseSchema
 
 
 class PaymentMethodsSchema(Schema):
@@ -16,7 +15,7 @@ class PaymentMethodsSchema(Schema):
     otherText = fields.Str(required=False, validate=validate.Length(min=3, max=255))
 
 
-class ManagerAccountRegistrationBaseSchema(Schema):
+class IndividualParkingManagerSchema(Schema):
     """Base schema for parking manager account registration."""
 
     owner_type = fields.Str(
@@ -90,22 +89,16 @@ class ManagerAccountRegistrationBaseSchema(Schema):
     )
     accessibility_features = fields.Str(required=False)
     nearby_facilities = fields.Str(required=False)
-
-
-class CompanyAccountRegistrationSchema(ManagerAccountRegistrationBaseSchema):
-    business_name = fields.Str(required=True, validate=validate.Length(min=2, max=255))
-    company_registration_number = fields.Str(
-        required=False, missing=None, validate=validate.Length(min=2, max=50)
-    )
     tax_identification_number = fields.Str(
         required=False, missing=None, validate=validate.Length(min=2, max=20)
     )
 
 
-class IndividualAccountRegistrationSchema(ManagerAccountRegistrationBaseSchema):
-    """Schema for individual account registration."""
-
-    pass
+class CompanyAccountRegistrationSchema(IndividualParkingManagerSchema):
+    company_name = fields.Str(required=True, validate=validate.Length(min=2, max=255))
+    company_registration_number = fields.Str(
+        required=False, missing=None, validate=validate.Length(min=2, max=50)
+    )
 
 
 class EstablishmentValidationBaseSchema(Schema):
@@ -128,62 +121,6 @@ class EstablishmentValidationBaseSchema(Schema):
         in_data["establishment_uuid"] = uuid_utility.uuid_to_binary(
             in_data["establishment_uuid"]
         )
-        return in_data
-
-
-class DeleteEstablishmentSchema(EstablishmentValidationBaseSchema):
-    """Validation schema for deleting establishment."""
-
-
-class EstablishmentValidationSchema(Schema):
-    """Class to handle parking establishment validation."""
-
-    name = fields.Str(required=True, validate=validate.Length(min=3, max=255))
-    address = fields.Str(required=True, validate=validate.Length(min=3, max=255))
-    contact_number = fields.Str(
-        required=True,
-        validate=[
-            validate.Regexp(
-                regex=r"^\+?[0-9]\d{1,14}$", error="Invalid phone number format."
-            ),
-            validate.Length(min=10, max=15),
-        ],
-    )
-    opening_time = fields.Time(required=True)
-    closing_time = fields.Time(required=True)
-    is_24_hours = fields.Bool(required=True)
-    hourly_rate = fields.Float(required=True)
-    longitude = fields.Float(required=True)
-    latitude = fields.Float(required=True)
-
-    @validates_schema
-    def validate_opening_and_closing_time(
-        self, data, **kwargs  # pylint: disable=unused-argument
-    ):
-        """Validate opening and closing time."""
-        if data["opening_time"] >= data["closing_time"]:
-            raise ValidationError("Closing time must be greater than opening time.")
-
-    @validates_schema
-    def same_closing_and_opening_time(
-        self, data, **kwargs  # pylint: disable=unused-argument
-    ):
-        """Validate that closing and opening time are not the same."""
-        if data["opening_time"] == data["closing_time"]:
-            raise ValidationError("Opening and closing time cannot be the same.")
-
-    @post_load
-    def format_time_to_24_hours_if_24_hours_establishment(
-        self, in_data, **kwargs  # pylint: disable=unused-argument
-    ):
-        """Format time to 24 hours if establishment is 24 hours."""
-
-        if in_data["is_24_hours"]:
-            in_data["opening_time"] = "00:00"
-            in_data["closing_time"] = "23:59"
-        elif in_data["opening_time"] or in_data["closing_time"]:
-            # If the time is provided and the 24 hours is true flip it to false:
-            in_data["is_24_hours"] = False
         return in_data
 
 

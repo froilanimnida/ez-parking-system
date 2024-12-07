@@ -12,3 +12,4 @@ class DevelopmentConfig(BaseConfig):  # pylint: disable=R0903
     DEBUG = True
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
     MAIL_USERNAME = getenv("MAIL_USERNAME")
+    R2_ENDPOINT_URL = BaseConfig.LOCALSTACK_URL

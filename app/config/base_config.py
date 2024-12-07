@@ -54,3 +54,9 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
 
     CELERY_BROKER_URL = getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     CELERY_RESULT_BACKEND = getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
+    AWS_ACCESS_KEY_ID = getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = getenv("AWS_SECRET_ACCESS_KEY")
+    AWS_REGION = getenv("AWS_REGION", "us-east-1")
+    R2_BUCKET_NAME = getenv("R2_BUCKET_NAME")
+    LOCALSTACK_URL = getenv("LOCALSTACK_URL", "http://localhost:4566")

@@ -17,13 +17,11 @@ from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import (
     CreateSlotSchema,
-    EstablishmentValidationSchema,
     UpdateEstablishmentInfoSchema,
     UpdateSlotSchema,
     ValidateEntrySchema,
-    DeleteEstablishmentSchema,
     DeleteSlotSchema,
-    ValidateNewScheduleSchema,
+    ValidateNewScheduleSchema, CompanyAccountRegistrationSchema, IndividualParkingManagerSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
@@ -68,27 +66,49 @@ def parking_manager_required():
     return wrapper
 
 
-@parking_manager_blp.route("/account/create")
+@parking_manager_blp.route("/company/account/create")
 class CreateParkingManagerAccount(MethodView):
-    @parking_manager_blp.arguments(EstablishmentValidationSchema)
+    @parking_manager_blp.arguments(CompanyAccountRegistrationSchema)
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Parking Manager Account Creation",
+        description="Create a new parking manager account.",
         responses={
-            201: "Parking manager account created successfully.",
+            201: "Company parking manager account created successfully.",
             400: "Bad Request",
             422: "Unprocessable Entity",
         },
     )
-    @jwt_required(False)
-    def post(self, new_establishment_data):
-        
+    def post(self, company_account_data):
+        company_account_data.update({"role": "parking_manager"})
+        print(company_account_data)
         return set_response(
             201,
             {
                 "code": "success",
-                "message": "Parking manager account created successfully.",
+                "message": "Company parking manager account created successfully.",
+            },
+        )
+
+@parking_manager_blp.route("/individual/account/create")
+class CreateParkingManagerAccount(MethodView):
+    @parking_manager_blp.arguments(IndividualParkingManagerSchema)
+    @parking_manager_blp.response(201, ApiResponse)
+    @parking_manager_blp.doc(
+        description="Individual Parking Manager Account Creation",
+        responses={
+            201: "Individual parking manager account created successfully.",
+            400: "Bad Request",
+            422: "Unprocessable Entity",
+        },
+    )
+    @jwt_required(True)
+    def post(self, individual_account_data):
+        print(individual_account_data)
+        return set_response(
+            201,
+            {
+                "code": "success",
+                "message": "Individual parking manager account created successfully.",
             },
         )
     

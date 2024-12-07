@@ -35,7 +35,7 @@ class DocumentStatusEnum(str, PyEnum):
 
 class EstablishmentDocument(Base):
     __tablename__ = "establishment_document"
-    
+
     document_id = Column(
         Integer,
         primary_key=True,
@@ -44,7 +44,7 @@ class EstablishmentDocument(Base):
     )
     establishment_id = Column(
         Integer,
-        ForeignKey("public.parking_establishment.establishment_id", ondelete="CASCADE"),
+        ForeignKey("parking_establishment.establishment_id", ondelete="CASCADE"),
         nullable=True,
     )
     document_type = Column(
@@ -63,7 +63,7 @@ class EstablishmentDocument(Base):
     verified_at = Column(TIMESTAMP(timezone=False), nullable=True)
     verified_by = Column(
         Integer,
-        ForeignKey("public.user.user_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+        ForeignKey("user.user_id", ondelete="NO ACTION", onupdate="NO ACTION"),
         nullable=True,
     )
     status = Column(
@@ -72,7 +72,7 @@ class EstablishmentDocument(Base):
         server_default=text("'pending'::character varying"),
     )
     verification_notes = Column(Text, nullable=True)
-    
+
     __table_args__ = (
         {"schema": "public"},
         CheckConstraint(

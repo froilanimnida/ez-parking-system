@@ -13,6 +13,7 @@ from app.utils.uuid_utility import UUIDUtility
 
 class Audit(Base):  # pylint: disable=too-few-public-methods
     """Model for audit logs."""
+
     __tablename__ = "audit"
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(BINARY(16), nullable=False)
@@ -21,7 +22,8 @@ class Audit(Base):  # pylint: disable=too-few-public-methods
     action_type = Column(Enum("CREATE", "UPDATE", "DELETE"), nullable=False)
     details = Column(VARCHAR(255), nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    user = relationship("User", back_populates="audit")
+
+    # user = relationship("User", back_populates="audit")
     def to_dict(self):  # pylint: disable=missing-function-docstring
         uuid_utility = UUIDUtility()
         return {
@@ -34,10 +36,14 @@ class Audit(Base):  # pylint: disable=too-few-public-methods
             "timestamp": self.timestamp,
         }
 
+
 class AuditOperations:
     """Wraps the logic for audit operations."""
+
     @staticmethod
-    def create_audit_log(audit_data: dict):  # pylint: disable=missing-function-docstring
+    def create_audit_log(
+        audit_data: dict,
+    ):  # pylint: disable=missing-function-docstring
         session = get_session()
         try:
             audit = Audit(
@@ -54,8 +60,9 @@ class AuditOperations:
             raise error
         finally:
             session.close()
+
     @staticmethod
-    def get_all_audit_logs(): # pylint: disable=missing-function-docstring
+    def get_all_audit_logs():  # pylint: disable=missing-function-docstring
         session = get_session()
         try:
             audit_logs = session.query(Audit).all()
@@ -65,8 +72,11 @@ class AuditOperations:
         finally:
             session.close()
         return audit_logs
+
     @staticmethod
-    def delete_audit_log(audit_uuid: bytes):  # pylint: disable=missing-function-docstring
+    def delete_audit_log(
+        audit_uuid: bytes,
+    ):  # pylint: disable=missing-function-docstring
         session = get_session()
         try:
             audit = session.query(Audit).filter_by(uuid=audit_uuid).first()

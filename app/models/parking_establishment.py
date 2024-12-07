@@ -24,7 +24,9 @@ from sqlalchemy import (
     update,
     ForeignKey,
     TIMESTAMP,
-    case, CheckConstraint, String,
+    case,
+    CheckConstraint,
+    String,
 )
 from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
 from sqlalchemy.orm import relationship
@@ -38,13 +40,14 @@ from app.utils.engine import get_session
 from app.utils.uuid_utility import UUIDUtility
 
 
+class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, missing-class-docstring
+    __tablename__ = "parking_establishment"
 
-class ParkingEstablishment(Base):
-    __tablename__ = 'parking_establishment'
-    
     establishment_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID, default=uuid4, unique=True)
-    profile_id = Column(Integer, ForeignKey('business_profile.profile_id'), nullable=False)
+    profile_id = Column(
+        Integer, ForeignKey("company_profile.profile_id"), nullable=False
+    )
     name = Column(String(255), nullable=False)
     space_type = Column(String(20), nullable=False)
     space_layout = Column(String(20), nullable=False)
@@ -53,32 +56,38 @@ class ParkingEstablishment(Base):
     is_24_hours = Column(Boolean, default=False)
     access_info = Column(Text)
     custom_access = Column(Text)
-    status = Column(String(20), default='pending')
+    status = Column(String(20), default="pending")
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
-    updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
-    
+    updated_at = Column(
+        TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
+    lighting = Column(Text, nullable=False)
+    accessibility = Column(Text, nullable=False)
+    nearby_landmarks = Column(Text, nullable=True)
+    longitude = Column(DECIMAL(precision=9, scale=6), nullable=False)
+    latitude = Column(DECIMAL(precision=9, scale=6), nullable=False)
+
     # Constraints (Space Layout, Space Type, and Status check constraints)
     __table_args__ = (
         CheckConstraint(
             "space_layout IN ('parallel', 'perpendicular', 'angled', 'custom')",
-            name='parking_establishment_space_layout_check'
+            name="parking_establishment_space_layout_check",
         ),
         CheckConstraint(
             "space_type IN ('Indoor', 'Outdoor', 'Both')",
-            name='parking_establishment_space_type_check'
+            name="parking_establishment_space_type_check",
         ),
         CheckConstraint(
             "status IN ('pending', 'approved', 'rejected')",
-            name='parking_establishment_status_check'
+            name="parking_establishment_status_check",
         ),
     )
-    
+
     # Relationship
-    business_profile = relationship("BusinessProfile", backref="parking_establishments")
-    
+    company_profile = relationship("CompanyProfile", backref="parking_establishments")
+
     def __repr__(self):
         return f"<ParkingEstablishment(establishment_id={self.establishment_id}, uuid={self.uuid}, space_type={self.space_type}, status={self.status})>"
-
 
     def to_dict(self):
         """Convert the ParkingEstablishment instance to a dictionary."""
@@ -98,6 +107,11 @@ class ParkingEstablishment(Base):
             "status": self.status,
             "created_at": str(self.created_at),
             "updated_at": str(self.updated_at),
+            "lighting": self.lighting,
+            "accessibility": self.accessibility,
+            "nearby_landmarks": self.nearby_landmarks,
+            "longitude": float(self.longitude),
+            "latitude": float(self.latitude),
         }
 
     def calculate_distance_from(self, latitude: float, longitude: float) -> float:
