@@ -10,12 +10,9 @@
 from uuid import uuid4
 
 from sqlalchemy import (
-    VARCHAR,
     Boolean,
     Column,
     Integer,
-    BINARY,
-    TIME,
     Text,
     UUID,
     DECIMAL,
@@ -36,6 +33,7 @@ from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentEditsNotAllowedException,
 )
 from app.models.base import Base
+from app.utils.db import session_scope
 from app.utils.engine import get_session
 from app.utils.uuid_utility import UUIDUtility
 
@@ -91,6 +89,8 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
 
     def to_dict(self):
         """Convert the ParkingEstablishment instance to a dictionary."""
+        if self is None:
+            return {}
         uuid_utility = UUIDUtility()
         return {
             "establishment_id": self.establishment_id,
@@ -154,6 +154,19 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             raise err
         finally:
             session.close()
+    
+    @staticmethod
+    def get_establishment_id(establishment_uuid: bytes):
+        """Get establishment ID by UUID"""
+        with session_scope() as session:
+            establishment = (
+                session.query(ParkingEstablishment)
+                .filter(ParkingEstablishment.uuid == establishment_uuid)
+                .first()
+            )
+            return establishment.establishment_id
+        
+
 
 
 class GetEstablishmentOperations:
@@ -381,55 +394,6 @@ class GetEstablishmentOperations:
         finally:
             session.close()
 
-
-class CreateEstablishmentOperations:  # pylint: disable=R0903
-    """
-    Class that handles the creation of new parking establishments in the database.
-    Provides a static method to create establishments using provided data dictionary.
-    Handles database session management and error handling for establishment creation.
-    """
-
-    @staticmethod
-    def create_establishment(establishment_data: dict):
-        """
-        Creates a new parking establishment in the database using provided data.
-
-        Args:
-            establishment_data (dict): Dictionary containing establishment details including uuid,
-                manager_id, name, address, contact info, hours, rates and coordinates.
-
-        Raises:
-            OperationalError: If there is a problem with database operations
-            DatabaseError: If there is a general database error
-            DataError: If there is an issue with the data format
-            IntegrityError: If there is a violation of database constraints
-        """
-        session = get_session()
-        try:
-            establishment = ParkingEstablishment(
-                uuid=establishment_data.get("uuid"),
-                manager_id=establishment_data.get("manager_id"),
-                name=establishment_data.get("name"),
-                address=establishment_data.get("address"),
-                contact_number=establishment_data.get("contact_number"),
-                opening_time=establishment_data.get("opening_time"),
-                closing_time=establishment_data.get("closing_time"),
-                is_24_hours=establishment_data.get("is_24_hours"),
-                created_at=establishment_data.get("created_at"),
-                updated_at=establishment_data.get("updated_at"),
-                hourly_rate=establishment_data.get("hourly_rate"),
-                longitude=establishment_data.get("longitude"),
-                latitude=establishment_data.get("latitude"),
-            )
-            session.add(establishment)
-            session.commit()
-        except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
-            session.rollback()
-            raise err
-        finally:
-            session.close()
-
-
 class UpdateEstablishmentOperations:  # pylint: disable=R0903
     """
     Class that handles update operations for parking establishments.
@@ -511,28 +475,6 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
         finally:
             session.close()
 
-    @staticmethod
-    def update_hours(manager_id: int, data: dict):
-        """Update the schedule hours of the establishment"""
-        session = get_session()
-        try:
-            session.execute(
-                update(ParkingEstablishment)
-                .where(ParkingEstablishment.manager_id == manager_id)
-                .values(
-                    {
-                        "opening_time": data.get("opening_time"),
-                        "closing_time": data.get("closing_time"),
-                        "is_24_hours": data.get("is_24_hours"),
-                    }
-                )
-            )
-            session.commit()
-        except (OperationalError, DatabaseError) as error:
-            raise error
-        finally:
-            session.close()
-
 
 class DeleteEstablishmentOperations:  # pylint: disable=R0903
     """
@@ -572,25 +514,25 @@ class DeleteEstablishmentOperations:  # pylint: disable=R0903
             session.close()
 
 
-class ParkingManagerOperations:  # pylint: disable=R0903
-    """Class for operations related to parking manager"""
-
-    @staticmethod
-    def get_all_slots(manager_id: int):
-        """Get all establishment information"""
-        session = get_session()
-        try:
-            establishment = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.manager_id == manager_id)
-                .first()
-            )
-            return establishment.to_dict()  # type: ignore
-        except (OperationalError, DatabaseError) as error:
-            raise error
-        finally:
-            session.close()
-
 
 class ParkingEstablishmentRepository:  # pylint: disable=R0903
     """Class for operations related to parking establishment"""
+    @staticmethod
+    def create_establishment(establishment_data: dict):
+        """Create a new parking establishment."""
+        with session_scope() as session:
+            new_parking_establishment = ParkingEstablishment(**establishment_data)
+            session.add(new_parking_establishment)
+            session.flush()
+            return new_parking_establishment.establishment_id
+        
+    @staticmethod
+    def get_establishment(establishment_uuid: bytes):
+        """Get parking establishment by UUID."""
+        with session_scope() as session:
+            establishment = (
+                session.query(ParkingEstablishment)
+                .filter(ParkingEstablishment.uuid == establishment_uuid)
+                .first()
+            )
+            return establishment.to_dict()

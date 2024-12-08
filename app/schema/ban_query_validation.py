@@ -1,18 +1,44 @@
 """ Wraps the query validation for banning the plate numbers by the admin. """
 
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, fields, validate, post_load
+
+from app.utils.uuid_utility import UUIDUtility
 
 
 class BanQueryValidation(Schema):
     """Validation schema for banning the plate numbers by the admin."""
 
-    plate_number = fields.Str(required=True, validate=validate.Length(min=1, max=10))
-    reason = fields.Str(required=True, validate=validate.Length(min=1, max=255))
+    ban_reason = fields.Str(required=True, validate=validate.Length(min=1, max=255))
+    ban_start = fields.DateTime(required=True)
+    ban_end = fields.DateTime(required=True)
     is_permanent = fields.Bool(required=True)
-    banned_by = fields.Int(required=True, validate=validate.Range(min=1))
+    
+    @post_load
+    def normalize_ban_reason(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Normalize ban reason by removing leading and trailing whitespaces."""
+        if "ban_reason" in in_data:
+            in_data["ban_reason"] = in_data["ban_reason"].strip()
+        return in_data
+    
+    @post_load
+    def validate_ban_start_end(self, in_data, **kwargs): # pylint: disable=unused-argument
+        """Validate if the ban end is greater than the ban start."""
+        if "ban_start" in in_data and "ban_end" in in_data:
+            if in_data["ban_start"] > in_data["ban_end"]:
+                raise ValueError("Ban end should be greater than the ban start.")
+        if "ban_start" in in_data and "ban_end" in in_data:
+            if in_data["ban_start"] == in_data["ban_end"]:
+                raise ValueError("Ban start and end should not be the same.")
+        return in_data
 
 class UnbanQueryValidation(Schema):
     """Validation schema for unbanning the plate numbers by the admin."""
-
-    plate_number = fields.Str(required=True, validate=validate.Length(min=1, max=10))
-    unbanned_by = fields.Int(required=True, validate=validate.Range(min=1))
+    ban_uuid = fields.Str(required=True)
+    
+    @post_load
+    def normalize_uuid(self, in_data, **kwargs): # pylint: disable=unused-argument
+        """Normalize the ban_uuid by removing hyphens."""
+        uuid_utility = UUIDUtility()
+        in_data["ban_uuid"] = uuid_utility.remove_hyphens_from_uuid(in_data["ban_uuid"])
+        in_data["ban_uuid"] = uuid_utility.uuid_to_binary(in_data["ban_uuid"])
+        return in_data

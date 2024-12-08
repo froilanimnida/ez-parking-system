@@ -25,7 +25,7 @@ from app.schema.parking_manager_validation import (
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
-from app.services.parking_manager_service import ParkingManagerService
+# from app.services.parking_manager_service import ParkingManagerService
 from app.services.slot_service import SlotService
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
@@ -196,12 +196,14 @@ class CreateSlot(MethodView):
             201: "Slot created successfully.",
             400: "Bad Request",
             401: "Unauthorized",
+            422: "Unprocessable Entity",
         },
     )
     @parking_manager_required()
     @jwt_required(False)
-    def post(self, new_slot_data):
-        SlotService.create_slot(new_slot_data)
+    def post(self, new_slot_data, user_id):
+        
+        SlotService.create_slot(new_slot_data, user_id)
         return set_response(
             201, {"code": "success", "message": "Slot created successfully."}
         )
@@ -218,6 +220,7 @@ class DeleteSlot(MethodView):
             200: "Slot deleted successfully.",
             400: "Bad Request",
             401: "Unauthorized",
+            422: "Unprocessable Entity",
         },
     )
     @parking_manager_required()
@@ -326,13 +329,13 @@ class GetAllEstablishmentsInfo(MethodView):
     @jwt_required(False)
     @parking_manager_required()
     def get(self, user_id):
-        data = ParkingManagerService.get_all_establishment_info(user_id)
+        # data = ParkingManagerService.get_all_establishment_info(user_id)
         return set_response(
             200,
             {
                 "code": "success",
                 "message": "Establishments information retrieved successfully.",
-                "data": data,
+                # "data": data,
             },
         )
 

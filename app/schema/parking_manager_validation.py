@@ -168,17 +168,25 @@ class UpdateEstablishmentInfoSchema(EstablishmentValidationBaseSchema):
             raise ValidationError("Closing time must be greater than opening time.")
 
 
-class CreateSlotSchema(EstablishmentValidationBaseSchema):
+class CreateSlotSchema(Schema):
     """Validation schema for create slot."""
 
     slot_code = fields.Str(required=True, validate=validate.Length(min=3, max=45))
     vehicle_type_id = fields.Integer(required=True)
     slot_status = fields.Str(
-        missing="open",
         required=False,
         validate=validate.OneOf(["open", "reserved", "occupied"]),
     )
     is_active = fields.Boolean(required=False, missing=True)
+    slot_multiplier = fields.Decimal(
+        required=True, validate=validate.Range(min=0, max=999999)
+    )
+    floor_level = fields.Integer(required=True, validate=validate.Range(min=0, max=99))
+    base_rate = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))
+    is_premium = fields.Boolean(required=True)
+    slot_features = fields.Str(required=False, missing="standard", validate=validate.OneOf(
+        ["standard", "covered", "vip", "disabled", "ev_charging"]
+    ))
 
 
 class UpdateSlotSchema(CreateSlotSchema):  # pylint: disable=C0115

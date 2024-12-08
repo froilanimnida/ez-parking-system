@@ -16,9 +16,7 @@ from sqlalchemy import (
     Enum,
     DateTime,
     ForeignKey,
-    select,
     Boolean,
-    func,
     and_,
     update,
     SMALLINT,
@@ -169,28 +167,6 @@ class GettingSlotsOperations:  # pylint: disable=R0903
         except OperationalError as error:
             raise error
 
-    @staticmethod
-    def get_slot_by_slot_id(slot_id: int):
-        """Retrieves a single slot from the database by its slot ID.
-
-        Args:
-            slot_id (int): The unique identifier of the slot.
-
-        Returns:
-            Slot: Slot object matching the slot ID.
-
-        Raises:
-            SlotNotFound: If the slot is not found.
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            slot = session.query(Slot).filter(Slot.slot_id == slot_id).first()
-            if slot is None:
-                raise SlotNotFound("Slot not found.")
-            return slot.to_dict()
-        except OperationalError as error:
-            raise error
 
     @staticmethod
     def get_slots_by_vehicle_type(vehicle_type_id: int, establishment_id: int):
@@ -217,142 +193,6 @@ class GettingSlotsOperations:  # pylint: disable=R0903
                 .all()
             )
             return slots
-        except OperationalError as error:
-            raise error
-
-    @staticmethod
-    def get_slots_by_establishment(establishment_id: int):
-        """Retrieves all slots from the database for a specific establishment with open slot count.
-
-        Args:
-            establishment_id (int): The ID of the parking establishment.
-
-        Returns:
-            list[dict]: List of dictionaries containing slot, vehicle type info and open slot count.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        from app.models.vehicle_type import VehicleType
-
-        session = get_session()
-        try:
-            # First get total open slots count
-            open_slots_count = (
-                session.query(func.count(Slot.slot_id))
-                .filter(
-                    Slot.establishment_id == establishment_id,
-                    Slot.slot_status == "open",
-                )
-                .scalar()
-            )
-
-            # Then get detailed slot info
-            results = session.execute(
-                select(
-                    Slot,
-                    VehicleType.name.label("vehicle_type_name"),
-                    VehicleType.size_category.label("size_category"),
-                    VehicleType.code.label("vehicle_type_code"),
-                    func.count(Slot.slot_id)
-                    .filter(Slot.slot_status == "open")
-                    .over(partition_by=VehicleType.vehicle_id)
-                    .label("available_slots"),
-                )
-                .where(Slot.establishment_id == establishment_id)
-                .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
-            ).all()
-
-            slots_with_vehicle_info = []
-            for result in results:
-                slot_dict = result[0].to_dict()
-                slot_dict.update(
-                    {
-                        "vehicle_type_name": result[1],
-                        "size_category": result[2],
-                        "vehicle_type_code": result[3],
-                        "available_slots": result[4],
-                        "total_open_slots": open_slots_count,
-                    }
-                )
-                slots_with_vehicle_info.append(slot_dict)
-
-            return slots_with_vehicle_info
-
-        except OperationalError as error:
-            raise error
-        finally:
-            session.close()
-
-    @staticmethod
-    def get_slot_by_slot_code(slot_code: str, establishment_id: int):
-        """Retrieves a single slot from the database by its slot code.
-
-        Args:
-            slot_code (str): The unique code identifier for the slot.
-            establishment_id (int): The ID of the parking establishment.
-
-        Returns:
-            dict: Dictionary containing slot information and related data.
-
-        Raises:
-            SlotNotFound: If the slot is not found.
-            OperationalError: If there is a database operation error.
-        """
-        from app.models.parking_establishment import ParkingEstablishment
-        from app.models.vehicle_type import VehicleType
-
-        session = get_session()
-        try:
-            result = (
-                session.query(
-                    Slot,
-                    ParkingEstablishment.name,
-                    VehicleType.name,
-                    VehicleType.size_category,
-                    VehicleType.code,
-                    VehicleType.description,
-                )
-                .filter(
-                    and_(
-                        Slot.slot_code == slot_code,
-                        Slot.establishment_id == establishment_id,
-                    )
-                )
-                .join(
-                    ParkingEstablishment,
-                    Slot.establishment_id == ParkingEstablishment.establishment_id,
-                )
-                .join(VehicleType, Slot.vehicle_type_id == VehicleType.vehicle_id)
-                .first()
-            )
-
-            if result is None:
-                raise SlotNotFound("Slot not found.")
-
-            slot = result[0]
-
-            slot_info = {
-                "slot_id": slot.slot_id,
-                "slot_code": slot.slot_code,
-                "establishment_id": slot.establishment_id,
-                "vehicle_type_id": slot.vehicle_type_id,
-                "status": slot.slot_status,
-                "created_at": slot.created_at,
-                "updated_at": slot.updated_at,
-            }
-
-            slot_info.update(
-                {
-                    "establishment_name": result[1],
-                    "vehicle_type_name": result[2],
-                    "size_category": result[3],
-                    "vehicle_type_code": result[4],
-                    "vehicle_type_description": result[5],
-                }
-            )
-
-            return slot_info
         except OperationalError as error:
             raise error
 

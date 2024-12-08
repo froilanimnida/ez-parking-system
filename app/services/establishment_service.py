@@ -1,24 +1,16 @@
 """ Establishment related operations from the routes will be handled here. """
 
 from datetime import datetime
-from uuid import uuid4
 
 from app.models.parking_establishment import (
-    CreateEstablishmentOperations,
     GetEstablishmentOperations,
     UpdateEstablishmentOperations,
-    DeleteEstablishmentOperations,
 )
 from app.models.slot import GettingSlotsOperations
 
 
 class EstablishmentService:
     """Class for operations related to parking establishment."""
-
-    @classmethod
-    def create_new_parking_establishment(cls, establishment_data: dict):
-        """Create a new parking establishment."""
-        CreateEstablishmentService.create_new_parking_establishment(establishment_data)
 
     @classmethod
     def get_establishments(cls, query_dict: dict) -> list:
@@ -31,11 +23,6 @@ class EstablishmentService:
     def update_establishment(cls, establishment_data: dict):
         """Update parking establishment."""
         UpdateEstablishmentService.update_establishment(establishment_data)
-
-    @classmethod
-    def delete_establishment(cls, establishment_uuid: bytes):
-        """Delete parking establishment."""
-        DeleteEstablishmentService.delete_establishment(establishment_uuid)
 
     @classmethod
     def get_establishment_info(cls, establishment_uuid: bytes):
@@ -53,18 +40,6 @@ class EstablishmentService:
         return UpdateEstablishmentService.update_establishment_schedule(
             manager_id, schedule_data
         )
-
-
-class CreateEstablishmentService:  # pylint: disable=R0903
-    """Class for operations related to creating parking establishment."""
-
-    @classmethod
-    def create_new_parking_establishment(cls, establishment_data: dict):
-        """Create a new parking establishment."""
-        establishment_data["uuid"] = uuid4().bytes
-        establishment_data["created_at"] = datetime.now()
-        establishment_data["updated_at"] = datetime.now()
-        return CreateEstablishmentOperations.create_establishment(establishment_data)
 
 
 class GetEstablishmentService:
@@ -110,12 +85,3 @@ class UpdateEstablishmentService:  # pylint: disable=R0903
     def update_establishment_schedule(cls, manager_id: int, schedule_data: dict):
         """Update parking establishment schedule."""
         return UpdateEstablishmentOperations.update_hours(manager_id, schedule_data)
-
-
-class DeleteEstablishmentService:  # pylint: disable=R0903
-    """Class for operations related to deleting parking establishment."""
-
-    @classmethod
-    def delete_establishment(cls, establishment_uuid: bytes):
-        """Delete parking establishment."""
-        DeleteEstablishmentOperations.delete_establishment(establishment_uuid)

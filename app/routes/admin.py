@@ -4,15 +4,14 @@
 
 from functools import wraps
 
+from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
-from flask.views import MethodView
 
 from app.schema.ban_query_validation import BanQueryValidation
 from app.schema.parking_manager_validation import CreateSlotSchema, UpdateSlotSchema
 from app.services.admin_service import AdminService
 from app.utils.response_util import set_response
-
 
 admin_blp = Blueprint(
     "admin",
@@ -40,7 +39,7 @@ def admin_role_required():
     return wrapper
 
 
-@admin_blp.route("/ban-plate-number")
+@admin_blp.route("/ban-user")
 class BanPlateNumber(MethodView):
     @admin_blp.arguments(BanQueryValidation)
     @admin_blp.response(200, {"message": str})

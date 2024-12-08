@@ -36,10 +36,22 @@ class EstablishmentSlotTypeValidation(EstablishmentQueryValidationBase):
     )
 
 
-class SlotCodeValidationQuerySchema(EstablishmentQueryValidationBase):
+class SlotCodeValidationQuerySchema(Schema):
     """Slot code validation query schema."""
 
-    slot_code = fields.Str(required=True, validate=validate.Length(min=1, max=45))
+    slot_uuid = fields.Str(required=True)
+    
+    @post_load
+    def remove_hyphen(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Remove hyphen from the slot_uuid."""
+        uuid_utility = UUIDUtility()
+        data["slot_uuid"] = uuid_utility.remove_hyphens_from_uuid(
+            data["slot_uuid"]
+        )
+        data["slot_uuid"] = uuid_utility.uuid_to_binary(
+            data["slot_uuid"]
+        )
+        return data
 
 
 class EstablishmentQuerySchema(Schema):

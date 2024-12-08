@@ -30,6 +30,7 @@ from sqlalchemy import (
     DateTime,
     update, String, TIMESTAMP,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.exc import IntegrityError, OperationalError, DatabaseError, DataError
 from sqlalchemy.orm import relationship
 
@@ -48,6 +49,7 @@ class VehicleType(Base):
     
     # Columns definition
     vehicle_type_id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, default=func.uuid_generate_v4())
     code = Column(String(45), nullable=False)
     name = Column(String(125), nullable=False)
     description = Column(String(255), nullable=False)

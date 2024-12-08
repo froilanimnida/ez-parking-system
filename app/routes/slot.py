@@ -2,32 +2,32 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
-from flask_smorest import Blueprint
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
+from flask_smorest import Blueprint
 
-from app.schema.query_validation import (
-    EstablishmentQueryValidation,
-    EstablishmentSlotTypeValidation,
-    SlotCodeValidationQuerySchema,
-)
-from app.schema.response_schema import ApiResponse
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
-from app.services.slot_service import SlotService
-from app.utils.response_util import set_response
-from app.utils.error_handlers.vehicle_type_error_handlers import (
-    handle_vehicle_type_does_not_exist,
+from app.schema.query_validation import (
+    EstablishmentQueryValidation,
+    EstablishmentSlotTypeValidation,
+    SlotCodeValidationQuerySchema,
 )
+from app.schema.response_schema import ApiResponse
+from app.services.slot_service import SlotService
 from app.utils.error_handlers.slot_lookup_error_handlers import (
     handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment,
     handle_no_slots_found_in_the_given_vehicle_type,
 )
+from app.utils.error_handlers.vehicle_type_error_handlers import (
+    handle_vehicle_type_does_not_exist,
+)
+from app.utils.response_util import set_response
 
 slot_blp = Blueprint(
     "slot",
@@ -76,7 +76,7 @@ class GetSlotsByVehicleType(MethodView):
         return set_response(200, {"slots": slots})
 
 
-@slot_blp.route("/get-slot-by-slot-code")
+@slot_blp.route("/get-slot")
 class GetSlotsBySlotCode(MethodView):
     """Get slots by slot code."""
 
@@ -92,7 +92,6 @@ class GetSlotsBySlotCode(MethodView):
     @jwt_required(True)
     def get(self, data):
         slot_code = data.get("slot_code")
-        establishment_uuid = data.get("establishment_uuid")
         slot = SlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
         return set_response(200, {"slot": slot})
 

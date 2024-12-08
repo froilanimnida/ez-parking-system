@@ -2,18 +2,14 @@
 
 # pylint: disable=R0401, R0801, C0415
 
-from typing import Literal
 from enum import Enum as PyEnum
+from typing import Literal
 
 from sqlalchemy import (
-    VARCHAR,
     Column,
     Enum,
     Integer,
     ForeignKey,
-    DateTime,
-    BINARY,
-    DECIMAL,
     TIMESTAMP,
     text,
     Numeric,
@@ -94,16 +90,21 @@ class ParkingTransaction(
         onupdate=func.now(),
     )
 
-    vehicle_type = relationship("VehicleType", back_populates="transactions")
-    parking_slot = relationship("ParkingSlot", back_populates="transactions")
+    vehicle_type = relationship("VehicleType", back_populates="parking_transaction")
+    parking_slot = relationship("ParkingSlot", back_populates="parking_transaction")
 
     def to_dict(self):
         """
         Convert the model instance to a dictionary.
         """
+        if self is None:
+            return {}
+        uuid_utility = UUIDUtility()
         return {
             "transaction_id": self.transaction_id,
-            "uuid": self.uuid.hex(),
+            "uuid": uuid_utility.format_uuid(
+                uuid_utility.binary_to_uuid(self.uuid)
+            ),
             "slot_id": self.slot_id,
             "vehicle_type_id": self.vehicle_type_id,
             "plate_number": self.plate_number,

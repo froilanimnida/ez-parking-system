@@ -18,8 +18,8 @@
 
 # pylint: disable=R0801
 
-from enum import Enum as PyEnum
 from datetime import datetime
+from enum import Enum as PyEnum
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -37,11 +37,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
-from app.models.audit import UUIDUtility
+
+from app.exceptions.authorization_exceptions import EmailNotFoundException
+from app.models.audit_log import UUIDUtility
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.db import session_scope
-from app.exceptions.authorization_exceptions import EmailNotFoundException
 from app.utils.engine import get_session
 
 
@@ -59,9 +60,9 @@ class User(Base):
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
     nickname = Column(String(24), nullable=True)
-    first_name = Column(String(100), nullable=False)
-    middle_name = Column(String(100), nullable=True)
-    last_name = Column(String(100), nullable=False)
+    first_name = Column(String(50), nullable=True)
+    middle_name = Column(String(50), nullable=True)
+    last_name = Column(String(100), nullable=True)
     suffix = Column(String(5), nullable=True)
     email = Column(String(75), nullable=False, unique=True)
     phone_number = Column(String(15), nullable=False, unique=True)
@@ -83,25 +84,21 @@ class User(Base):
             "role IN ('user', 'parking_manager', 'admin')", name="valid_role"
         ),
     )
-    # parking_establishment = relationship(
-    #     "ParkingEstablishment",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    # )
 
-    # banned_plate = relationship(
-    #     "BannedPlate",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    #     foreign_keys="BannedPlate.plate_number",
-    # )
-    # audit = relationship(
-    #     "Audit",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    # )
-    files = relationship(
-        "ParkingManagerFile", back_populates="manager", cascade="all, delete-orphan"
+    ban_user = relationship(
+        "BanUser",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    audit_log = relationship(
+        "AuditLog",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    establishment_document = relationship(
+        "EstablishmentDocument",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
     company_profile = relationship(
         "CompanyProfile",
@@ -112,6 +109,8 @@ class User(Base):
 
     def to_dict(self):
         """Converts the user object to a dictionary."""
+        if self is None:
+            return {}
         uuid_utility = UUIDUtility()
         return {
             "user_id": self.user_id,
@@ -130,6 +129,17 @@ class User(Base):
             "verification_expiry": self.verification_expiry,
             "created_at": self.created_at,
         }
+    
+    def __repr__(self):
+        """String representation of the User object."""
+        return f"<User(user_id={self.user_id}, email={self.email})>"
+    
+    @staticmethod
+    def get_user_id(user_uuid: bytes):
+        """Get the user ID from the user UUID."""
+        with session_scope() as session:
+            user = session.execute(select(User).where(User.uuid == user_uuid)).scalar()
+            return user.user_id
 
 
 class UserRepository:

@@ -2,17 +2,15 @@
 
 from datetime import datetime
 
+from app.models.ban_user import BannedPlateOperations, BanUserRepository
 from app.models.slot import SlotOperation
-from app.models.banned_plate import BannedPlateOperations
 
 
 class AdminService:
     """Service class for admin operations."""
 
     @staticmethod
-    def ban_plate_number(  # pylint: disable=C0116
-        ban_data: dict,
-    ) -> None:
+    def ban_plate_number(ban_data: dict,) -> None: # pylint: disable=C0116
         return PlateBanningService.ban_plate_number(ban_data)
 
     @staticmethod
@@ -34,14 +32,8 @@ class PlateBanningService:
     """Service class for banning plate numbers."""
 
     @staticmethod
-    def ban_plate_number(  # pylint: disable=C0116
-        ban_data: dict,
-    ) -> None:
-        return BannedPlateOperations.ban_plate(
-            ban_data.get("plate_number"),  # type: ignore
-            ban_data.get("reason"),  # type: ignore
-            ban_data.get("banned_by"),  # type: ignore
-        )
+    def ban_plate_number(ban_data: dict) -> None:  # pylint: disable=C0116
+        return BanUserRepository.ban_user(ban_data)
 
     @staticmethod
     def unban_plate_number(  # pylint: disable=C0116

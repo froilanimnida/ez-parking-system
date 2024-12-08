@@ -8,7 +8,6 @@ from werkzeug.utils import secure_filename
 from app.schema.parking_manager_validation import FileUploadSchema
 from app.schema.response_schema import ApiResponse
 from app.utils.response_util import set_response
-from app.models.parking_manager_file import ParkingManagerFileRepository
 
 file_upload_blp = Blueprint(
     "file_upload",

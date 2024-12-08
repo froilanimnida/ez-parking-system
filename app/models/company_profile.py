@@ -12,6 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
+from app.utils.db import session_scope
 
 
 class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
@@ -40,3 +41,37 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
 
     def __repr__(self):
         return f"<CompanyProfile(profile_id={self.profile_id}, user_id={self.user_id}, owner_type={self.owner_type})>"
+    
+    def to_dict(self):
+        if self is None:
+            return {}
+        return {
+            "profile_id": self.profile_id,
+            "user_id": self.user_id,
+            "owner_type": self.owner_type,
+            "company_name": self.company_name,
+            "company_reg_number": self.company_reg_number,
+            "tin": self.tin,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+
+
+class CompanyProfileRepository:
+    """Company Profile Repository"""
+
+    @staticmethod
+    def create_new_company_profile(profile_data: dict):
+        """Create a new company profile."""
+        with session_scope() as session:
+            company_profile = CompanyProfile(**profile_data)
+            session.add(company_profile)
+            session.commit()
+            return company_profile.profile_id
+        
+    @staticmethod
+    def get_company_profile_by_user_id(user_id: int):
+        """Get company profile by user id."""
+        with session_scope() as session:
+            company_profile = session.query(CompanyProfile).filter_by(user_id=user_id).first()
+            return company_profile.to_dict()

@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
+from app.utils.db import session_scope
 
 
 class RateType(PyEnum):
@@ -47,3 +48,65 @@ class PricingPlan(Base):
     
     def __repr__(self):
         return f"<PricingPlan(plan_id={self.plan_id}, establishment_id={self.establishment_id}, rate_type={self.rate_type}, rate={self.rate})>"
+    
+    def to_dict(self):
+        if self is None:
+            return {}
+        return {
+            'plan_id': self.plan_id,
+            'establishment_id': self.establishment_id,
+            'rate_type': self.rate_type,
+            'is_enabled': self.is_enabled,
+            'rate': self.rate,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
+        }
+
+
+class PricingPlanRepository:
+    """Repository for the PricingPlan model."""
+    
+    @staticmethod
+    def create_pricing_plan(establishment_id: int, pricing_plans: list):
+        """Create pricing plan for a parking establishment."""
+        with session_scope() as session:
+            pricing_plan_ids = []
+            for plan in pricing_plans:
+                pricing_plan = PricingPlan(
+                    establishment_id=establishment_id,
+                    rate_type=plan.get('rate_type'),
+                    rate=plan.get('rate')
+                )
+                session.add(pricing_plan)
+                pricing_plan_ids.append(pricing_plan.plan_id)
+            session.commit()
+            return pricing_plan_ids
+        
+    @staticmethod
+    def get_pricing_plans(establishment_id: int):
+        """Get pricing plans of a parking establishment."""
+        with session_scope() as session:
+            pricing_plans = session.query(PricingPlan).filter_by(establishment_id=establishment_id).all()
+            return [plan.to_dict() for plan in pricing_plans]
+        
+    @staticmethod
+    def update_pricing_plans(establishment_id: int, pricing_plans: list):
+        """Update pricing plans of a parking establishment."""
+        with session_scope() as session:
+            for plan in pricing_plans:
+                pricing_plan = session.query(PricingPlan).filter_by(
+                    establishment_id=establishment_id, rate_type=plan.get('rate_type')
+                ).first()
+                if pricing_plan is not None:
+                    pricing_plan.rate = plan.get('rate')
+                    pricing_plan.is_enabled = plan.get('is_enabled')
+            session.commit()
+            
+    @staticmethod
+    def delete_pricing_plans(establishment_id: int):
+        """Delete pricing plans of a parking establishment."""
+        with session_scope() as session:
+            pricing_plans = session.query(PricingPlan).filter_by(establishment_id=establishment_id).all()
+            for plan in pricing_plans:
+                session.delete(plan)
+            session.commit()
