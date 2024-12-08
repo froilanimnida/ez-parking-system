@@ -14,13 +14,14 @@ class AuditLog(Base):  # pylint: disable=too-few-public-methods
     """Model for audit logs."""
 
     __tablename__ = "audit_log"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    audit_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(BINARY(16), nullable=False)
-    admin_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
-    table_name = Column(VARCHAR(50), nullable=False)
     action_type = Column(Enum("CREATE", "UPDATE", "DELETE"), nullable=False)
+    performed_by = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+    target_user = Column(Integer, ForeignKey("user.user_id"), nullable=True)
     details = Column(VARCHAR(255), nullable=False)
-    timestamp = Column(DateTime, nullable=False)
+    performed_at = Column(DateTime, nullable=False)
+    ip_address = Column(VARCHAR(15), nullable=False)
     
     user = relationship("User", back_populates="audit_log")
 
@@ -30,13 +31,14 @@ class AuditLog(Base):  # pylint: disable=too-few-public-methods
             return {}
         uuid_utility = UUIDUtility()
         return {
-            "id": self.id,
+            "audit_id": self.audit_id,
             "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
-            "admin_id": self.admin_id,
-            "table_name": self.table_name,
             "action_type": self.action_type,
+            "performed_by": self.performed_by,
+            "target_user": self.target_user,
             "details": self.details,
-            "timestamp": self.timestamp,
+            "performed_at": self.performed_at,
+            "ip_address": self.ip_address
         }
 
 
@@ -47,7 +49,7 @@ class AuditLogRepository:  # pylint: disable=too-few-public-methods
             new_audit_log = AuditLog(**log_data)
             session.add(new_audit_log)
             session.flush()
-            return new_audit_log.id
+            return new_audit_log.audit_id
         
     @staticmethod
     def get_audit_log(audit_uuid: bytes):

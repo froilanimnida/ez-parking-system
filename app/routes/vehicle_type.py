@@ -2,6 +2,7 @@
 
 # pylint: disable=missing-function-docstring
 
+from flask import request
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
@@ -62,7 +63,8 @@ class CreateVehicleType(MethodView):
     @jwt_required(False)
     @admin_role_required()
     def post(self, new_vehicle_type_data, admin_id):
-        VehicleTypeService.create_new_vehicle_type(new_vehicle_type_data, admin_id)
+        ip_address = request.remote_addr
+        VehicleTypeService.create_new_vehicle_type(new_vehicle_type_data, admin_id, ip_address)
         return set_response(
             201,
             {

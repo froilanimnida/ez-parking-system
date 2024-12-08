@@ -206,7 +206,21 @@ class UpdateSlotSchema(CreateSlotSchema):  # pylint: disable=C0115
 
 
 class DeleteSlotSchema(EstablishmentValidationBaseSchema):  # pylint: disable=C0115
-    slot_id = fields.Integer(required=True)
+    slot_uuid = fields.Str(required=True)
+    
+    @post_load
+    def normalize_uuid_to_binary(
+        self, in_data, **kwargs
+    ):
+        """Normalize the slot_uuid to binary."""
+        uuid_utility = UUIDUtility()
+        in_data["slot_uuid"] = uuid_utility.remove_hyphens_from_uuid(
+            in_data["slot_uuid"]
+        )
+        in_data["slot_uuid"] = uuid_utility.uuid_to_binary(
+            in_data["slot_uuid"]
+        )
+        return in_data
 
 
 class SlotCodeValidationQuerySchema(Schema):  # pylint: disable=C0115

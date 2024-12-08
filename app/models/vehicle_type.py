@@ -36,6 +36,7 @@ from sqlalchemy.orm import relationship
 
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.models.base import Base
+from app.utils.db import session_scope
 from app.utils.engine import get_session
 
 
@@ -62,13 +63,11 @@ class VehicleType(Base):
         return f"<VehicleType(vehicle_type_id={self.vehicle_type_id}, code={self.code}, name={self.name}, size_category={self.size_category})>"
 
 
-    slot = relationship(
-        "Slot", back_populates="vehicle_type", cascade="all, delete-orphan"
+    parking_slot = relationship(
+        "ParkingSlot", back_populates="vehicle_type", cascade="all, delete-orphan"
     )
     parking_transaction = relationship(
-        "ParkingTransaction",
-        back_populates="vehicle_type",
-        cascade="all, delete-orphan",
+        "ParkingTransaction", back_populates="vehicle_type", cascade="all, delete-orphan"
     )
 
     def to_dict(self):
@@ -272,3 +271,23 @@ class VehicleRepository:  # pylint: disable=R0903
             raise error
         finally:
             session.close()
+            
+    
+    @staticmethod
+    def create_vehicle_type(vehicle_type_data: dict):
+        """Create a new vehicle type."""
+        with session_scope() as session:
+            vehicle_type = VehicleType(**vehicle_type_data)
+            session.add(vehicle_type)
+            session.commit()
+            return vehicle_type.vehicle_type_id
+        
+    @staticmethod
+    def update_vehicle_type(vehicle_id: int, vehicle_type_data: dict):
+        """Update vehicle type."""
+        with session_scope() as session:
+            vehicle_type = session.query(VehicleType).filter_by(vehicle_type_id=vehicle_id).update(
+                vehicle_type_data
+            )
+            session.commit()
+            return vehicle_type.vehicle_type_id

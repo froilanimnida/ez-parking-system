@@ -3,6 +3,7 @@ This module contains the SQLAlchemy model for the parking_slot table.
 """
 
 from enum import Enum as PyEnum
+from typing import Any
 
 from sqlalchemy import (
     Column,
@@ -85,7 +86,7 @@ class ParkingSlot(Base):
             "establishment_id", "slot_code", name="unique_establishment_slot_code"
         ),
     )
-
+    
     parking_establishment = relationship(
         "ParkingEstablishment", back_populates="parking_slot"
     )
@@ -131,7 +132,7 @@ class ParkingSlot(Base):
     #     return base_multiplier * slot_multiplier * feature_mult
 
 
-class SlotRepository:
+class ParkingSlotRepository:
     @staticmethod
     def create_slot(slot_data: dict) -> int:
         """
@@ -150,45 +151,46 @@ class SlotRepository:
             return new_slot.slot_id
     
     @staticmethod
-    def delete_slot(slot_id: int) -> int:
+    def delete_slot(slot_uuid: bytes) -> int:
         """
         Delete a parking slot.
     
         Parameters:
-            slot_id (int): The ID of the slot to be deleted.
+            slot_uuid (bytes): The UUID of the slot to be deleted.
     
         Returns:
             int: The ID of the deleted slot.
         """
         with session_scope() as session:
-            slot = session.query(ParkingSlot).get(slot_id)
+            slot = session.query(ParkingSlot).get(slot_uuid)
             if slot:
                 session.delete(slot)
-                return slot_id
+                return slot.slot_id
             else:
                 raise ValueError("Slot not found")
     
     @staticmethod
-    def update_slot(slot_id: int, slot_data: dict) -> int:
+    def update_slot(slot_data: dict) -> int:
         """
-        Update a parking slot.
+        Update a parking slot by the uuid of the slot.
     
         Parameters:
-            slot_id (int): The ID of the slot to be updated.
             slot_data (dict): Dictionary containing updated slot details.
     
         Returns:
             int: The ID of the updated slot.
         """
         with session_scope() as session:
-            result = session.query(ParkingSlot).filter(ParkingSlot.slot_id == slot_id).update(slot_data)
+            result = session.query(ParkingSlot).filter(
+                ParkingSlot.uuid == slot_data.get("uuid")
+            ).update(slot_data)
             if result:
-                return slot_id
+                return result
             else:
                 raise ValueError("Slot not found")
     
     @staticmethod
-    def get_slot(slot_uuid: bytes) -> dict:
+    def get_slot(slot_uuid: bytes = None) -> dict:
         """
         Get a parking slot by UUID.
     
@@ -203,7 +205,7 @@ class SlotRepository:
             return slot.to_dict()
     
     @staticmethod
-    def get_slots(establishment_id: int) -> list[ParkingSlot]:
+    def get_slots(establishment_id: int = None) -> list[ParkingSlot]:
         """
         Get all parking slots for a specific establishment.
 
@@ -215,6 +217,24 @@ class SlotRepository:
         """
         with session_scope() as session:
             slots = session.query(ParkingSlot).filter(ParkingSlot.establishment_id == establishment_id).all()
+            return [slot.to_dict() for slot in slots]
+    
+    @staticmethod
+    def get_slots_by_criteria(criteria: dict[str, Any]) -> list[dict[str, Any]]:
+        """
+        Fetch parking slots based on specific criteria.
+
+        Parameters:
+            criteria (dict): Dictionary containing the filter criteria.
+
+        Returns:
+            list[dict]: List of parking slot dictionaries.
+        """
+        with session_scope() as session:
+            query = session.query(ParkingSlot)
+            for key, value in criteria.items():
+                query = query.filter(getattr(ParkingSlot, key) == value)
+            slots = query.all()
             return [slot.to_dict() for slot in slots]
     
     @staticmethod

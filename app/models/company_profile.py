@@ -38,6 +38,7 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
     )
 
     user = relationship("User", back_populates="company_profile")
+    parking_establishment = relationship("ParkingEstablishment", back_populates="company_profile")
 
     def __repr__(self):
         return f"<CompanyProfile(profile_id={self.profile_id}, user_id={self.user_id}, owner_type={self.owner_type})>"

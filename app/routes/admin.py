@@ -9,7 +9,6 @@ from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
 from app.schema.ban_query_validation import BanQueryValidation
-from app.schema.parking_manager_validation import CreateSlotSchema, UpdateSlotSchema
 from app.services.admin_service import AdminService
 from app.utils.response_util import set_response
 
@@ -63,7 +62,7 @@ class BanPlateNumber(MethodView):
         return set_response(201, {"code": "success", "message": "Plate number banned."})
 
 
-@admin_blp.route("/unban-plate-number")
+@admin_blp.route("/unban-user")
 class UnbanPlateNumber(MethodView):
     @admin_blp.arguments(BanQueryValidation)
     @admin_blp.response(200, {"message": str})
@@ -86,56 +85,4 @@ class UnbanPlateNumber(MethodView):
         admin_service.unban_plate_number(ban_data["plate_number"])
         return set_response(
             201, {"code": "success", "message": "Plate number unbanned."}
-        )
-
-
-@admin_blp.route("/add-slot")
-class AddSlot(MethodView):
-    @admin_blp.arguments(CreateSlotSchema)
-    @admin_blp.response(200, {"message": str})
-    @admin_blp.doc(
-        security=[{"Bearer": []}],
-        description="Add a slot.",
-        responses={
-            200: "Slot added.",
-            401: "Unauthorized",
-            403: "Forbidden",
-            500: "Internal Server Error",
-            422: "Unprocessable",
-        },
-    )
-    @jwt_required(False)
-    @admin_role_required()
-    def post(self, slot_data, admin_id):
-        print(slot_data)
-        admin_service = AdminService()
-        print(admin_id)  # this is for auditing
-        admin_service.add_slot(slot_data)
-        return set_response(201, {"code": "success", "message": "Slot added."})
-
-
-@admin_blp.route("/update-slot")
-class UpdateParkingSlot(MethodView):
-
-    @admin_blp.arguments(UpdateSlotSchema)
-    @admin_blp.response(200, {"message": str})
-    @admin_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update a parking slot.",
-        responses={
-            200: "Parking slot updated.",
-            401: "Unauthorized",
-            403: "Forbidden",
-            500: "Internal Server Error",
-            422: "Unprocessable",
-        },
-    )
-    @jwt_required(False)
-    @admin_role_required()
-    def patch(self, slot_data, admin_id):
-        admin_service = AdminService()
-        print(admin_id)  # this is for auditing
-        admin_service.update_parking_slot(slot_data)
-        return set_response(
-            201, {"code": "success", "message": "Parking slot updated."}
         )

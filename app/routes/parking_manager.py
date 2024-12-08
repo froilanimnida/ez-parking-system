@@ -16,17 +16,14 @@ from app.exceptions.qr_code_exceptions import (
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import (
-    CreateSlotSchema,
     UpdateEstablishmentInfoSchema,
-    UpdateSlotSchema,
     ValidateEntrySchema,
-    DeleteSlotSchema,
     ValidateNewScheduleSchema, CompanyAccountRegistrationSchema, IndividualParkingManagerSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.establishment_service import EstablishmentService
+from app.services.operating_hour_service import OperatingHourService
 # from app.services.parking_manager_service import ParkingManagerService
-from app.services.slot_service import SlotService
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
     handle_invalid_qr_content,
@@ -185,77 +182,6 @@ class UpdateEstablishment(MethodView):
         )
 
 
-@parking_manager_blp.route("/slot/create")
-class CreateSlot(MethodView):
-    @parking_manager_blp.arguments(CreateSlotSchema)
-    @parking_manager_blp.response(201, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Create a new slot.",
-        responses={
-            201: "Slot created successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-            422: "Unprocessable Entity",
-        },
-    )
-    @parking_manager_required()
-    @jwt_required(False)
-    def post(self, new_slot_data, user_id):
-        
-        SlotService.create_slot(new_slot_data, user_id)
-        return set_response(
-            201, {"code": "success", "message": "Slot created successfully."}
-        )
-
-
-@parking_manager_blp.route("/slot/delete")
-class DeleteSlot(MethodView):
-    @parking_manager_blp.arguments(DeleteSlotSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Delete a slot.",
-        responses={
-            200: "Slot deleted successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-            422: "Unprocessable Entity",
-        },
-    )
-    @parking_manager_required()
-    @jwt_required(False)
-    def delete(self, data, user_id):
-        data.update({"manager_id": user_id})
-        SlotService.delete_slot(data)
-        return set_response(
-            200, {"code": "success", "message": "Slot deleted successfully."}
-        )
-
-
-@parking_manager_blp.route("/slot/update")
-class UpdateSlot(MethodView):
-
-    @parking_manager_blp.arguments(UpdateSlotSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update a slot.",
-        responses={
-            200: "Slot updated successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @parking_manager_required()
-    @jwt_required(False)
-    def post(self, request, user_id):
-        print(user_id, request)
-        return set_response(
-            200, {"code": "success", "message": "Slot updated successfully."}
-        )
-
-
 @parking_manager_blp.route("/validate/entry")
 class EstablishmentEntry(MethodView):
     @jwt_required(False)
@@ -339,15 +265,14 @@ class GetAllEstablishmentsInfo(MethodView):
             },
         )
 
-
-@parking_manager_blp.route("/get-schedule-hours")
+@parking_manager_blp.route("/get-operating-hours")
 class GetScheduleHours(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
-        description="Get the schedule hours of the establishment.",
+        description="Get the operating hours of the establishment.",
         responses={
-            200: "Schedule hours retrieved successfully.",
+            200: "Operating hours retrieved successfully.",
             400: "Bad Request",
             401: "Unauthorized",
         },
@@ -355,16 +280,15 @@ class GetScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_required()
     def get(self, user_id):
-        data = EstablishmentService.get_schedule_hours(user_id)
+        operating_hours = OperatingHourService.get_operating_hours(user_id)
         return set_response(
             200,
             {
                 "code": "success",
                 "message": "Schedule hours retrieved successfully.",
-                "data": data,
+                "operating_hours": operating_hours,
             },
         )
-
 
 @parking_manager_blp.route("/update-schedule-hours")
 class UpdateScheduleHours(MethodView):

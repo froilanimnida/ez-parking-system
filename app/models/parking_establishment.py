@@ -81,8 +81,11 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
         ),
     )
 
-    # Relationship
-    company_profile = relationship("CompanyProfile", backref="parking_establishments")
+    company_profile = relationship("CompanyProfile", backref="parking_establishment")
+    establishment_document = relationship("EstablishmentDocument", backref="parking_establishment")
+    operating_hour = relationship("OperatingHour", backref="parking_establishment")
+    parking_slot = relationship("ParkingSlot", backref="parking_establishment")
+    payment_method = relationship("PaymentMethod", backref="parking_establishment")
 
     def __repr__(self):
         return f"<ParkingEstablishment(establishment_id={self.establishment_id}, uuid={self.uuid}, space_type={self.space_type}, status={self.status})>"
@@ -223,33 +226,6 @@ class GetEstablishmentOperations:
             if establishment is None:
                 raise EstablishmentDoesNotExist("Establishment does not exist")
             return establishment.establishment_id
-        except OperationalError as err:
-            raise err
-        finally:
-            session.close()
-
-    @staticmethod
-    def get_establishment_by_id(establishment_id: int):
-        """
-        Retrieves a parking establishment from the database by its ID.
-
-        Args:
-            establishment_id (int): The ID of the parking establishment to retrieve.
-
-        Returns:
-            ParkingEstablishment: The parking establishment object if found, None otherwise.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            establishment = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.establishment_id == establishment_id)
-                .first()
-            )
-            return establishment
         except OperationalError as err:
             raise err
         finally:
@@ -476,45 +452,6 @@ class UpdateEstablishmentOperations:  # pylint: disable=R0903
             session.close()
 
 
-class DeleteEstablishmentOperations:  # pylint: disable=R0903
-    """
-    Class for managing deletion operations of parking establishments.
-    Provides functionality to safely remove parking establishment records from the database
-    while handling database transaction errors and ensuring proper session management.
-    """
-
-    @staticmethod
-    def delete_establishment(establishment_uuid: bytes):
-        """
-        Deletes a parking establishment from the database by its ID.
-
-        Args:
-            establishment_uuid (bytes): The unique identifier of the
-            parking establishment to delete.
-
-        Raises:
-            OperationalError: If there is a problem with database operations.
-            DatabaseError: If there is a general database error.
-            DataError: If there is an issue with the data format.
-            IntegrityError: If deletion violates database integrity constraints.
-        """
-        session = get_session()
-        try:
-            establishment = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.uuid == establishment_uuid)
-                .first()
-            )
-            session.delete(establishment)
-            session.commit()
-        except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
-            session.rollback()
-            raise err
-        finally:
-            session.close()
-
-
-
 class ParkingEstablishmentRepository:  # pylint: disable=R0903
     """Class for operations related to parking establishment"""
     @staticmethod
@@ -527,12 +464,23 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
             return new_parking_establishment.establishment_id
         
     @staticmethod
-    def get_establishment(establishment_uuid: bytes):
+    def get_establishment(establishment_uuid: bytes = None, profile_id: int = None):
         """Get parking establishment by UUID."""
         with session_scope() as session:
-            establishment = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.uuid == establishment_uuid)
-                .first()
-            )
+            establishment: ParkingEstablishment
+            if profile_id:
+                establishment = (
+                    session.query(ParkingEstablishment)
+                    .filter(
+                        ParkingEstablishment.uuid == establishment_uuid,
+                        ParkingEstablishment.profile_id == profile_id
+                    )
+                    .first()
+                )
+            else:
+                establishment = (
+                    session.query(ParkingEstablishment)
+                    .filter(ParkingEstablishment.uuid == establishment_uuid)
+                    .first()
+                )
             return establishment.to_dict()

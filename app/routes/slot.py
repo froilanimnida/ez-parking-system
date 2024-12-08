@@ -2,6 +2,7 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
+from flask import request
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
@@ -12,13 +13,14 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenVehicleType,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
+from app.routes.parking_manager import parking_manager_required
+from app.schema.parking_manager_validation import CreateSlotSchema, DeleteSlotSchema, UpdateSlotSchema
 from app.schema.query_validation import (
     EstablishmentQueryValidation,
     EstablishmentSlotTypeValidation,
-    SlotCodeValidationQuerySchema,
 )
 from app.schema.response_schema import ApiResponse
-from app.services.slot_service import SlotService
+from app.services.slot_service import ParkingSlotService
 from app.utils.error_handlers.slot_lookup_error_handlers import (
     handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment,
@@ -39,7 +41,6 @@ slot_blp = Blueprint(
 
 @slot_blp.route("/get-all-slots")
 class GetSlotsByEstablishmentID(MethodView):
-
     @slot_blp.arguments(EstablishmentQueryValidation)
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
@@ -51,14 +52,12 @@ class GetSlotsByEstablishmentID(MethodView):
     )
     @jwt_required(True)
     def get(self, data):
-        slots = SlotService.get_all_slots(data.get("establishment_uuid"))
+        slots = ParkingSlotService.get_all_slots(data.get("establishment_uuid"))
         return set_response(200, {"slots": slots})
 
 
 @slot_blp.route("/get-slots-by-vehicle-type")
 class GetSlotsByVehicleType(MethodView):
-    """Get slots by vehicle type."""
-
     @slot_blp.arguments(EstablishmentSlotTypeValidation)
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
@@ -72,29 +71,77 @@ class GetSlotsByVehicleType(MethodView):
     def get(self, data):
         vehicle_size = data.get("vehicle_size")
         establishment_id = data.get("establishment_id")
-        slots = SlotService.get_slots_by_vehicle_type(vehicle_size, establishment_id)
+        slots = ParkingSlotService.get_slots_by_vehicle_type(vehicle_size, establishment_id)
         return set_response(200, {"slots": slots})
 
 
-@slot_blp.route("/get-slot")
-class GetSlotsBySlotCode(MethodView):
-    """Get slots by slot code."""
-
-    @slot_blp.arguments(SlotCodeValidationQuerySchema, location="query")
-    @slot_blp.response(200, ApiResponse)
+@slot_blp.route("/create")
+class CreateSlot(MethodView):
+    @slot_blp.arguments(CreateSlotSchema)
+    @slot_blp.response(201, ApiResponse)
     @slot_blp.doc(
-        description="Get all slots by slot code",
+        security=[{"Bearer": []}],
+        description="Create a new slot.",
         responses={
-            200: {"description": "Slots retrieved successfully"},
-            400: {"description": "Bad Request"},
+            201: "Slot created successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            422: "Unprocessable Entity",
         },
     )
-    @jwt_required(True)
-    def get(self, data):
-        slot_code = data.get("slot_code")
-        slot = SlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
-        return set_response(200, {"slot": slot})
+    @parking_manager_required()
+    @jwt_required(False)
+    def post(self, new_slot_data, user_id):
+        ParkingSlotService.create_slot(new_slot_data, user_id, request.remote_addr)
+        return set_response(
+            201, {"code": "success", "message": "Slot created successfully."}
+        )
 
+
+@slot_blp.route("/delete")
+class DeleteSlot(MethodView):
+    @slot_blp.arguments(DeleteSlotSchema)
+    @slot_blp.response(200, ApiResponse)
+    @slot_blp.doc(
+        security=[{"Bearer": []}],
+        description="Delete a slot.",
+        responses={
+            200: "Slot deleted successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            422: "Unprocessable Entity",
+        },
+    )
+    @parking_manager_required()
+    @jwt_required(False)
+    def delete(self, data, user_id):
+        data.update({"manager_id": user_id})
+        ParkingSlotService.delete_slot(data)
+        return set_response(
+            200, {"code": "success", "message": "Slot deleted successfully."}
+        )
+
+
+@slot_blp.route("/update")
+class UpdateSlot(MethodView):
+    @slot_blp.arguments(UpdateSlotSchema)
+    @slot_blp.response(200, ApiResponse)
+    @slot_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update a slot.",
+        responses={
+            200: "Slot updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @parking_manager_required()
+    @jwt_required(False)
+    def post(self, slot_data, user_id):
+        ParkingSlotService.update_slot(slot_data, user_id, request.remote_addr)
+        return set_response(
+            200, {"code": "success", "message": "Slot updated successfully."}
+        )
 
 slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code
