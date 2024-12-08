@@ -23,6 +23,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.models.base import Base
+from app.models.vehicle_type import VehicleType
 from app.utils.db import session_scope
 from app.utils.uuid_utility import UUIDUtility
 
@@ -216,7 +217,9 @@ class ParkingSlotRepository:
             list[ParkingSlot]: List of parking slot objects.
         """
         with session_scope() as session:
-            slots = session.query(ParkingSlot).filter(ParkingSlot.establishment_id == establishment_id).all()
+            slots = session.query(ParkingSlot).join(
+                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+            ).filter(ParkingSlot.establishment_id == establishment_id).all()
             return [slot.to_dict() for slot in slots]
     
     @staticmethod
@@ -231,7 +234,9 @@ class ParkingSlotRepository:
             list[dict]: List of parking slot dictionaries.
         """
         with session_scope() as session:
-            query = session.query(ParkingSlot)
+            query = session.query(ParkingSlot).join(
+                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+            )
             for key, value in criteria.items():
                 query = query.filter(getattr(ParkingSlot, key) == value)
             slots = query.all()
@@ -246,5 +251,7 @@ class ParkingSlotRepository:
             list[ParkingSlot]: List of all parking slot objects.
         """
         with session_scope() as session:
-            slots = session.query(ParkingSlot).all()
+            slots = session.query(ParkingSlot).join(
+                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+            ).all
             return [slot.to_dict() for slot in slots]

@@ -17,9 +17,7 @@ class EstablishmentService:
 
     @classmethod
     def get_establishments(cls, query_dict: dict) -> list:
-        """
-        Get establishments with optional filtering and sorting
-        """
+        """Get establishments with optional filtering and sorting"""
         return GetEstablishmentService.get_establishments(query_dict=query_dict)
 
     @classmethod
@@ -43,9 +41,7 @@ class GetEstablishmentService:
 
     @classmethod
     def get_establishments(cls, query_dict: dict) -> list:
-        """
-        Get establishments with optional filtering and sorting
-        """
+        """Get establishments with optional filtering and sorting"""
         return GetEstablishmentOperations.get_establishments(query_dict)
 
     @classmethod
@@ -73,7 +69,6 @@ class GetEstablishmentService:
 
 class UpdateEstablishmentService:  # pylint: disable=R0903
     """Class for operations related to updating parking establishment."""
-
     @classmethod
     def update_establishment(cls, establishment_data: dict):
         """Update parking establishment."""

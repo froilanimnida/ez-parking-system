@@ -11,7 +11,9 @@ class PaymentMethod(Base):
     
     # Columns definition
     method_id = Column(Integer, primary_key=True, autoincrement=True)
-    establishment_id = Column(Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True)
+    establishment_id = Column(
+        Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True
+    )
     accepts_cash = Column(Boolean, default=False)
     accepts_mobile = Column(Boolean, default=False)
     accepts_other = Column(Boolean, default=False)
