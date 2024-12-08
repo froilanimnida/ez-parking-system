@@ -57,8 +57,7 @@ class BanPlateNumber(MethodView):
     @jwt_required(False)
     def post(self, ban_data, admin_id):
         admin_service = AdminService()
-        ban_data["banned_by"] = admin_id
-        admin_service.ban_plate_number(ban_data)
+        admin_service.ban_user(ban_data, admin_id)
         return set_response(201, {"code": "success", "message": "Plate number banned."})
 
 
@@ -81,8 +80,7 @@ class UnbanPlateNumber(MethodView):
     @jwt_required(False)
     def post(self, ban_data, admin_id):
         admin_service = AdminService()
-        print(admin_id)
-        admin_service.unban_plate_number(ban_data["plate_number"])
+        admin_service.unban_user(ban_data, admin_id)
         return set_response(
             201, {"code": "success", "message": "Plate number unbanned."}
         )

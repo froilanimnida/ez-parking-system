@@ -109,7 +109,7 @@ class UserRegistration:  # pylint: disable=R0903
                 "created_at": datetime.now(),
                 "updated_at": datetime.now(),
             })
-            pricing_plant_id = self.add_pricing_plan(
+            pricing_plan_id = self.add_pricing_plan(
                 parking_establishment_id, sign_up_data.get("pricing_plan")
             )
             self.add_operating_hours(parking_establishment_id, sign_up_data.get("operating_hours"))

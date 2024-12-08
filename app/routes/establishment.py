@@ -53,7 +53,7 @@ class GetEstablishments(MethodView):
         )
 
 
-@establishment_blp.route("/get-establishment-info")
+@establishment_blp.route("/info")
 class GetEstablishmentInfo(MethodView):
     @establishment_blp.arguments(EstablishmentQueryValidation, location="query")
     @establishment_blp.response(200, EstablishmentResponseSchema)
@@ -65,10 +65,7 @@ class GetEstablishmentInfo(MethodView):
         },
     )
     def get(self, query_params):
-        establishment = EstablishmentService.get_establishment_info(
-            query_params.get("establishment_uuid")
-        )
-
+        establishment = EstablishmentService.get_establishment(query_params.get("establishment_uuid"))
         return set_response(
             200,
             {

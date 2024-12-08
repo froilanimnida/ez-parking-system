@@ -2,11 +2,14 @@
 
 from datetime import datetime
 
+from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import (
     GetEstablishmentOperations,
-    UpdateEstablishmentOperations,
+    UpdateEstablishmentOperations, ParkingEstablishmentRepository,
 )
-from app.models.slot import GettingSlotsOperations
+from app.models.parking_slot import ParkingSlotRepository
+from app.models.payment_method import PaymentMethodRepository
+from app.models.pricing_plan import PricingPlanRepository
 
 
 class EstablishmentService:
@@ -25,21 +28,14 @@ class EstablishmentService:
         UpdateEstablishmentService.update_establishment(establishment_data)
 
     @classmethod
-    def get_establishment_info(cls, establishment_uuid: bytes):
+    def get_establishment(cls, establishment_uuid: bytes):
         """Get parking establishment information."""
-        return GetEstablishmentService.get_establishment_info(establishment_uuid)
+        return GetEstablishmentService.get_establishment(establishment_uuid)
 
     @classmethod
     def get_schedule_hours(cls, manager_id: int):
         """Get parking establishment schedule."""
         return GetEstablishmentService.get_schedule_hours(manager_id)
-
-    @classmethod
-    def update_establishment_schedule(cls, manager_id: int, schedule_data: dict):
-        """Update parking establishment schedule."""
-        return UpdateEstablishmentService.update_establishment_schedule(
-            manager_id, schedule_data
-        )
 
 
 class GetEstablishmentService:
@@ -53,17 +49,20 @@ class GetEstablishmentService:
         return GetEstablishmentOperations.get_establishments(query_dict)
 
     @classmethod
-    def get_establishment_info(cls, establishment_uuid_bin: bytes):
+    def get_establishment(cls, establishment_uuid: bytes):
         """Get parking establishment information."""
-        establishment_info = GetEstablishmentOperations.get_establishment_info(
-            establishment_uuid_bin
-        )
-        establishment_slots = GettingSlotsOperations.get_all_slots(
-            establishment_info.get("establishment_id")
-        )
+        establishment = ParkingEstablishmentRepository.get_establishment(establishment_uuid=establishment_uuid)
+        establishment_id = establishment.get("establishment_id")
+        establishment_slots = ParkingSlotRepository.get_slots(establishment_id=establishment_id)
+        pricing_plan = PricingPlanRepository.get_pricing_plans(establishment_id)
+        payment_methods = PaymentMethodRepository.get_payment_methods(establishment_id)
+        operating_hour = OperatingHoursRepository.get_operating_hours(establishment_id)
         return {
-            "establishment_info": establishment_info,
+            "establishment": establishment,
             "establishment_slots": establishment_slots,
+            "pricing_plan": pricing_plan,
+            "payment_methods": payment_methods,
+            "operating_hour": operating_hour,
         }
 
     @classmethod
@@ -80,8 +79,4 @@ class UpdateEstablishmentService:  # pylint: disable=R0903
         """Update parking establishment."""
         establishment_data["updated_at"] = datetime.now()
         UpdateEstablishmentOperations.update_establishment(establishment_data)
-
-    @classmethod
-    def update_establishment_schedule(cls, manager_id: int, schedule_data: dict):
-        """Update parking establishment schedule."""
-        return UpdateEstablishmentOperations.update_hours(manager_id, schedule_data)
+    

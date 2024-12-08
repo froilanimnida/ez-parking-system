@@ -26,7 +26,6 @@ class PricingPlan(Base):
     """ Pricing Plan Model """
     __tablename__ = 'pricing_plan'
     
-    # Columns definition
     plan_id = Column(Integer, primary_key=True, autoincrement=True)
     establishment_id = Column(Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True)
     rate_type = Column(ENUM(RateType), nullable=True)
@@ -35,7 +34,6 @@ class PricingPlan(Base):
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
     
-    # Constraints
     __table_args__ = (
         UniqueConstraint('establishment_id', 'rate_type', name='unique_establishment_rate_type'),
         CheckConstraint('rate >= 0', name='pricing_plan_rate_check'),
@@ -43,7 +41,6 @@ class PricingPlan(Base):
             RateType.HOURLY.value, RateType.DAILY.value, RateType.MONTHLY.value), name='pricing_plan_rate_type_check')
     )
     
-    # Relationship to ParkingEstablishment
     parking_establishment = relationship("ParkingEstablishment", backref="pricing_plans")
     
     def __repr__(self):

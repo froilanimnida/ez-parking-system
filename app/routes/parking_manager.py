@@ -307,7 +307,6 @@ class UpdateScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_required()
     def patch(self, data, user_id):
-        EstablishmentService.update_establishment_schedule(user_id, data)
         return set_response(
             200,
             {

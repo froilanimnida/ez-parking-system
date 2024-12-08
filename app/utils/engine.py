@@ -2,9 +2,10 @@
     This is responsible for initializing the Database engine and session
 """
 
-from os import getenv
 import logging
 from logging import FileHandler, StreamHandler, getLogger
+from os import getenv
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -26,7 +27,6 @@ DATABASE_URL = (
 )
 
 engine = create_engine(DATABASE_URL)  # type: ignore
-print(DATABASE_URL)
 
 session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 

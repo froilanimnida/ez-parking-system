@@ -10,12 +10,10 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
-from app.utils.engine import get_session
 from app.utils.uuid_utility import UUIDUtility
 
 
@@ -61,71 +59,6 @@ class BanUser(Base):
         }
 
 
-class BannedPlateOperations:
-    """Operations for the BannedPlate model."""
-
-    @staticmethod
-    def ban_plate(plate_number: str, reason: str, banned_by: int) -> None:
-        """Ban a plate number."""
-        session = get_session()
-        try:
-            banned_plate = BannedPlate(
-                plate_number=plate_number, reason=reason, banned_by=banned_by
-            )
-            session.add(banned_plate)
-            session.commit()
-        except (
-            DataError,
-            IntegrityError,
-            OperationalError,
-            DatabaseError,
-        ) as exception:
-            session.rollback()
-            raise exception
-        finally:
-            session.close()
-
-    @staticmethod
-    def unban_plate(plate_number: str) -> None:
-        """Unban a plate number."""
-        session = get_session()
-        try:
-            session.query(BannedPlate).filter(
-                BannedPlate.plate_number == plate_number
-            ).delete()
-            session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as exc:
-            session.rollback()
-            raise exc
-        finally:
-            session.close()
-
-    @staticmethod
-    def get_banned_plates() -> list[BannedPlate]:
-        """Get all banned plates."""
-        session = get_session()
-        try:
-            return session.query(BannedPlate).all()
-        except (OperationalError, DatabaseError) as exc:
-            raise exc
-        finally:
-            session.close()
-
-    @staticmethod
-    def get_banned_plate(plate_number: str) -> BannedPlate:
-        """Get a banned plate by plate number."""
-        session = get_session()
-        try:
-            return (
-                session.query(BannedPlate)
-                .filter(BannedPlate.plate_number == plate_number)
-                .first()
-            )
-        except (OperationalError, DatabaseError) as e:
-            raise e
-        finally:
-            session.close()
-
 class BanUserRepository:
     @staticmethod
     def ban_user(data: dict):
@@ -148,9 +81,9 @@ class BanUserRepository:
             session.commit()
             
     @staticmethod
-    def get_ban_user(user_id: int):
+    def get_ban_user(ban_uuid: bytes):
         with session_scope() as session:
-            ban_user = session.query(BanUser).filter(BanUser.user_id == user_id).first()
+            ban_user = session.query(BanUser).filter(BanUser.uuid == ban_uuid).first()
             return ban_user.to_dict()
         
     @staticmethod
