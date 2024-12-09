@@ -9,7 +9,7 @@ from app.models.base import Base
 from app.utils.db import session_scope
 
 
-class PaymentMethod(Base):
+class PaymentMethod(Base):  # pylint: disable=too-few-public-methods
     """Represents the payment methods in the database."""
     __tablename__ = 'payment_method'
 

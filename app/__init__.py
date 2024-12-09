@@ -1,5 +1,7 @@
 """ This module contains the factory function to create the Flask app instance. """
 
+# pylint: disable=W0603:
+
 from os import path
 
 from flask import Flask

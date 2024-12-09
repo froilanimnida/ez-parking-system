@@ -282,7 +282,9 @@ class UserRepository:
             elif email:
                 user = session.execute(select(User).where(User.email == email)).scalar()
             elif plate_number:
-                user = session.execute(select(User).where(User.plate_number == plate_number)).scalar()
+                user = session.execute(
+                    select(User).where(User.plate_number == plate_number)
+                ).scalar()
             return user.to_dict()
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115

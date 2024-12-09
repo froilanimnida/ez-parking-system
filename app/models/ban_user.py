@@ -11,7 +11,7 @@ from app.utils.db import session_scope
 from app.utils.uuid_utility import UUIDUtility
 
 
-class BanUser(Base):
+class BanUser(Base):  # pylint: disable=too-few-public-methods
     """Represents the banned users in the database."""
     __tablename__ = "ban_user"
     __table_args__ = {'schema': 'public'}

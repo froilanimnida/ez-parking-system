@@ -1,4 +1,6 @@
-""" Represents the ORM model for the address table. This is connected to the company_profile table. """
+"""
+Represents the ORM model for the address table. This is connected to the company_profile table.
+"""
 
 # pylint: disable=E1102
 

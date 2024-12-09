@@ -22,23 +22,22 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.pricing_plan import PricingPlanRepository
 from app.models.user import UserOperations, OTPOperations, UserRepository
 from app.tasks import send_mail
-from app.utils.email_utility import send_mail
 from app.utils.security import generate_otp, generate_token
 
 
 class AuthService:
     """Class to handle user authentication operations."""
-    
+
     @staticmethod
     def create_new_user(sign_up_data: dict):
         """Create a new user account."""
         user_registration = UserRegistration()
         return user_registration.create_new_user(sign_up_data)
-    
+
     @staticmethod
     def verify_email(token: str):  # pylint: disable=C0116
         return EmailVerification.verify_email(token=token)
-    
+
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
         return UserLoginService.login_user(login_data)
@@ -110,11 +109,11 @@ class UserOTPService:
             raise IncorrectOTPException(message="Incorrect OTP.")
         OTPOperations.delete_otp(email=email)
         return user_id, role
- 
+
 
 class UserRegistration:  # pylint: disable=R0903
     """User Registration Service"""
-    
+
     def create_new_user(self, sign_up_data: dict):
         """Create a new user account."""
         user_email = sign_up_data.get("email")
@@ -193,22 +192,22 @@ class UserRegistration:  # pylint: disable=R0903
             )
             self.add_operating_hours(parking_establishment_id, sign_up_data.get("operating_hours"))
         return send_mail(user_email, template, "Welcome to EZ Parking")
-    
+
     @staticmethod
     def add_new_address(address_data: dict):
         """Add a new address."""
         return AddressRepository.create_address(address_data)
-    
+
     @staticmethod
     def add_new_parking_establishment(establishment_data: dict):
         """Add a new parking establishment."""
         return ParkingEstablishmentRepository.create_establishment(establishment_data)
-    
+
     @staticmethod
     def add_operating_hours(establishment_id: int, operating_hours: dict):
         """Add operating hours for a parking establishment."""
         return OperatingHoursRepository.create_operating_hours(establishment_id, operating_hours)
-    
+
     @staticmethod
     def add_pricing_plan(establisment_id: int, pricing_plan_data: dict):
         """Add a pricing plan."""
@@ -217,7 +216,7 @@ class UserRegistration:  # pylint: disable=R0903
 
 class EmailVerification:  # pylint: disable=R0903
     """Email Verification Service"""
-    
+
     @staticmethod
     def verify_email(token: str):
         """Verify the email."""

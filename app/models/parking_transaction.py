@@ -3,7 +3,7 @@
 # pylint: disable=R0401, R0801, C0415, E1102
 
 from enum import Enum as PyEnum
-from typing import Literal, overload, List
+from typing import Literal, overload
 
 from sqlalchemy import (
     Column,
@@ -22,6 +22,7 @@ from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, Operational
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
+from app.models.vehicle_type import VehicleType
 from app.utils.engine import get_session
 from app.utils.uuid_utility import UUIDUtility
 
@@ -335,48 +336,10 @@ class UpdateTransaction:  # pylint: disable=R0903
         finally:
             session.close()
 
-    @classmethod
-    def cancel_transaction(cls, transaction_uuid: bytes):
-        """
-        Cancel a parking transaction in the database.
-        """
-        session = get_session()
-        try:
-            session.execute(
-                update(ParkingTransaction)
-                .values(status="cancelled")
-                .where(ParkingTransaction.uuid == transaction_uuid)
-            )
-            session.commit()
-        except (DatabaseError, DataError, IntegrityError, OperationalError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
-
-
-class DeleteTransaction:  # pylint: disable=R0903
-    """Class that provides operations for deleting parking transactions in the database."""
-
-    @classmethod
-    def delete_transaction_entry(cls, transaction_id):
-        """
-        Delete a parking transaction entry from the database.
-        """
-        session = get_session()
-        try:
-            transaction = session.query(ParkingTransaction).get(transaction_id)
-            session.delete(transaction)
-            session.commit()
-        except (DatabaseError, DataError, IntegrityError, OperationalError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
-
 
 class ParkingTransactionRepository:  # pylint: disable=R0903
     """Repository for ParkingTransaction model."""
+    vehicle_type = VehicleType()
 
     @staticmethod
     def create_transaction(data: dict):
@@ -387,31 +350,35 @@ class ParkingTransactionRepository:  # pylint: disable=R0903
             session.commit()
             return transaction.transaction_id
 
-    @staticmethod
+    @classmethod
     @overload
-    def get_transaction(transaction_uuid: bytes):
+    def get_transaction(cls, transaction_uuid: bytes):
         """Get a parking transaction by UUID."""
 
-    @staticmethod
+    @classmethod
     @overload
-    def get_transaction(transaction_id: int):
+    def get_transaction(cls, transaction_id: int):
         """Get a parking transaction by ID."""
-
-    @staticmethod
-    def get_transaction(identifier):
+        
+    @classmethod
+    def get_transaction(cls, transaction_uuid: bytes=None, transaction_id: int=None) -> dict:
         """Get a parking transaction."""
         with get_session() as session:
-            if isinstance(identifier, bytes):
+            if transaction_uuid:
                 transaction = (
                     session.query(ParkingTransaction)
-                    .filter(ParkingTransaction.uuid == identifier)
-                    .first()
+                    .filter(ParkingTransaction.uuid == transaction_uuid)
+                    .join(cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id)
                 )
-            elif isinstance(identifier, int):
-                transaction = session.query(ParkingTransaction).get(identifier)
-            else:
-                return {}
-            return transaction.to_dict()
+            elif transaction_id:
+                transaction = session.query(ParkingTransaction).filter(
+                    ParkingTransaction.transaction_id == transaction_id
+                ).join(cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id)
+            transaction_dict = {}
+            if transaction:
+                transaction_dict = transaction.to_dict()
+                transaction_dict["vehicle_type"] = cls.vehicle_type.to_dict()
+            return transaction_dict
 
     @staticmethod
     @overload
@@ -423,16 +390,34 @@ class ParkingTransactionRepository:  # pylint: disable=R0903
     def get_all_transactions():
         """Get all parking transactions."""
 
-    @staticmethod
-    def get_all_transactions(user_id=None):
+    @classmethod
+    def get_all_transactions(cls, user_id: int=None):
         """Get all parking transactions."""
         with get_session() as session:
             if user_id:
                 transactions = (
                     session.query(ParkingTransaction)
                     .filter(ParkingTransaction.user_id == user_id)
-                    .all()
+                    .join(cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id)
                 )
             else:
-                transactions = session.query(ParkingTransaction).all()
-            return [transaction.to_dict() for transaction in transactions]
+                transactions = session.query(ParkingTransaction).join(
+                    cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id
+                )
+            transactions_arr_dict = []
+            for transaction in transactions:
+                transaction_dict = transaction.to_dict()
+                transaction_dict["vehicle_type"] = cls.vehicle_type.to_dict()
+                transactions_arr_dict.append(transaction_dict)
+            return transactions_arr_dict
+        
+    @classmethod
+    def update_transaction_status(cls, transaction_uuid: bytes, status: Literal["active", "completed", "cancelled"]):
+        """Update the status of a parking transaction."""
+        with get_session() as session:
+            session.execute(
+                update(ParkingTransaction)
+                .values(status=status)
+                .where(ParkingTransaction.uuid == transaction_uuid)
+            )
+            session.commit()
