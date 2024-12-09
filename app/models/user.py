@@ -33,13 +33,13 @@ from sqlalchemy import (
     UUID,
     String,
     DateTime,
-    Boolean,
+    Boolean, and_,
 )
-from sqlalchemy.exc import DataError, IntegrityError, OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
-from app.exceptions.authorization_exceptions import EmailNotFoundException
+from app.exceptions.authorization_exceptions import EmailNotFoundException, BannedUserException
 from app.models.audit_log import UUIDUtility
+from app.models.ban_user import BanUser
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.db import session_scope
@@ -221,156 +221,36 @@ class UserRepository:
 
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115
-
     @classmethod
-    def create_new_user(cls, user_data: dict):
-        """
-        Creates a new user in the database with the provided user data.
-
-        Parameters:
-        user_data (dict): A dictionary containing user information.
-                        Expected keys are 'uuid', 'first_name', 'last_name',
-                        'email', 'phone_number', 'role', and 'creation_date'.
-
-        Returns:
-        int: The ID of the newly created user.
-
-        Raises:
-        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
-        during the database operation, the session is rolled back and the exception is raised.
-        """
-        session = get_session()
-        try:
-            new_user = User(
-                uuid=user_data.get("uuid"),
-                first_name=user_data.get("first_name"),
-                last_name=user_data.get("last_name"),
-                nickname=user_data.get("nickname"),
-                plate_number=user_data.get("plate_number"),
-                email=user_data.get("email"),
-                phone_number=user_data.get("phone_number"),
-                role=user_data.get("role"),
-                created_at=user_data.get("created_at"),
-                verification_token=user_data.get("verification_token"),
-                verification_expiry=user_data.get("verification_expiry"),
-                is_verified=user_data.get("is_verified"),
-            )
-            session.add(new_user)
-            session.commit()
-            return new_user.user_id
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
-
-    @classmethod
-    def login_user(cls, email: str):
+    def login_user(cls, email: str, role: str):
         """
         Authenticates a user by their email address.
 
         Parameters:
         email (str): The email address of the user attempting to log in.
+        role (str): The role of the user attempting to log in.
 
         Returns:
-        str: The email of the user if found.
+        dict: A dictionary containing the user information
 
         Raises:
         EmailNotFoundException: If the email is not found in the database.
         OperationalError, DatabaseError: If there is an error during the database operation.
         """
-        session = get_session()
-        try:
-            user: User = session.execute(
-                statement=select(User).where(User.email == email)
+        with session_scope() as session:
+            user = session.execute(
+                statement=select(User).where(and_(User.email == email, User.role == role))
+            ).scalar()
+            is_banned_user = session.execute(
+                select(BanUser).where(BanUser.user_id == user.user_id)
             ).scalar()
             if user is None:
                 raise EmailNotFoundException("Email not found.")
             if user.is_verified is False:
                 raise AccountIsNotVerifiedException("Account is not verified.")
-            return user.email
-        except (OperationalError, DatabaseError) as e:
-            raise e
-        finally:
-            session.close()
-
-    @classmethod
-    def is_email_taken(cls, email: str) -> bool:
-        """
-        Checks if an email is already associated with an existing user.
-
-        Parameters:
-        email (str): The email address to check for existence.
-
-        Returns:
-        bool: True if the email is taken, False otherwise.
-
-        Raises:
-        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
-        during the database operation.
-        """
-        session = get_session()
-        try:
-            user = session.execute(select(User).where(User.email == email)).scalar()
-            return user is not None
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            raise e
-        finally:
-            session.close()
-
-    @classmethod
-    def is_phone_number_taken(cls, phone_number: str) -> bool:
-        """
-        Checks if a phone number is already associated with an existing user.
-
-        Parameters:
-        phone_number (str): The phone number to check for existence.
-
-        Returns:
-        bool: True if the phone number is taken, False otherwise.
-
-        Raises:
-        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
-        during the database operation.
-        """
-        session = get_session()
-        try:
-            user = session.execute(
-                select(User).where(User.phone_number == phone_number)
-            ).scalar()
-            return user is not None
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            raise e
-        finally:
-            session.close()
-
-    @classmethod
-    def verify_email(cls, token: str):
-        """
-        Verify the email of a user identified by their token.
-
-        Parameters:
-        token (str): The token of the user whose email is to be verified.
-
-        Raises:
-        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
-        during the database operation.
-        """
-        session = get_session()
-        try:
-            session.execute(
-                update(User)
-                .where(User.verification_token == token)
-                .values(
-                    verification_token=None, verification_expiry=None, is_verified=True
-                )
-            )
-            session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
+            if is_banned_user is not None:
+                raise BannedUserException("User is banned.")
+            return user.to_dict()
 
 
 class OTPOperations:
@@ -391,8 +271,7 @@ class OTPOperations:
             EmailNotFoundException: If no user is found with the given email.
             DataError, IntegrityError, OperationalError, DatabaseError: If a database error occurs.
         """
-        session = get_session()
-        try:
+        with session_scope() as session:
             user = session.execute(
                 select(
                     User.user_id,
@@ -405,12 +284,6 @@ class OTPOperations:
                 raise EmailNotFoundException("Email not found.")
             user_id, otp_secret, otp_expiry, role = user
             return otp_secret, otp_expiry, user_id, role
-
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     @classmethod
     def set_otp(cls, data: dict):
@@ -425,8 +298,7 @@ class OTPOperations:
             DataError, IntegrityError, OperationalError, DatabaseError: If a
             database error occurs.
         """
-        session = get_session()
-        try:
+        with session_scope() as session:
             session.execute(
                 update(User)
                 .where(User.email == data.get("email"))
@@ -435,11 +307,6 @@ class OTPOperations:
                 )
             )
             session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     @classmethod
     def delete_otp(cls, email: str):
@@ -453,16 +320,10 @@ class OTPOperations:
             DataError, IntegrityError, OperationalError, DatabaseError: If a
             database error occurs.
         """
-        session = get_session()
-        try:
+        with get_session() as session:
             session.execute(
                 update(User)
                 .where(User.email == email)
                 .values(otp_secret=None, otp_expiry=None)
             )
             session.commit()
-        except (DataError, IntegrityError, OperationalError, DatabaseError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()

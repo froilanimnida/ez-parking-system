@@ -16,14 +16,12 @@ from app.exceptions.qr_code_exceptions import (
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import (
-    UpdateEstablishmentInfoSchema,
-    ValidateEntrySchema,
-    ValidateNewScheduleSchema, CompanyAccountRegistrationSchema, IndividualParkingManagerSchema,
+    ParkingManagerIndividualOwnerSchema, ParkingManagerCompanyOwnerSchema
 )
+from app.schema.transaction_validation import ValidateEntrySchema
 from app.schema.response_schema import ApiResponse
-from app.services.establishment_service import EstablishmentService
+from app.services.auth_service import AuthService
 from app.services.operating_hour_service import OperatingHourService
-# from app.services.parking_manager_service import ParkingManagerService
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
     handle_invalid_qr_content,
@@ -57,15 +55,13 @@ def parking_manager_required():
                 )
             user_id = jwt_data.get("sub", {}).get("user_id")
             return fn(*args, user_id=user_id, **kwargs)
-
         return decorator
-
     return wrapper
 
 
 @parking_manager_blp.route("/company/account/create")
-class CreateParkingManagerAccount(MethodView):
-    @parking_manager_blp.arguments(CompanyAccountRegistrationSchema)
+class CreateParkingManagerCompanyAccount(MethodView):
+    @parking_manager_blp.arguments(ParkingManagerCompanyOwnerSchema)
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
         description="Create a new parking manager account.",
@@ -76,8 +72,7 @@ class CreateParkingManagerAccount(MethodView):
         },
     )
     def post(self, company_account_data):
-        company_account_data.update({"role": "parking_manager"})
-        print(company_account_data)
+        AuthService.create_new_user(company_account_data)
         return set_response(
             201,
             {
@@ -87,8 +82,8 @@ class CreateParkingManagerAccount(MethodView):
         )
 
 @parking_manager_blp.route("/individual/account/create")
-class CreateParkingManagerAccount(MethodView):
-    @parking_manager_blp.arguments(IndividualParkingManagerSchema)
+class CreateParkingManagerIndividualAccount(MethodView):
+    @parking_manager_blp.arguments(ParkingManagerIndividualOwnerSchema)
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
         description="Individual Parking Manager Account Creation",
@@ -100,34 +95,12 @@ class CreateParkingManagerAccount(MethodView):
     )
     @jwt_required(True)
     def post(self, individual_account_data):
-        print(individual_account_data)
+        AuthService.create_new_user(individual_account_data)
         return set_response(
             201,
             {
                 "code": "success",
                 "message": "Individual parking manager account created successfully.",
-            },
-        )
-    
-@parking_manager_blp.route("/account/login")
-class LoginParkingManagerAccount(MethodView):
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Parking Manager Account Login",
-        responses={
-            200: "Parking manager account login successful.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(False)
-    def patch(self):
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Parking manager account login successful.",
             },
         )
 
@@ -152,32 +125,6 @@ class DeleteEstablishment(MethodView):
             {
                 "code": "success",
                 "message": "Parking establishment deleted successfully.",
-            },
-        )
-
-
-@parking_manager_blp.route("/establishment/update")
-class UpdateEstablishment(MethodView):
-    @parking_manager_blp.arguments(UpdateEstablishmentInfoSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update parking establishment information.",
-        responses={
-            200: "Establishment updated successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(False)
-    @parking_manager_required()
-    def patch(self, establishment_data, user_id):  # pylint: disable=unused-argument
-        EstablishmentService.update_establishment(establishment_data)
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Establishment updated successfully.",
             },
         )
 
@@ -265,6 +212,7 @@ class GetAllEstablishmentsInfo(MethodView):
             },
         )
 
+
 @parking_manager_blp.route("/get-operating-hours")
 class GetScheduleHours(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
@@ -290,9 +238,9 @@ class GetScheduleHours(MethodView):
             },
         )
 
+
 @parking_manager_blp.route("/update-schedule-hours")
 class UpdateScheduleHours(MethodView):
-
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.arguments(ValidateNewScheduleSchema)
     @parking_manager_blp.doc(

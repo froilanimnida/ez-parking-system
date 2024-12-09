@@ -59,3 +59,8 @@ class TransactionFormDetailsSchema(Schema):
         )
         data["establishment_uuid"] = uuid_utility.uuid_to_binary(data["establishment_uuid"])
         return data
+
+
+class ValidateEntrySchema(Schema):
+    """Validation schema for entry validation."""
+    qr_content = fields.Str(required=True, validate=validate.Length(min=100, max=1024))
