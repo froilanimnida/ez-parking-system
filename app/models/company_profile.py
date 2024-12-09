@@ -1,4 +1,7 @@
 """ Business Profile Model (Postgres SCHEMA) """
+
+# pylint: disable=E1102
+
 from typing import overload, Union
 
 from sqlalchemy import (
@@ -39,12 +42,10 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
     )
 
     user = relationship("User", back_populates="company_profile")
-    parking_establishment = relationship("ParkingEstablishment", back_populates="company_profile")
+    parking_establishments = relationship("ParkingEstablishment", back_populates="company_profile")
 
-    def __repr__(self):
-        return f"<CompanyProfile(profile_id={self.profile_id}, user_id={self.user_id}, owner_type={self.owner_type})>"
-    
     def to_dict(self):
+        """ Convert the company profile object to a dictionary. """
         if self is None:
             return {}
         return {
@@ -58,7 +59,6 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
             "updated_at": self.updated_at,
         }
 
-
 class CompanyProfileRepository:
     """Company Profile Repository"""
 
@@ -70,19 +70,17 @@ class CompanyProfileRepository:
             session.add(company_profile)
             session.commit()
             return company_profile.profile_id
-        
+
     @staticmethod
     @overload
     def get_company_profile(user_id: int):
         """Get company profile by user id."""
-        ...
-    
+
     @staticmethod
     @overload
     def get_company_profile(profile_id: int):
         """Get company profile by profile id."""
-        ...
-    
+
     @staticmethod
     def get_company_profile(profile_id: int = None, user_id: int = None) -> Union[dict, list]:
         """Get company profile by user id or profile id."""
@@ -93,4 +91,3 @@ class CompanyProfileRepository:
             with session_scope() as session:
                 return session.query(CompanyProfile).filter_by(user_id=user_id).first()
         return {}
-        

@@ -18,6 +18,8 @@
 
 # pylint: disable=R0801
 
+from typing import overload
+
 from datetime import datetime
 from enum import Enum as PyEnum
 from uuid import uuid4
@@ -84,18 +86,25 @@ class User(Base):
             "role IN ('user', 'parking_manager', 'admin')", name="valid_role"
         ),
     )
-
     ban_user = relationship(
         "BanUser",
         back_populates="user",
         cascade="all, delete-orphan",
+        foreign_keys="[BanUser.user_id]"
     )
-    audit_log = relationship(
+    performed_audits = relationship(
         "AuditLog",
-        back_populates="user",
+        back_populates="user_performed_by",
         cascade="all, delete-orphan",
+        foreign_keys="[AuditLog.performed_by]"
     )
-    establishment_document = relationship(
+    targeted_audits = relationship(
+        "AuditLog",
+        back_populates="user_target",
+        cascade="all, delete-orphan",
+        foreign_keys="[AuditLog.target_user]"
+    )
+    establishment_documents = relationship(
         "EstablishmentDocument",
         back_populates="user",
         cascade="all, delete-orphan",
@@ -104,6 +113,11 @@ class User(Base):
         "CompanyProfile",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    transactions = relationship(
+        "ParkingTransaction",
+        back_populates="user",
         cascade="all, delete-orphan",
     )
 
@@ -129,11 +143,11 @@ class User(Base):
             "verification_expiry": self.verification_expiry,
             "created_at": self.created_at,
         }
-    
+
     def __repr__(self):
         """String representation of the User object."""
         return f"<User(user_id={self.user_id}, email={self.email})>"
-    
+
     @staticmethod
     def get_user_id(user_uuid: bytes):
         """Get the user ID from the user UUID."""
@@ -219,6 +233,57 @@ class UserRepository:
                 )
             )
 
+    @staticmethod
+    @overload
+    def get_user(user_id: int = None) -> dict:
+        """Get a user by their ID."""
+
+    @staticmethod
+    @overload
+    def get_user(user_uuid: bytes = None) -> dict:
+        """Get a user by their UUID."""
+
+    @staticmethod
+    @overload
+    def get_user(email: str = None) -> dict:
+        """Get a user by their email address."""
+
+    @staticmethod
+    @overload
+    def get_user(plate_number: str = None) -> dict:
+        """Get a user by their plate number."""
+
+    @staticmethod
+    def get_user(
+        user_id: int = None, user_uuid: bytes = None, email: str = None, plate_number: str = None
+    ):
+        """
+        Get a user by their ID, UUID, email address, or plate number.
+
+        Parameters:
+        user_id (int): The ID of the user.
+        user_uuid (bytes): The UUID of the user.
+        email (str): The email address of the user.
+        plate_number (str): The plate number of the user.
+
+        Returns:
+        dict: A dictionary containing the user information.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            user: User = None
+            if user_id:
+                user = session.execute(select(User).where(User.user_id == user_id)).scalar()
+            elif user_uuid:
+                user = session.execute(select(User).where(User.uuid == user_uuid)).scalar()
+            elif email:
+                user = session.execute(select(User).where(User.email == email)).scalar()
+            elif plate_number:
+                user = session.execute(select(User).where(User.plate_number == plate_number)).scalar()
+            return user.to_dict()
 
 class UserOperations:  # pylint: disable=R0903 disable=C0115
     @classmethod

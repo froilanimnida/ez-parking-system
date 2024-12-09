@@ -1,3 +1,6 @@
+"""This module contains the model for payment methods."""
+
+# pylint: disable=E1102
 
 from sqlalchemy import Column, Integer, Boolean, Text, TIMESTAMP, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import relationship
@@ -7,9 +10,9 @@ from app.utils.db import session_scope
 
 
 class PaymentMethod(Base):
+    """Represents the payment methods in the database."""
     __tablename__ = 'payment_method'
-    
-    # Columns definition
+
     method_id = Column(Integer, primary_key=True, autoincrement=True)
     establishment_id = Column(
         Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True
@@ -19,23 +22,36 @@ class PaymentMethod(Base):
     accepts_other = Column(Boolean, default=False)
     other_methods = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
-    updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
-    
-    # Constraints
+    updated_at = Column(
+        TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
+
     __table_args__ = (
         UniqueConstraint('establishment_id', name='unique_establishment_payment'),
     )
-    
-    # Relationship to ParkingEstablishment
-    parking_establishment = relationship("ParkingEstablishment", backref="payment_methods")
-    
-    def __repr__(self):
-        return f"<PaymentMethod(method_id={self.method_id}, establishment_id={self.establishment_id}, accepts_cash={self.accepts_cash})>"
+
+    parking_establishment = relationship("ParkingEstablishment", back_populates="payment_methods")
+
+
+    def to_dict(self):
+        """Convert the payment method object to a dictionary."""
+        if self is None:
+            return {}
+        return {
+            'method_id': self.method_id,
+            'establishment_id': self.establishment_id,
+            'accepts_cash': self.accepts_cash,
+            'accepts_mobile': self.accepts_mobile,
+            'accepts_other': self.accepts_other,
+            'other_methods': self.other_methods,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }
 
 
 class PaymentMethodRepository:
     """Wraps the logic for creating, updating, and deleting payment methods."""
-    
+
     @staticmethod
     def create_payment_method(payment_method_data: dict):
         """Create a new payment method."""
@@ -63,7 +79,7 @@ class PaymentMethodRepository:
             session.delete(payment_method)
             session.flush()
             return payment_method
-        
+
     @staticmethod
     def get_payment_methods(establishment_id: int):
         """Get payment methods by establishment id."""

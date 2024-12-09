@@ -1,6 +1,6 @@
 """This module contains the SQLAlchemy model for the establishment_document table."""
 
-# pylint disable=E1102
+# pylint: disable=E1102
 
 from enum import Enum as PyEnum
 
@@ -22,6 +22,7 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
+from app.utils.uuid_utility import UUIDUtility
 
 
 class DocumentTypeEnum(str, PyEnum):
@@ -40,8 +41,7 @@ class DocumentStatusEnum(str, PyEnum):
     APPROVED = "approved"
     REJECTED = "rejected"
 
-
-class EstablishmentDocument(Base):
+class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
     """Establishment Document Model."""
     __tablename__ = "establishment_document"
     __table_args__ = (
@@ -75,19 +75,12 @@ class EstablishmentDocument(Base):
         ForeignKey("parking_establishment.establishment_id", ondelete="CASCADE"),
         nullable=True,
     )
-    document_type = Column(
-        Enum(DocumentTypeEnum),
-        nullable=False,
-    )
+    document_type = Column(Enum(DocumentTypeEnum), nullable=False)
     bucket_path = Column(Text, nullable=False)
     filename = Column(Text, nullable=False)
     mime_type = Column(String(100), nullable=True)
     file_size = Column(BigInteger, nullable=True)
-    uploaded_at = Column(
-        TIMESTAMP(timezone=False),
-        nullable=True,
-        server_default=func.now(),
-    )
+    uploaded_at = Column(TIMESTAMP(timezone=False), nullable=True, server_default=func.now())
     verified_at = Column(TIMESTAMP(timezone=False), nullable=True)
     verified_by = Column(
         Integer,
@@ -99,17 +92,19 @@ class EstablishmentDocument(Base):
         nullable=True,
         server_default=text("'pending'::character varying"),
     )
-    verification_notes = Column(Text, nullable=True)
 
-    user = relationship("User", backref="establishment_document")
+    verification_notes = Column(Text, nullable=True)
+    user = relationship("User", back_populates="establishment_documents")
+    parking_establishment = relationship("ParkingEstablishment", back_populates="documents")
 
     def to_dict(self):
         """Convert the establishment document object to a dictionary."""
         if self is None:
             return {}
+        uuid_utility = UUIDUtility()
         return {
             "document_id": self.document_id,
-            "uuid": str(self.uuid),
+            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
             "establishment_id": self.establishment_id,
             "document_type": self.document_type,
             "bucket_path": self.bucket_path,
@@ -140,6 +135,6 @@ class EstablishmentDocumentRepository:
     def get_establishment_documents(establishment_id):
         """Get all establishment documents by establishment id."""
         with session_scope() as session:
-            document = session.query(EstablishmentDocument
+            documents = session.query(EstablishmentDocument
                 ).filter_by(establishment_id=establishment_id).all()
-            return document.to_dict()
+            return [document.to_dict() for document in documents]

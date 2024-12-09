@@ -2,6 +2,8 @@
 This module contains the SQLAlchemy model for the parking_slot table.
 """
 
+# pylint: disable=E1102
+
 from enum import Enum as PyEnum
 from typing import Any, overload, Union
 
@@ -46,32 +48,24 @@ class SlotFeature(PyEnum):
     PREMIUM = "premium"
 
 
-class ParkingSlot(Base):
-    """
-    Define the parking_slot table model.
-    """
-
+class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
+    """Define the parking_slot table model."""
     __tablename__ = "parking_slot"
 
-    # Columns definition
     slot_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, default=func.uuid_generate_v4())
     establishment_id = Column(
         Integer, ForeignKey("parking_establishment.establishment_id"), nullable=False
     )
     slot_code = Column(String(45), nullable=False)
-    vehicle_type_id = Column(
-        Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False
-    )
+    vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
     slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.OPEN)
     is_active = Column(Boolean, nullable=False, default=True)
     slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     floor_level = Column(SmallInteger, nullable=False, default=1)
     base_rate = Column(Numeric(10, 2), default=None)
     is_premium = Column(Boolean, nullable=False, default=False)
-    slot_features = Column(
-        ENUM(SlotFeature), nullable=False, default=SlotFeature.STANDARD
-    )
+    slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.STANDARD)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
@@ -87,15 +81,10 @@ class ParkingSlot(Base):
             "establishment_id", "slot_code", name="unique_establishment_slot_code"
         ),
     )
-    
-    parking_establishment = relationship(
-        "ParkingEstablishment", back_populates="parking_slot"
-    )
-    vehicle_type = relationship("VehicleType", back_populates="parking_slot")
-    parking_transaction = relationship("ParkingTransaction", back_populates="parking_slot")
 
-    def __repr__(self):  # pylint: disable=missing-function-docstring
-        return f"<ParkingSlot(slot_id={self.slot_id}, slot_code={self.slot_code}, status={self.slot_status}, is_active={self.is_active})>"
+    parking_establishment = relationship("ParkingEstablishment", back_populates="parking_slots")
+    vehicle_type = relationship("VehicleType", back_populates="parking_slots")
+    transactions = relationship("ParkingTransaction", back_populates="parking_slots")
 
     def to_dict(self):
         """
@@ -118,8 +107,8 @@ class ParkingSlot(Base):
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
-    
-    
+
+
     # def calculate_total_multiplier(self) -> float:
     #     """Calculate final rate multiplier including vehicle type and slot factors"""
     #     base_multiplier = float(self.vehicle_type.base_rate_multiplier)
@@ -134,14 +123,15 @@ class ParkingSlot(Base):
 
 
 class ParkingSlotRepository:
+    """Repository for ParkingSlot model."""
     @staticmethod
     def create_slot(slot_data: dict) -> int:
         """
         Create a new parking slot.
-    
+
         Parameters:
             slot_data (dict): Dictionary containing slot details.
-    
+
         Returns:
             int: The ID of the newly created slot.
         """
@@ -150,57 +140,54 @@ class ParkingSlotRepository:
             session.add(new_slot)
             session.flush()
             return new_slot.slot_id
-        
+
     @staticmethod
     @overload
     def get_slot(slot_code: str) -> dict:
         """
         Get a parking slot by slot code.
-    
+
         Parameters:
             slot_code (str): The code of the slot.
-    
+
         Returns:
             dict: The parking slot object.
         """
-        ...
-    
+
     @staticmethod
     @overload
     def get_slot(slot_uuid: bytes) -> dict:
         """
         Get a parking slot by slot code and establishment ID.
-    
+
         Parameters:
             slot_uuid (bytes): The UUID of the slot.
-    
+
         Returns:
             dict: The parking slot object.
         """
-        ...
-    
+
     @staticmethod
     @overload
     def get_slot(slot_id: int) -> dict:
         """
         Get a parking slot by slot ID.
-    
+
         Parameters:
             slot_id (int): The ID of the slot.
-    
+
         Returns:
             dict: The parking slot object.
         """
-        ...
-    
+
     @staticmethod
     def get_slot(identifier: Union[int, str, bytes]) -> dict:
         """
         Get a parking slot by slot code, establishment ID, or slot ID.
-    
+
         Parameters:
             identifier (Union[int, str, bytes]): The slot code, establishment ID, or slot ID.
-    
+
         Returns:
             dict: The parking slot object.
         """
@@ -214,15 +201,15 @@ class ParkingSlotRepository:
             else:
                 return {}
             return slot.to_dict() if slot else {}
-    
+
     @staticmethod
     def delete_slot(slot_uuid: bytes) -> int:
         """
         Delete a parking slot.
-    
+
         Parameters:
             slot_uuid (bytes): The UUID of the slot to be deleted.
-    
+
         Returns:
             int: The ID of the deleted slot.
         """
@@ -233,15 +220,15 @@ class ParkingSlotRepository:
                 return slot.slot_id
             else:
                 raise ValueError("Slot not found")
-    
+
     @staticmethod
     def update_slot(slot_data: dict) -> int:
         """
         Update a parking slot by the uuid of the slot.
-    
+
         Parameters:
             slot_data (dict): Dictionary containing updated slot details.
-    
+
         Returns:
             int: The ID of the updated slot.
         """
@@ -254,7 +241,7 @@ class ParkingSlotRepository:
             else:
                 raise ValueError("Slot not found")
 
-    
+
     @staticmethod
     def get_slots(establishment_id: int = None) -> list[ParkingSlot]:
         """
@@ -271,7 +258,7 @@ class ParkingSlotRepository:
                 VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
             ).filter(ParkingSlot.establishment_id == establishment_id).all()
             return [slot.to_dict() for slot in slots]
-    
+
     @staticmethod
     def get_slots_by_criteria(criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
@@ -291,7 +278,7 @@ class ParkingSlotRepository:
                 query = query.filter(getattr(ParkingSlot, key) == value)
             slots = query.all()
             return [slot.to_dict() for slot in slots]
-    
+
     @staticmethod
     def get_all_slots() -> list[ParkingSlot]:
         """

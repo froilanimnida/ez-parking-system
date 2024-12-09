@@ -7,8 +7,8 @@
 
 # pylint: disable=E1102, C0415
 
-from uuid import uuid4
 from typing import Union, overload
+from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
@@ -25,12 +25,11 @@ from sqlalchemy import (
     CheckConstraint,
     String,
 )
-from sqlalchemy.exc import OperationalError, DatabaseError, IntegrityError, DataError
+from sqlalchemy.exc import OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
 from app.exceptions.establishment_lookup_exceptions import (
     EstablishmentDoesNotExist,
-    EstablishmentEditsNotAllowedException,
 )
 from app.models.base import Base
 from app.utils.db import session_scope
@@ -81,14 +80,11 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
         ),
     )
 
-    company_profile = relationship("CompanyProfile", backref="parking_establishment")
-    establishment_document = relationship("EstablishmentDocument", backref="parking_establishment")
-    operating_hour = relationship("OperatingHour", backref="parking_establishment")
-    parking_slot = relationship("ParkingSlot", backref="parking_establishment")
-    payment_method = relationship("PaymentMethod", backref="parking_establishment")
-
-    def __repr__(self):
-        return f"<ParkingEstablishment(establishment_id={self.establishment_id}, uuid={self.uuid}, space_type={self.space_type}, status={self.status})>"
+    company_profile = relationship("CompanyProfile", back_populates="parking_establishments")
+    documents = relationship("EstablishmentDocument", back_populates="parking_establishment")
+    operating_hours = relationship("OperatingHour", back_populates="parking_establishment")
+    parking_slots = relationship("ParkingSlot", back_populates="parking_establishment")
+    payment_methods = relationship("PaymentMethod", back_populates="parking_establishment")
 
     def to_dict(self):
         """Convert the ParkingEstablishment instance to a dictionary."""
@@ -140,7 +136,7 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             + func.sin(func.radians(latitude)) * func.sin(func.radians(cls.latitude))
         )
         return distance_formula.asc() if ascending else distance_formula.desc()
-    
+
     @staticmethod
     def get_establishment_id(establishment_uuid: bytes):
         """Get establishment ID by UUID"""
@@ -275,25 +271,25 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
             session.add(new_parking_establishment)
             session.flush()
             return new_parking_establishment.establishment_id
-        
+
     @staticmethod
     @overload
     def get_establishment(establishment_uuid: bytes) -> dict:
         """Get parking establishment by UUID."""
         ...
-    
+
     @staticmethod
     @overload
     def get_establishment(profile_id: int) -> dict:
         """Get parking establishment by profile id."""
         ...
-    
+
     @staticmethod
     @overload
     def get_establishment(establisment_id: int) -> dict:
         """Get parking establishment by establishment id."""
         ...
-    
+
     @staticmethod
     def get_establishment(
         establishment_uuid: bytes = None, profile_id: int = None, establishment_id: int = None

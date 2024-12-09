@@ -74,19 +74,19 @@ class DayScheduleSchema(Schema):
 
 class WeeklyScheduleSchema(Schema):
     """Schema for weekly operating schedule"""
-    monday = fields.Nested(DayScheduleSchema, required=True)
-    tuesday = fields.Nested(DayScheduleSchema, required=True)
-    wednesday = fields.Nested(DayScheduleSchema, required=True)
-    thursday = fields.Nested(DayScheduleSchema, required=True)
-    friday = fields.Nested(DayScheduleSchema, required=True)
-    saturday = fields.Nested(DayScheduleSchema, required=True)
-    sunday = fields.Nested(DayScheduleSchema, required=True)
+    monday = fields.Nested(DayScheduleSchema(), required=True)
+    tuesday = fields.Nested(DayScheduleSchema(), required=True)
+    wednesday = fields.Nested(DayScheduleSchema(), required=True)
+    thursday = fields.Nested(DayScheduleSchema(), required=True)
+    friday = fields.Nested(DayScheduleSchema(), required=True)
+    saturday = fields.Nested(DayScheduleSchema(), required=True)
+    sunday = fields.Nested(DayScheduleSchema(), required=True)
 
 
 class OperatingHoursSchema(Schema):
     """Updated schema for operating hours"""
     is_24_hours = fields.Bool(required=True)
-    weekly_schedule = fields.Nested(WeeklyScheduleSchema, required=True)
+    weekly_schedule = fields.Nested(WeeklyScheduleSchema(), required=True)
     @validates("weekly_schedule")
     def validate_schedule(self, value):
         """Validate schedule based on is_24_hours"""
@@ -125,6 +125,20 @@ class ParkingEstablishmentAddressSchema(Schema):
     landmarks = fields.Str(allow_none=True)
     longitude = fields.Float(required=True)
     latitude = fields.Float(required=True)
+    
+
+class ParkingPhotoSchema(Schema):
+    """ Schema for parking establishment photos. """
+    parking_photo = fields.Raw(required=True, type="file")
+
+
+class ParkingEstablishmentFilesSchema(Schema):
+    government_id = fields.Raw(required=True, type="file")
+    parking_photos = fields.List(fields.Nested(ParkingPhotoSchema()), required=True)
+    proof_of_ownership = fields.Raw(required=True, type="file")
+    business_certificate = fields.Raw(required=True, type="file")
+    bir_certification = fields.Raw(required=True, type="file")
+    liability_insurance = fields.Raw(required=True, type="file")
 
 
 class ParkingEstablishmentOtherDetailsSchema(Schema):
@@ -156,7 +170,7 @@ class ParkingEstablishmentPaymentSchema(Schema):
 
 class CommonParkingManagerSchema(
         ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
-        ParkingEstablishmentPaymentSchema
+        ParkingEstablishmentPaymentSchema, ParkingEstablishmentFilesSchema
     ):
     """ Schema for common parking manager fields. """
     owner_type = fields.Str(

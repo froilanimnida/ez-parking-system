@@ -18,8 +18,8 @@ from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import (
     ParkingManagerIndividualOwnerSchema, ParkingManagerCompanyOwnerSchema
 )
-from app.schema.transaction_validation import ValidateEntrySchema
 from app.schema.response_schema import ApiResponse
+from app.schema.transaction_validation import ValidateEntrySchema
 from app.services.establishment_service import EstablishmentService
 from app.services.operating_hour_service import OperatingHourService
 from app.services.transaction_service import TransactionService

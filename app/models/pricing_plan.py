@@ -25,7 +25,7 @@ class RateType(PyEnum):
 class PricingPlan(Base):
     """ Pricing Plan Model """
     __tablename__ = 'pricing_plan'
-    
+
     plan_id = Column(Integer, primary_key=True, autoincrement=True)
     establishment_id = Column(Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True)
     rate_type = Column(ENUM(RateType), nullable=True)
@@ -33,19 +33,16 @@ class PricingPlan(Base):
     rate = Column(Numeric(10, 2), nullable=False)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
-    
+
     __table_args__ = (
         UniqueConstraint('establishment_id', 'rate_type', name='unique_establishment_rate_type'),
         CheckConstraint('rate >= 0', name='pricing_plan_rate_check'),
         CheckConstraint('rate_type IN (%s, %s, %s)' % (
             RateType.HOURLY.value, RateType.DAILY.value, RateType.MONTHLY.value), name='pricing_plan_rate_type_check')
     )
-    
+
     parking_establishment = relationship("ParkingEstablishment", backref="pricing_plans")
-    
-    def __repr__(self):
-        return f"<PricingPlan(plan_id={self.plan_id}, establishment_id={self.establishment_id}, rate_type={self.rate_type}, rate={self.rate})>"
-    
+
     def to_dict(self):
         if self is None:
             return {}
@@ -62,7 +59,7 @@ class PricingPlan(Base):
 
 class PricingPlanRepository:
     """Repository for the PricingPlan model."""
-    
+
     @staticmethod
     def create_pricing_plan(establishment_id: int, pricing_plans: list):
         """Create pricing plan for a parking establishment."""
@@ -78,14 +75,14 @@ class PricingPlanRepository:
                 pricing_plan_ids.append(pricing_plan.plan_id)
             session.commit()
             return pricing_plan_ids
-        
+
     @staticmethod
     def get_pricing_plans(establishment_id: int):
         """Get pricing plans of a parking establishment."""
         with session_scope() as session:
             pricing_plans = session.query(PricingPlan).filter_by(establishment_id=establishment_id).all()
             return [plan.to_dict() for plan in pricing_plans]
-        
+
     @staticmethod
     def update_pricing_plans(establishment_id: int, pricing_plans: list):
         """Update pricing plans of a parking establishment."""
@@ -98,7 +95,7 @@ class PricingPlanRepository:
                     pricing_plan.rate = plan.get('rate')
                     pricing_plan.is_enabled = plan.get('is_enabled')
             session.commit()
-            
+
     @staticmethod
     def delete_pricing_plans(establishment_id: int):
         """Delete pricing plans of a parking establishment."""

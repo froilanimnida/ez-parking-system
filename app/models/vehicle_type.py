@@ -17,19 +17,12 @@
         operations.
 """
 
-# pylint: disable=R0801
+# pylint: disable=R0801, E1102
 
 from enum import Enum as PyEnum
 
-from sqlalchemy import (
-    BOOLEAN,
-    Column,
-    Integer,
-    Enum,
-    func,
-    DateTime,
-    update, String, TIMESTAMP,
-)
+from sqlalchemy import BOOLEAN, Column, Integer, Enum, func, update, String, TIMESTAMP
+
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.exc import IntegrityError, OperationalError, DatabaseError, DataError
 from sqlalchemy.orm import relationship
@@ -41,14 +34,15 @@ from app.utils.engine import get_session
 
 
 class SizeCategory(PyEnum):
+    """Enum class for vehicle size categories."""
     SMALL = 'Small'
     MEDIUM = 'Medium'
     LARGE = 'Large'
 
-class VehicleType(Base):
+class VehicleType(Base):  # pylint: disable=R0903
+    """ Represents the vehicle type entity in the database. """
     __tablename__ = 'vehicle_type'
-    
-    # Columns definition
+
     vehicle_type_id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, default=func.uuid_generate_v4())
     code = Column(String(45), nullable=False)
@@ -57,21 +51,21 @@ class VehicleType(Base):
     size_category = Column(Enum(SizeCategory), nullable=False)
     is_active = Column(BOOLEAN, default=True, nullable=False)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
-    updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
-    
-    def __repr__(self):
-        return f"<VehicleType(vehicle_type_id={self.vehicle_type_id}, code={self.code}, name={self.name}, size_category={self.size_category})>"
+    updated_at = Column(
+        TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
 
-
-    parking_slot = relationship(
+    parking_slots = relationship(
         "ParkingSlot", back_populates="vehicle_type", cascade="all, delete-orphan"
     )
-    parking_transaction = relationship(
+    parking_transactions = relationship(
         "ParkingTransaction", back_populates="vehicle_type", cascade="all, delete-orphan"
     )
 
     def to_dict(self):
         """Returns the data representation of the vehicle type object."""
+        if self is None:
+            return {}
         return {
             "vehicle_type_id": self.vehicle_type_id,
             "code": self.code,
@@ -271,8 +265,8 @@ class VehicleRepository:  # pylint: disable=R0903
             raise error
         finally:
             session.close()
-            
-    
+
+
     @staticmethod
     def create_vehicle_type(vehicle_type_data: dict):
         """Create a new vehicle type."""
@@ -281,7 +275,7 @@ class VehicleRepository:  # pylint: disable=R0903
             session.add(vehicle_type)
             session.commit()
             return vehicle_type.vehicle_type_id
-        
+
     @staticmethod
     def update_vehicle_type(vehicle_id: int, vehicle_type_data: dict):
         """Update vehicle type."""

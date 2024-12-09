@@ -1,9 +1,9 @@
 """ Parking transaction module that represents the parking transaction database table. """
 
-# pylint: disable=R0401, R0801, C0415
+# pylint: disable=R0401, R0801, C0415, E1102
 
 from enum import Enum as PyEnum
-from typing import Literal
+from typing import Literal, overload, List
 
 from sqlalchemy import (
     Column,
@@ -28,16 +28,18 @@ from app.utils.uuid_utility import UUIDUtility
 
 # Define custom Enum types for 'payment_status' and 'transaction_status'
 class PaymentStatusEnum(str, PyEnum):
-    pending = "pending"
-    completed = "completed"
-    failed = "failed"
+    """Encapsulate enumerate types of payment status."""
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class TransactionStatusEnum(str, PyEnum):
-    reserved = "reserved"
-    active = "active"
-    completed = "completed"
-    cancelled = "cancelled"
+    """Encapsulate enumerate types of transaction status."""
+    RESERVED = "reserved"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class ParkingTransaction(
@@ -46,37 +48,27 @@ class ParkingTransaction(
     __tablename__ = "parking_transaction"
 
     transaction_id = Column(
-        Integer,
-        primary_key=True,
-        autoincrement=True,
-        server_default=text(
-            "nextval('parking_transaction_transaction_id_seq'::regclass)"
-        ),
+        Integer, primary_key=True, autoincrement=True,
+        server_default=text("nextval('parking_transaction_transaction_id_seq'::regclass)"),
     )
     uuid = Column(UUID(as_uuid=True), unique=True, nullable=False)
     slot_id = Column(
-        Integer,
-        ForeignKey("parking_slot.slot_id", onupdate="CASCADE", ondelete="CASCADE"),
+        Integer, ForeignKey("parking_slot.slot_id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
     vehicle_type_id = Column(
-        Integer,
-        ForeignKey(
-            "vehicle_type.vehicle_type_id", onupdate="CASCADE", ondelete="CASCADE"
-        ),
+        Integer, ForeignKey("vehicle_type.vehicle_type_id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
     plate_number = Column(String(15), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=True)
     entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
     exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
     payment_status = Column(
-        Enum(PaymentStatusEnum),
-        nullable=False,
-        server_default=text("'pending'::payment_status"),
+        Enum(PaymentStatusEnum), nullable=False, server_default=text("'pending'::payment_status"),
     )
     status = Column(
-        Enum(TransactionStatusEnum),
-        nullable=False,
+        Enum(TransactionStatusEnum), nullable=False,
         server_default=text("'reserved'::transaction_status"),
     )
     amount_due = Column(Numeric(9, 2), nullable=True)
@@ -84,14 +76,12 @@ class ParkingTransaction(
         TIMESTAMP(timezone=False), nullable=False, server_default=func.now()
     )
     updated_at = Column(
-        TIMESTAMP(timezone=False),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
+        TIMESTAMP(timezone=False), nullable=False, server_default=func.now(), onupdate=func.now(),
     )
 
-    vehicle_type = relationship("VehicleType", back_populates="parking_transaction")
-    parking_slot = relationship("ParkingSlot", back_populates="parking_transaction")
+    parking_slots = relationship("ParkingSlot", back_populates="transactions")
+    vehicle_type = relationship("VehicleType", back_populates="parking_transactions")
+    user = relationship("User", back_populates="transactions")
 
     def to_dict(self):
         """
@@ -385,5 +375,64 @@ class DeleteTransaction:  # pylint: disable=R0903
             session.close()
 
 
-class FeeOperation:  # pylint: disable=R0903
-    """Class that provides operations for calculating parking fees."""
+class ParkingTransactionRepository:  # pylint: disable=R0903
+    """Repository for ParkingTransaction model."""
+
+    @staticmethod
+    def create_transaction(data: dict):
+        """Create a parking transaction."""
+        with get_session() as session:
+            transaction = ParkingTransaction(**data)
+            session.add(transaction)
+            session.commit()
+            return transaction.transaction_id
+
+    @staticmethod
+    @overload
+    def get_transaction(transaction_uuid: bytes):
+        """Get a parking transaction by UUID."""
+
+    @staticmethod
+    @overload
+    def get_transaction(transaction_id: int):
+        """Get a parking transaction by ID."""
+
+    @staticmethod
+    def get_transaction(identifier):
+        """Get a parking transaction."""
+        with get_session() as session:
+            if isinstance(identifier, bytes):
+                transaction = (
+                    session.query(ParkingTransaction)
+                    .filter(ParkingTransaction.uuid == identifier)
+                    .first()
+                )
+            elif isinstance(identifier, int):
+                transaction = session.query(ParkingTransaction).get(identifier)
+            else:
+                return {}
+            return transaction.to_dict()
+
+    @staticmethod
+    @overload
+    def get_all_transactions(user_id: int):
+        """Get all parking transactions for a user."""
+
+    @staticmethod
+    @overload
+    def get_all_transactions():
+        """Get all parking transactions."""
+
+    @staticmethod
+    def get_all_transactions(user_id=None):
+        """Get all parking transactions."""
+        with get_session() as session:
+            if user_id:
+                transactions = (
+                    session.query(ParkingTransaction)
+                    .filter(ParkingTransaction.user_id == user_id)
+                    .all()
+                )
+            else:
+                transactions = session.query(ParkingTransaction).all()
+            return [transaction.to_dict() for transaction in transactions]

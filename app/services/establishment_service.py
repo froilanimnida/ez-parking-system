@@ -26,23 +26,20 @@ class EstablishmentService:
     @overload
     def get_establishment(cls, establishment_uuid: bytes) -> dict:
         """Get parking establishment information by UUID."""
-        ...
 
     @classmethod
     @overload
     def get_establishment(cls, manager_id: int) -> dict:
         """Get parking establishment information by manager ID."""
-        ...
 
     @classmethod
     def get_establishment(cls, identifier: Union[bytes, int]) -> dict:
         """Get parking establishment information."""
         if isinstance(identifier, bytes):
             return GetEstablishmentService.get_establishment(identifier)
-        elif isinstance(identifier, int):
+        if isinstance(identifier, int):
             return AdministrativeService.get_establishment(identifier)
-        else:
-            return {}
+        return {}
 
 
 class GetEstablishmentService:
@@ -79,13 +76,21 @@ class AdministrativeService:  # pylint: disable=too-few-public-methods
         company_profile = CompanyProfileRepository.get_company_profile(user_id=manager_id)
         company_profile_id = company_profile.get("profile_id")
         address = AddressRepository.get_address(profile_id=company_profile_id)
-        parking_establishment = ParkingEstablishmentRepository.get_establishment(profile_id=company_profile_id)
+        parking_establishment = ParkingEstablishmentRepository.get_establishment(
+            profile_id=company_profile_id
+        )
         establishment_document = EstablishmentDocumentRepository.get_establishment_documents(
             establishment_id=parking_establishment.get("establishment_id")
         )
-        operating_hour = OperatingHoursRepository.get_operating_hours(parking_establishment.get("establishment_id"))
-        payment_method = PaymentMethodRepository.get_payment_methods(parking_establishment.get("establishment_id"))
-        pricing_plan = PricingPlanRepository.get_pricing_plans(parking_establishment.get("establishment_id"))
+        operating_hour = OperatingHoursRepository.get_operating_hours(
+            parking_establishment.get("establishment_id")
+        )
+        payment_method = PaymentMethodRepository.get_payment_methods(
+            parking_establishment.get("establishment_id")
+        )
+        pricing_plan = PricingPlanRepository.get_pricing_plans(
+            parking_establishment.get("establishment_id")
+        )
         return {
             "company_profile": company_profile,
             "address": address,

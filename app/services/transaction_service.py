@@ -11,7 +11,6 @@ from app.models.parking_transaction import (
     ParkingTransactionOperation,
     UpdateTransaction,
 )
-from app.models.slot import GettingSlotsOperations, SlotOperation
 from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
 
@@ -111,7 +110,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
                 "uuid": transaction_data.get("uuid"),
                 "status": transaction_data.get("status"),
                 "plate_number": transaction_data.get("plate_number"),
-            }  # type: ignore
+            }
         )
         base64_image = qr_code_utils.generate_qr_code(qr_data)
         return {"transaction_data": transaction_data, "qr_code": base64_image}
@@ -125,10 +124,10 @@ class TransactionVerification:
         """Verifies the entry transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
-        if transaction_data.get("status") != "reserved":  # type: ignore
+        if transaction_data.get("status") != "reserved":
             raise QRCodeError("Invalid transaction status.")
         return UpdateTransaction.update_transaction_status(
-            "active", transaction_data.get("uuid")  # type: ignore
+            "active", transaction_data.get("uuid")
         )
 
     @staticmethod
@@ -136,7 +135,7 @@ class TransactionVerification:
         """Verifies the exit transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
-        if transaction_data.get("status") != "active":  # type: ignore
+        if transaction_data.get("status") != "active":
             raise QRCodeError("Invalid transaction status.")
 
     @staticmethod
@@ -145,14 +144,10 @@ class TransactionVerification:
         qr_code_utils = QRCodeUtils()
         uuid_utils = UUIDUtility()
         transaction_data = qr_code_utils.verify_qr_content(qr_code_data)
-        transaction_uuid = transaction_data.get("uuid")  # type: ignore
-        transaction_uuid_bin = uuid_utils.uuid_to_binary(transaction_uuid)  # type: ignore
-        transaction_data = ParkingTransactionOperation.get_transaction(
-            transaction_uuid_bin
-        )
-        user_info = UserRepository.get_by_plate_number(
-            plate_number=transaction_data.get("plate_number"),  # type: ignore
-        )
+        transaction_uuid = transaction_data.get("uuid")
+        transaction_uuid_bin = uuid_utils.uuid_to_binary(transaction_uuid)
+        transaction_data = ParkingTransactionOperation.get_transaction(transaction_uuid_bin)
+        user_info = UserRepository.get_user(plate_number=transaction_data.get("plate_number"))
         return {
             "transaction_uuid": transaction_uuid,
             "user_info": user_info,
@@ -200,7 +195,4 @@ class Transaction:  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
-        user_plate_number = UserRepository.get_by_id(user_id).get("plate_number")
-        return ParkingTransactionOperation.get_transaction_by_plate_number(
-            user_plate_number
-        )
+        return ParkingTransactionRepository.get_all_user_transactions(user_id=user_id)

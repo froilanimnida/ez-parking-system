@@ -2,11 +2,8 @@
 
 # pylint disable=R0401
 
-import base64
-import time
-from base64 import urlsafe_b64encode
 from datetime import datetime, timedelta
-from os import getenv, urandom
+from os import getenv
 
 from flask import render_template
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -24,9 +21,9 @@ from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.pricing_plan import PricingPlanRepository
 from app.models.user import UserOperations, OTPOperations, UserRepository
-from app.utils.email_utility import send_mail
 from app.tasks import send_mail
-from app.utils.security import generate_otp
+from app.utils.email_utility import send_mail
+from app.utils.security import generate_otp, generate_token
 
 
 class AuthService:
@@ -126,7 +123,7 @@ class UserRegistration:  # pylint: disable=R0903
         UserRepository.is_field_taken(
             "phone_number", sign_up_data.get("phone_number"), PhoneNumberAlreadyTaken
         )
-        verification_token = urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")
+        verification_token = generate_token()
         is_production = getenv("ENVIRONMENT") == "production"
         base_url = (getenv("PRODUCTION_URL") if is_production else getenv("DEVELOPMENT_URL"))
         template = render_template(

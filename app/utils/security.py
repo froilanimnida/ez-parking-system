@@ -1,11 +1,11 @@
 """ Security utilities for generating high-entropy seeds. """
 
+from base64 import b32encode, urlsafe_b64encode
 from datetime import datetime, timedelta
-from base64 import b32encode
-from os import getenv, getpid, urandom, times
-from time import time_ns, time, perf_counter_ns
-from socket import gethostname
 from hashlib import sha256
+from os import getenv, getpid, urandom, times
+from socket import gethostname
+from time import time_ns, time, perf_counter_ns
 
 from psutil import Process
 from pyotp import TOTP
@@ -65,3 +65,7 @@ def generate_otp() -> tuple:
             digest=sha256).now(),
         datetime.now() + timedelta(minutes=5)
     )
+
+def generate_token():
+    """ Generate url safe token """
+    return urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")

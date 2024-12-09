@@ -22,8 +22,17 @@ class AuditLog(Base):  # pylint: disable=too-few-public-methods
     details = Column(VARCHAR(255), nullable=False)
     performed_at = Column(DateTime, nullable=False)
     ip_address = Column(VARCHAR(15), nullable=False)
-    
-    user = relationship("User", back_populates="audit_log")
+
+    user_performed_by = relationship(
+        "User",
+        back_populates="performed_audits",
+        foreign_keys=[performed_by]
+    )
+    user_target = relationship(
+        "User",
+        back_populates="targeted_audits",
+        foreign_keys=[target_user]
+    )
 
     # user = relationship("User", back_populates="audit")
     def to_dict(self):  # pylint: disable=missing-function-docstring
@@ -50,16 +59,15 @@ class AuditLogRepository:  # pylint: disable=too-few-public-methods
             session.add(new_audit_log)
             session.flush()
             return new_audit_log.audit_id
-        
+
     @staticmethod
     def get_audit_log(audit_uuid: bytes):
         with session_scope() as session:
             audit_log = session.query(AuditLog).filter_by(uuid=audit_uuid).first()
             return audit_log.to_dict()
-        
+
     @staticmethod
     def get_all_audit_logs():
         with session_scope() as session:
             audit_logs = session.query(AuditLog).all()
             return [audit_log.to_dict() for audit_log in audit_logs]
-
