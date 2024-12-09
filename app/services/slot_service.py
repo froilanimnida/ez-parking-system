@@ -40,9 +40,9 @@ class ParkingSlotService:
         return DeleteSlotService.delete_slot(slot_data)
     
     @staticmethod
-    def update_slot(slot_data: dict, user_id: int, ip_address):
+    def update_slot(slot_data: dict):
         """Update a slot."""
-        return UpdateSlotService.update_slot(slot_data, slot_data, ip_address)
+        return UpdateSlotService.update_slot(slot_data)
 
 
 class GetSlotService:
@@ -78,7 +78,7 @@ class AddingSlotService:  # pylint: disable=R0903
     """Wraps the logic for creating a new slot."""
     @staticmethod
     def create_slot(new_slot_data: dict, user_id: int, ip_address):  # pylint: disable=C0116
-        company_profile_id = CompanyProfileRepository.get_company_profile_by_user_id(user_id).get("profile_id")
+        company_profile_id = CompanyProfileRepository.get_company_profile(user_id=user_id).get("profile_id")
         new_slot_data.update({
             "establishment_id": ParkingEstablishmentRepository.get_establishment(
                 profile_id=company_profile_id
@@ -99,20 +99,25 @@ class DeleteSlotService:  # pylint: disable=R0903
     @staticmethod
     def delete_slot(slot_data):
         """Delete a slot."""
-        user_id = slot_data.get("user_id")
-        slot_uuid = slot_data.get("slot_uuid")
-        return ParkingSlotRepository.delete_slot(slot_data)
+        slot_id = ParkingSlotRepository.delete_slot(slot_data.get("slot_uuid"))
+        AuditLogRepository.create_audit_log({
+            "action_type": "DELETE",
+            "performed_by": slot_data.get("user_id"),
+            "details": f"Deleted slot with slot id: {slot_id}",
+            "performed_at": datetime.now(),
+            "ip_address": slot_data.get("ip_address"),
+        })
 
 
 class UpdateSlotService:  # pylint: disable=R0903
     @staticmethod
-    def update_slot(slot_data, user_id, ip_address):
+    def update_slot(slot_data):
         """Update a slot."""
         slot_id = ParkingSlotRepository.update_slot(slot_data)
         return AuditLogRepository.create_audit_log({
             "action_type": "UPDATE",
-            "performed_by": user_id,
+            "performed_by": slot_data.get("user_id"),
             "details": f"Updated slot with slot code {slot_id}",
             "performed_at": datetime.now(),
-            "ip_address": ip_address,
+            "ip_address": slot_data.get("ip_address"),
         })

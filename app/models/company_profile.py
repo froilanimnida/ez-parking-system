@@ -1,4 +1,5 @@
 """ Business Profile Model (Postgres SCHEMA) """
+from typing import overload, Union
 
 from sqlalchemy import (
     TIMESTAMP,
@@ -71,8 +72,25 @@ class CompanyProfileRepository:
             return company_profile.profile_id
         
     @staticmethod
-    def get_company_profile_by_user_id(user_id: int):
+    @overload
+    def get_company_profile(user_id: int):
         """Get company profile by user id."""
-        with session_scope() as session:
-            company_profile = session.query(CompanyProfile).filter_by(user_id=user_id).first()
-            return company_profile.to_dict()
+        ...
+    
+    @staticmethod
+    @overload
+    def get_company_profile(profile_id: int):
+        """Get company profile by profile id."""
+        ...
+    
+    @staticmethod
+    def get_company_profile(profile_id: int = None, user_id: int = None) -> Union[dict, list]:
+        """Get company profile by user id or profile id."""
+        if profile_id:
+            with session_scope() as session:
+                return session.query(CompanyProfile).filter_by(profile_id=profile_id).first()
+        elif user_id:
+            with session_scope() as session:
+                return session.query(CompanyProfile).filter_by(user_id=user_id).first()
+        return {}
+        

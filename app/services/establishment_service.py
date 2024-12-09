@@ -1,15 +1,17 @@
 """ Establishment related operations from the routes will be handled here. """
 
-from datetime import datetime
+from typing import overload, Union
 
+from app.models.address import AddressRepository
+from app.models.company_profile import CompanyProfileRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import (
-    GetEstablishmentOperations,
-    UpdateEstablishmentOperations, ParkingEstablishmentRepository,
+    ParkingEstablishmentRepository, GetEstablishmentOperations
 )
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.payment_method import PaymentMethodRepository
 from app.models.pricing_plan import PricingPlanRepository
+from app.models.establishment_document import EstablishmentDocumentRepository
 
 
 class EstablishmentService:
@@ -21,19 +23,26 @@ class EstablishmentService:
         return GetEstablishmentService.get_establishments(query_dict=query_dict)
 
     @classmethod
-    def update_establishment(cls, establishment_data: dict):
-        """Update parking establishment."""
-        UpdateEstablishmentService.update_establishment(establishment_data)
+    @overload
+    def get_establishment(cls, establishment_uuid: bytes) -> dict:
+        """Get parking establishment information by UUID."""
+        ...
 
     @classmethod
-    def get_establishment(cls, establishment_uuid: bytes):
+    @overload
+    def get_establishment(cls, manager_id: int) -> dict:
+        """Get parking establishment information by manager ID."""
+        ...
+
+    @classmethod
+    def get_establishment(cls, identifier: Union[bytes, int]) -> dict:
         """Get parking establishment information."""
-        return GetEstablishmentService.get_establishment(establishment_uuid)
-
-    @classmethod
-    def get_schedule_hours(cls, manager_id: int):
-        """Get parking establishment schedule."""
-        return GetEstablishmentService.get_schedule_hours(manager_id)
+        if isinstance(identifier, bytes):
+            return GetEstablishmentService.get_establishment(identifier)
+        elif isinstance(identifier, int):
+            return AdministrativeService.get_establishment(identifier)
+        else:
+            return {}
 
 
 class GetEstablishmentService:
@@ -61,17 +70,28 @@ class GetEstablishmentService:
             "operating_hour": operating_hour,
         }
 
-    @classmethod
-    def get_schedule_hours(cls, manager_id: int):
-        """Get parking establishment schedule."""
-        return GetEstablishmentOperations.get_establishment_schedule(manager_id)
 
-
-class UpdateEstablishmentService:  # pylint: disable=R0903
-    """Class for operations related to updating parking establishment."""
+class AdministrativeService:  # pylint: disable=too-few-public-methods
+    """Class for operations related to administrative tasks."""
     @classmethod
-    def update_establishment(cls, establishment_data: dict):
-        """Update parking establishment."""
-        establishment_data["updated_at"] = datetime.now()
-        UpdateEstablishmentOperations.update_establishment(establishment_data)
-    
+    def get_establishment(cls, manager_id: int):
+        """Get parking establishment information."""
+        company_profile = CompanyProfileRepository.get_company_profile(user_id=manager_id)
+        company_profile_id = company_profile.get("profile_id")
+        address = AddressRepository.get_address(profile_id=company_profile_id)
+        parking_establishment = ParkingEstablishmentRepository.get_establishment(profile_id=company_profile_id)
+        establishment_document = EstablishmentDocumentRepository.get_establishment_documents(
+            establishment_id=parking_establishment.get("establishment_id")
+        )
+        operating_hour = OperatingHoursRepository.get_operating_hours(parking_establishment.get("establishment_id"))
+        payment_method = PaymentMethodRepository.get_payment_methods(parking_establishment.get("establishment_id"))
+        pricing_plan = PricingPlanRepository.get_pricing_plans(parking_establishment.get("establishment_id"))
+        return {
+            "company_profile": company_profile,
+            "address": address,
+            "parking_establishment": parking_establishment,
+            "establishment_document": establishment_document,
+            "operating_hour": operating_hour,
+            "payment_method": payment_method,
+            "pricing_plan": pricing_plan,
+        }

@@ -8,6 +8,7 @@
 # pylint: disable=E1102, C0415
 
 from uuid import uuid4
+from typing import Union, overload
 
 from sqlalchemy import (
     Boolean,
@@ -16,7 +17,6 @@ from sqlalchemy import (
     Text,
     UUID,
     DECIMAL,
-    and_,
     func,
     update,
     ForeignKey,
@@ -125,7 +125,7 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             * func.cos(func.radians(self.latitude))
             * func.cos(func.radians(self.longitude) - func.radians(longitude))
             + func.sin(func.radians(latitude)) * func.sin(func.radians(self.latitude))
-        )  # type: ignore
+        )
 
     @classmethod
     def order_by_distance(
@@ -140,23 +140,6 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             + func.sin(func.radians(latitude)) * func.sin(func.radians(cls.latitude))
         )
         return distance_formula.asc() if ascending else distance_formula.desc()
-
-    @classmethod
-    def get_establishment_id_by_uuid(cls, uuid: bytes):
-        """Get establishment ID by UUID"""
-        session = get_session()
-        try:
-            establishment = (
-                session.query(cls.establishment_id)
-                .filter(cls.uuid == uuid)
-                .with_entities(cls.establishment_id)
-                .first()
-            )
-            return establishment.establishment_id  # type: ignore
-        except (OperationalError, DatabaseError) as err:
-            raise err
-        finally:
-            session.close()
     
     @staticmethod
     def get_establishment_id(establishment_uuid: bytes):
@@ -168,39 +151,10 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
                 .first()
             )
             return establishment.establishment_id
-        
-
 
 
 class GetEstablishmentOperations:
     """Class for operations related to parking establishment (Getting)."""
-
-    @staticmethod
-    def is_establishment_exists(establishment_uuid: bytes):
-        """
-        Checks if a parking establishment exists in the database by its ID.
-
-        Args:
-            establishment_uuid (bytes): The uuid of the parking establishment to check.
-
-        Returns:
-            bool: True if the establishment exists, False otherwise.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            return (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.uuid == establishment_uuid)
-                .count()
-                > 0
-            )
-        except (OperationalError, DatabaseError) as e:
-            raise e
-        finally:
-            session.close()
 
     @staticmethod
     def get_establishment_id_by_uuid(establishment_uuid: bytes):
@@ -310,147 +264,6 @@ class GetEstablishmentOperations:
         finally:
             session.close()
 
-    @staticmethod
-    def get_establishment_info(establishment_uuid: bytes) -> dict:
-        """
-        Get parking establishment information by its UUID.
-
-        Args:
-            establishment_uuid (bytes): The UUID of the parking establishment
-
-        Returns:
-            dict: Dictionary containing establishment and slot details
-
-        Raises:
-            OperationalError: If database operation fails
-            EstablishmentNotFound: If establishment doesn't exist
-        """
-        session = get_session()
-        try:
-            establishment = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.uuid == establishment_uuid)
-                .first()
-            )
-            if not establishment:
-                raise EstablishmentDoesNotExist("Establishment not found")
-
-            return establishment.to_dict()
-
-        except (OperationalError, DatabaseError) as error:
-            raise error
-        finally:
-            session.close()
-
-    @staticmethod
-    def get_establishment_schedule(manager_id: int):
-        """Get the schedule hours of the establishment"""
-        session = get_session()
-        try:
-            schedule = (
-                session.query(
-                    ParkingEstablishment.opening_time,
-                    ParkingEstablishment.closing_time,
-                    ParkingEstablishment.is_24_hours,
-                )
-                .where(ParkingEstablishment.manager_id == manager_id)
-                .first()
-            )
-            return (
-                {}
-                if not schedule
-                else {
-                    "opening_time": str(schedule.opening_time),
-                    "closing_time": str(schedule.closing_time),
-                    "is_24_hours": bool(schedule.is_24_hours),
-                }
-            )
-        except (OperationalError, DatabaseError) as error:
-            raise error
-        finally:
-            session.close()
-
-class UpdateEstablishmentOperations:  # pylint: disable=R0903
-    """
-    Class that handles update operations for parking establishments.
-
-    This class provides functionality to update parking establishment details in the database.
-    Validates establishment existence and manager permissions before allowing updates.
-    Handles database operations with proper session management and error handling.
-    """
-
-    @staticmethod
-    def update_establishment(establishment_data: dict):
-        """
-        Updates a parking establishment's details in the database.
-
-        Args:
-            establishment_data (dict): Dictionary containing the updated establishment details.
-
-        Raises:
-            EstablishmentDoesNotExist: If the establishment with given ID does not exist.
-            EstablishmentEditsNotAllowedException: If the manager_id does not match the
-            establishment.
-            OperationalError: If there is a database operation error.
-            DatabaseError: If there is a database-related error.
-            DataError: If there is an error with the data format.
-            IntegrityError: If there is a database integrity constraint violation.
-        """
-        session = get_session()
-        try:
-            is_establishment_exists = (
-                GetEstablishmentOperations.is_establishment_exists(
-                    establishment_data.get("establishment_uuid")
-                )
-            )
-            if not is_establishment_exists:
-                raise EstablishmentDoesNotExist("Establishment does not exist")
-            is_allowed_to_make_edits = (
-                session.query(ParkingEstablishment).filter(
-                    and_(
-                        ParkingEstablishment.uuid
-                        == establishment_data.get("establishment_uuid"),
-                        ParkingEstablishment.manager_id
-                        == establishment_data.get("manager_id"),
-                    )
-                )
-            ).count()
-            if not is_allowed_to_make_edits:
-                raise EstablishmentEditsNotAllowedException(
-                    "You are not allowed to make edits to this establishment."
-                )
-            session.execute(
-                update(ParkingEstablishment)
-                .where(
-                    and_(
-                        ParkingEstablishment.uuid
-                        == establishment_data.get("establishment_uuid"),
-                        ParkingEstablishment.manager_id
-                        == establishment_data.get("manager_id"),
-                    )
-                )
-                .values(
-                    {
-                        "name": establishment_data.get("name"),
-                        "address": establishment_data.get("address"),
-                        "contact_number": establishment_data.get("contact_number"),
-                        "opening_time": establishment_data.get("opening_time"),
-                        "closing_time": establishment_data.get("closing_time"),
-                        "is_24_hours": establishment_data.get("is_24_hours"),
-                        "hourly_rate": establishment_data.get("hourly_rate"),
-                        "longitude": establishment_data.get("longitude"),
-                        "latitude": establishment_data.get("latitude"),
-                        "updated_at": establishment_data.get("updated_at"),
-                    }
-                )
-            )
-            session.commit()
-        except (OperationalError, DatabaseError, DataError, IntegrityError) as err:
-            session.rollback()
-            raise err
-        finally:
-            session.close()
-
 
 class ParkingEstablishmentRepository:  # pylint: disable=R0903
     """Class for operations related to parking establishment"""
@@ -464,23 +277,63 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
             return new_parking_establishment.establishment_id
         
     @staticmethod
-    def get_establishment(establishment_uuid: bytes = None, profile_id: int = None):
+    @overload
+    def get_establishment(establishment_uuid: bytes) -> dict:
         """Get parking establishment by UUID."""
+        ...
+    
+    @staticmethod
+    @overload
+    def get_establishment(profile_id: int) -> dict:
+        """Get parking establishment by profile id."""
+        ...
+    
+    @staticmethod
+    @overload
+    def get_establishment(establisment_id: int) -> dict:
+        """Get parking establishment by establishment id."""
+        ...
+    
+    @staticmethod
+    def get_establishment(
+        establishment_uuid: bytes = None, profile_id: int = None, establishment_id: int = None
+    ) -> Union[dict]:
+        """Get parking establishment by UUID, profile id, or establishment id."""
         with session_scope() as session:
-            establishment: ParkingEstablishment
-            if profile_id:
+            if establishment_id is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
-                    .filter(
-                        ParkingEstablishment.uuid == establishment_uuid,
-                        ParkingEstablishment.profile_id == profile_id
-                    )
+                    .filter(ParkingEstablishment.establishment_id == establishment_id)
                     .first()
                 )
-            else:
+                return establishment.to_dict() if establishment else {}
+            elif profile_id is not None:
+                establishment = (
+                    session.query(ParkingEstablishment)
+                    .filter(ParkingEstablishment.profile_id == profile_id)
+                    .first()
+                )
+                return establishment.to_dict()
+            elif establishment_uuid is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
                     .filter(ParkingEstablishment.uuid == establishment_uuid)
                     .first()
                 )
-            return establishment.to_dict()
+                return establishment.to_dict() if establishment else {}
+            else:
+                return {}
+
+    @staticmethod
+    def update_parking_establishment(establishment_data: dict):
+        """Update parking establishment details."""
+        with session_scope() as session:
+            establishment_id = ParkingEstablishment.get_establishment_id(
+                establishment_uuid=establishment_data.get("establishment_uuid")
+            )
+            session.execute(
+                update(ParkingEstablishment)
+                .where(ParkingEstablishment.establishment_id == establishment_id)
+                .values(establishment_data)
+            )
+            session.commit()

@@ -3,8 +3,8 @@ from marshmallow import Schema, fields, post_load
 
 from app.utils.uuid_utility import UUIDUtility
 from app.schema.common_registration_schema import (
-    EmailBaseSchema, ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
-    ParkingEstablishmentSpacingSchema, ParkingEstablishmentPaymentSchema
+    ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
+    ParkingEstablishmentPaymentSchema
 )
 
 
@@ -28,15 +28,14 @@ class EstablishmentCommonValidation(Schema):
             in_data["establishment_uuid"]
         )
         return in_data
-    
+
 
 class SlotCommonValidation(Schema):
+    """ Common validation schema for slot. It is used to validate the slot_uuid. """
     slot_uuid = fields.Str(required=True)
-    
+
     @post_load
-    def normalize_uuid_to_binary(
-        self, in_data, **kwargs
-    ):
+    def normalize_uuid_to_binary(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Normalize the slot_uuid to binary."""
         uuid_utility = UUIDUtility()
         in_data["slot_uuid"] = uuid_utility.remove_hyphens_from_uuid(
@@ -48,5 +47,8 @@ class SlotCommonValidation(Schema):
         return in_data
 
 
-class EstablishmentBaseInformationSchema(ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema, ParkingEstablishmentSpacingSchema, ParkingEstablishmentPaymentSchema):
-    is_24_hours = fields.Boolean(required=True)
+class EstablishmentBaseInformationSchema(
+        ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
+        ParkingEstablishmentPaymentSchema
+    ):
+    """ Schema for establishment base information. """

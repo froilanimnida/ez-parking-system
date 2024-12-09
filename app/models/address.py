@@ -1,5 +1,9 @@
 """ Represents the ORM model for the address table. This is connected to the company_profile table. """
 
+# pylint: disable=E1102
+
+from typing import overload
+
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -33,10 +37,8 @@ class Address(Base):  # pylint: disable=too-few-public-methods, missing-class-do
 
     company_profile = relationship("CompanyProfile", backref="addresses")
 
-    def __repr__(self):
-        return f"<Address(address_id={self.address_id}, profile_id={self.profile_id}, street={self.street})>"
-
     def to_dict(self):
+        """ Convert the address object to a dictionary. """
         if self is None:
             return {}
         return {
@@ -63,14 +65,29 @@ class AddressRepository:
             session.add(address)
             session.commit()
             return address.address_id
-        
+
     @staticmethod
-    def get_address(address_id: int):
+    @overload
+    def get_address(address_id: int = None) -> dict:
         """Get address by address id."""
+
+    @staticmethod
+    @overload
+    def get_address(profile_id: int = None) -> dict:
+        """Get addresses by profile id."""
+
+    @staticmethod
+    def get_address(profile_id: int = None, address_id: int = None) -> dict:
+        """Get address by address id or profile id."""
         with session_scope() as session:
-            address = session.query(Address).filter_by(address_id=address_id).first()
+            if profile_id is not None:
+                address = session.query(Address).filter_by(profile_id=profile_id).first()
+            elif address_id is not None:
+                address = session.query(Address).filter_by(address_id=address_id).first()
+            else:
+                return {}
             return address.to_dict()
-        
+
     @staticmethod
     def update_address(address_id: int, address_data: dict):
         """Update an address."""

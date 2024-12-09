@@ -6,7 +6,7 @@ from uuid import uuid4
 from app.exceptions.qr_code_exceptions import QRCodeError
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
 from app.models.audit_log import UUIDUtility
-from app.models.parking_establishment import GetEstablishmentOperations
+from app.models.parking_establishment import GetEstablishmentOperations, ParkingEstablishmentRepository
 from app.models.parking_transaction import (
     ParkingTransactionOperation,
     UpdateTransaction,
@@ -183,7 +183,7 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
         if status in ["reserved", "occupied"]:
             raise SlotStatusTaken("Invalid slot status.")
 
-        establishment_info = GetEstablishmentOperations.get_establishment_info(
+        establishment_info = ParkingEstablishmentRepository.get_establishment(
             establishment_uuid_bin
         )
 

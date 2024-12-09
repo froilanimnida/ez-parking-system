@@ -3,7 +3,7 @@ This module contains the SQLAlchemy model for the parking_slot table.
 """
 
 from enum import Enum as PyEnum
-from typing import Any
+from typing import Any, overload, Union
 
 from sqlalchemy import (
     Column,
@@ -150,6 +150,70 @@ class ParkingSlotRepository:
             session.add(new_slot)
             session.flush()
             return new_slot.slot_id
+        
+    @staticmethod
+    @overload
+    def get_slot(slot_code: str) -> dict:
+        """
+        Get a parking slot by slot code.
+    
+        Parameters:
+            slot_code (str): The code of the slot.
+    
+        Returns:
+            dict: The parking slot object.
+        """
+        ...
+    
+    @staticmethod
+    @overload
+    def get_slot(slot_uuid: bytes) -> dict:
+        """
+        Get a parking slot by slot code and establishment ID.
+    
+        Parameters:
+            slot_uuid (bytes): The UUID of the slot.
+    
+        Returns:
+            dict: The parking slot object.
+        """
+        ...
+    
+    @staticmethod
+    @overload
+    def get_slot(slot_id: int) -> dict:
+        """
+        Get a parking slot by slot ID.
+    
+        Parameters:
+            slot_id (int): The ID of the slot.
+    
+        Returns:
+            dict: The parking slot object.
+        """
+        ...
+    
+    @staticmethod
+    def get_slot(identifier: Union[int, str, bytes]) -> dict:
+        """
+        Get a parking slot by slot code, establishment ID, or slot ID.
+    
+        Parameters:
+            identifier (Union[int, str, bytes]): The slot code, establishment ID, or slot ID.
+    
+        Returns:
+            dict: The parking slot object.
+        """
+        with session_scope() as session:
+            if isinstance(identifier, str):
+                slot = session.query(ParkingSlot).filter_by(slot_code=identifier).first()
+            elif isinstance(identifier, bytes):
+                slot = session.query(ParkingSlot).get(identifier)
+            elif isinstance(identifier, int):
+                slot = session.query(ParkingSlot).get(identifier)
+            else:
+                return {}
+            return slot.to_dict() if slot else {}
     
     @staticmethod
     def delete_slot(slot_uuid: bytes) -> int:
@@ -189,21 +253,7 @@ class ParkingSlotRepository:
                 return result
             else:
                 raise ValueError("Slot not found")
-    
-    @staticmethod
-    def get_slot(slot_uuid: bytes = None) -> dict:
-        """
-        Get a parking slot by UUID.
-    
-        Parameters:
-            slot_uuid (bytes): The UUID of the slot.
-    
-        Returns:
-            ParkingSlot: The parking slot object.
-        """
-        with session_scope() as session:
-            slot = session.query(ParkingSlot).filter(ParkingSlot.uuid == slot_uuid).first()
-            return slot.to_dict()
+
     
     @staticmethod
     def get_slots(establishment_id: int = None) -> list[ParkingSlot]:

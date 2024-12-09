@@ -115,7 +115,7 @@ class DeleteSlot(MethodView):
     @parking_manager_required()
     @jwt_required(False)
     def delete(self, data, user_id):
-        data.update({"manager_id": user_id})
+        data.update({"ip_address": request.remote_addr, "manager_id": user_id})
         ParkingSlotService.delete_slot(data)
         return set_response(
             200, {"code": "success", "message": "Slot deleted successfully."}
@@ -138,7 +138,8 @@ class UpdateSlot(MethodView):
     @parking_manager_required()
     @jwt_required(False)
     def post(self, slot_data, user_id):
-        ParkingSlotService.update_slot(slot_data, user_id, request.remote_addr)
+        slot_data.update({"ip_address": request.remote_addr, "manager_id": user_id})
+        ParkingSlotService.update_slot(slot_data)
         return set_response(
             200, {"code": "success", "message": "Slot updated successfully."}
         )
