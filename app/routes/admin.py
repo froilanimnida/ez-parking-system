@@ -10,6 +10,7 @@ from flask_smorest import Blueprint
 
 from app.schema.ban_query_validation import BanQueryValidation
 from app.services.admin_service import AdminService
+from app.services.vehicle_type_service import VehicleTypeService
 from app.utils.response_util import set_response
 
 admin_blp = Blueprint(
@@ -85,3 +86,46 @@ class UnbanUser(MethodView):
         return set_response(
             201, {"code": "success", "message": "User unbanned."}
         )
+
+
+@admin_blp.route("/get-banned-users")
+class GetBannedUsers(MethodView):
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get all banned users.",
+        responses={
+            200: "Banned users retrieved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+            422: "Unprocessable",
+        },
+    )
+    @admin_role_required()
+    @jwt_required(False)
+    def get(self, admin_id):  # pylint: disable=unused-argument
+        # admin_service = AdminService()
+        # banned_users = admin_service.get_banned_users(admin_id)
+        return set_response(200, {"code": "success", "data": "HELLO"})
+
+@admin_blp.route("/get-all-vehicle-types")
+class GetAllVehicleTypes(MethodView):
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get all vehicle types.",
+        responses={
+            200: "Vehicle types retrieved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+            422: "Unprocessable",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    @jwt_required(False)
+    def get(self, admin_id):  # pylint: disable=unused-argument
+        vehicle_types = VehicleTypeService().get_all_vehicle_types()
+        return set_response(200, {"code": "success", "data": vehicle_types})

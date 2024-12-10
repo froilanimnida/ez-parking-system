@@ -139,9 +139,7 @@ class Logout(MethodView):
     @jwt_required(False)
     def post(self):
         get_jwt()
-        response = set_response(
-            200, {"code": "success", "message": "Logged out successfully."}
-        )
+        response = set_response(200, {"code": "success", "message": "Logged out successfully."})
         unset_access_cookies(response)
         unset_refresh_cookies(response)
         unset_jwt_cookies(response)
@@ -163,12 +161,7 @@ class VerifyToken(MethodView):
     def post(self):
         role = get_jwt().get("role")
         return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Token verified successfully.",
-                "role": role,
-            },
+            200, {"code": "success", "message": "Token verified successfully.", "role": role}
         )
 
 
@@ -186,13 +179,7 @@ class VerifyEmail(MethodView):
     @jwt_required(True)
     def patch(self, data):
         AuthService.verify_email(data.get("verification_token"))
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Email verified successfully.",
-            },
-        )
+        return set_response(200, {"code": "success", "message": "Email verified successfully."})
 
 auth_blp.register_error_handler(BannedUserException, handle_banned_user)
 auth_blp.register_error_handler(EmailNotFoundException, handle_email_not_found)

@@ -54,7 +54,7 @@ class VehicleType(Base):
             'code': self.code,
             'name': self.name,
             'description': self.description,
-            'size_category': self.size_category,
+            'size_category': self.size_category.value,
             'is_active': self.is_active,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
