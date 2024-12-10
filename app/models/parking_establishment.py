@@ -188,7 +188,7 @@ class GetEstablishmentOperations:
         Combined query for establishments with optional filters
         """
         # pylint: disable=cyclic-import
-        from app.models.slot import Slot
+        from app.models.parking_slot import ParkingSlot
 
         session = get_session()
         try:
@@ -200,17 +200,17 @@ class GetEstablishmentOperations:
             query = (
                 session.query(
                     ParkingEstablishment,
-                    func.count(case((Slot.slot_status == "open", 1))).label(
+                    func.count(case((ParkingSlot.slot_status == "open", 1))).label(
                         "open_slots"
                     ),
-                    func.count(case((Slot.slot_status == "occupied", 1))).label(
+                    func.count(case((ParkingSlot.slot_status == "occupied", 1))).label(
                         "occupied_slots"
                     ),
-                    func.count(case((Slot.slot_status == "reserved", 1))).label(
+                    func.count(case((ParkingSlot.slot_status == "reserved", 1))).label(
                         "reserved_slots"
                     ),
                 )
-                .outerjoin(Slot)
+                .outerjoin(ParkingSlot)
                 .group_by(ParkingEstablishment.establishment_id)
             )
 
@@ -218,7 +218,7 @@ class GetEstablishmentOperations:
                 query = query.filter(ParkingEstablishment.is_24_hours == is_24_hours)
 
             if vehicle_type_id is not None:
-                query = query.filter(Slot.vehicle_type_id == vehicle_type_id)
+                query = query.filter(ParkingSlot.vehicle_type_id == vehicle_type_id)
             if establishment_name is not None:
                 query = query.filter(
                     ParkingEstablishment.name.ilike(f"%{establishment_name}%")
@@ -276,19 +276,16 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
     @overload
     def get_establishment(establishment_uuid: bytes) -> dict:
         """Get parking establishment by UUID."""
-        ...
 
     @staticmethod
     @overload
     def get_establishment(profile_id: int) -> dict:
         """Get parking establishment by profile id."""
-        ...
 
     @staticmethod
     @overload
-    def get_establishment(establisment_id: int) -> dict:
+    def get_establishment(establishment_id: int) -> dict:
         """Get parking establishment by establishment id."""
-        ...
 
     @staticmethod
     def get_establishment(
@@ -303,22 +300,21 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
                     .first()
                 )
                 return establishment.to_dict() if establishment else {}
-            elif profile_id is not None:
+            if profile_id is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
                     .filter(ParkingEstablishment.profile_id == profile_id)
                     .first()
                 )
                 return establishment.to_dict()
-            elif establishment_uuid is not None:
+            if establishment_uuid is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
                     .filter(ParkingEstablishment.uuid == establishment_uuid)
                     .first()
                 )
                 return establishment.to_dict() if establishment else {}
-            else:
-                return {}
+            return {}
 
     @staticmethod
     def update_parking_establishment(establishment_data: dict):

@@ -20,14 +20,13 @@ from app.models.company_profile import CompanyProfileRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.pricing_plan import PricingPlanRepository
-from app.models.user import UserOperations, OTPOperations, UserRepository
+from app.models.user import AuthOperations, OTPOperations, UserRepository
 from app.tasks import send_mail
 from app.utils.security import generate_otp, generate_token
 
 
 class AuthService:
     """Class to handle user authentication operations."""
-
     @staticmethod
     def create_new_user(sign_up_data: dict):
         """Create a new user account."""
@@ -53,21 +52,17 @@ class AuthService:
 
 class UserLoginService:  # pylint: disable=R0903
     """Class to handle user login operations."""
-
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
         email = login_data.get("email")
         role = login_data.get("role")
-
-        user = UserOperations.login_user(email, role)  # type: ignore
-        user_email = user
-        # Send otp to user to their email by calling the generate_otp method
+        
+        user_email = AuthOperations.login_user(email, role).get("email")
         return UserOTPService.generate_otp(email=user_email)  # type: ignore
 
 
 class SessionTokenService:  # pylint: disable=R0903
     """This class is responsible for the session token service."""
-
     @staticmethod
     def generate_session_token(email, user_id) -> str:
         """This is the function responsible for generating the session token."""
@@ -91,15 +86,14 @@ class UserOTPService:
             template_name_or_list="auth/one-time-password.html", otp=otp_code, user_name=email,
         )
         OTPOperations.set_otp({"email": email, "otp_secret": otp_code, "otp_expiry": otp_expiry})
-        send_mail(
-            message=one_time_password_template, email=email, subject="One Time Password"
-        )
+        send_mail(message=one_time_password_template, email=email, subject="One Time Password")
 
 
     @classmethod
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """Function to verify an OTP for a user."""
-        retrieved_otp, expiry, user_id, role = OTPOperations.get_otp(email=email)
+        res = OTPOperations.get_otp(email=email)
+        user_id, role, retrieved_otp, expiry = res.get("user_id"), res.get("role"), res.get("otp"), res.get("expiry")
         if expiry is None or retrieved_otp is None:
             raise RequestNewOTPException("Please request for a new OTP.")
         if datetime.now() > expiry:

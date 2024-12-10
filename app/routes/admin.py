@@ -62,14 +62,14 @@ class BanPlateNumber(MethodView):
 
 
 @admin_blp.route("/unban-user")
-class UnbanPlateNumber(MethodView):
+class UnbanUser(MethodView):
     @admin_blp.arguments(BanQueryValidation)
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],
-        description="Unban a plate number.",
+        description="Unban a user.",
         responses={
-            200: "Plate number unbanned.",
+            200: "User unbanned.",
             401: "Unauthorized",
             403: "Forbidden",
             500: "Internal Server Error",
@@ -82,5 +82,5 @@ class UnbanPlateNumber(MethodView):
         admin_service = AdminService()
         admin_service.unban_user(ban_data, admin_id)
         return set_response(
-            201, {"code": "success", "message": "Plate number unbanned."}
+            201, {"code": "success", "message": "User unbanned."}
         )

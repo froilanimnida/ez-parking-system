@@ -52,7 +52,13 @@ class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
             name="establishment_document_document_type_check",
         ),
         CheckConstraint(
-            f"status IN ('{DocumentStatusEnum.PENDING}', '{DocumentStatusEnum.APPROVED}', '{DocumentStatusEnum.REJECTED}')",
+            f"""
+            status IN (
+                '{DocumentStatusEnum.PENDING}',
+                '{DocumentStatusEnum.APPROVED}',
+                '{DocumentStatusEnum.REJECTED}'
+            )
+            """,
             name="establishment_document_status_check",
         ),
         {'schema': 'public'},

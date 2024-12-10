@@ -26,7 +26,9 @@ from app.exceptions.authorization_exceptions import (
     RequestNewOTPException,
 )
 from app.schema.response_schema import ApiResponse
-from app.schema.user_auth_schema import UserLoginSchema, OTPLoginSchema, EmailVerificationSchema, GenerateOTPBaseSchema
+from app.schema.user_auth_schema import (
+    UserLoginSchema, OTPLoginSchema, EmailVerificationSchema, GenerateOTPBaseSchema
+)
 from app.services.auth_service import AuthService
 from app.services.token_service import TokenService
 from app.utils.error_handlers.auth_error_handlers import (

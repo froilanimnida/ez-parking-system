@@ -1,12 +1,16 @@
 """
-This module defines the PricingPlan model which represents the pricing plan of a parking establishment.
+This module defines the PricingPlan model which represents the
+pricing plan of a parking establishment.
 """
+
+# pylint: disable=E1102
 
 
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Column, Integer, Numeric, Boolean, TIMESTAMP, func, ForeignKey, UniqueConstraint, CheckConstraint
+    Column, Integer, Numeric, Boolean, TIMESTAMP, func, ForeignKey,
+    UniqueConstraint, CheckConstraint
 )
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
@@ -22,28 +26,35 @@ class RateType(PyEnum):
     MONTHLY = 'monthly'
 
 
-class PricingPlan(Base):
+class PricingPlan(Base):  # pylint: disable=too-few-public-methods
     """ Pricing Plan Model """
     __tablename__ = 'pricing_plan'
 
     plan_id = Column(Integer, primary_key=True, autoincrement=True)
-    establishment_id = Column(Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True)
+    establishment_id = Column(
+        Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True
+    )
     rate_type = Column(ENUM(RateType), nullable=True)
     is_enabled = Column(Boolean, default=False)
     rate = Column(Numeric(10, 2), nullable=False)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
-    updated_at = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    updated_at = Column(
+        TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
 
     __table_args__ = (
         UniqueConstraint('establishment_id', 'rate_type', name='unique_establishment_rate_type'),
         CheckConstraint('rate >= 0', name='pricing_plan_rate_check'),
         CheckConstraint('rate_type IN (%s, %s, %s)' % (
-            RateType.HOURLY.value, RateType.DAILY.value, RateType.MONTHLY.value), name='pricing_plan_rate_type_check')
+            RateType.HOURLY.value, RateType.DAILY.value, RateType.MONTHLY.value),
+                        name='pricing_plan_rate_type_check'
+        )
     )
 
     parking_establishment = relationship("ParkingEstablishment", backref="pricing_plans")
 
     def to_dict(self):
+        """Convert the pricing plan object to a dictionary."""
         if self is None:
             return {}
         return {
@@ -80,7 +91,8 @@ class PricingPlanRepository:
     def get_pricing_plans(establishment_id: int):
         """Get pricing plans of a parking establishment."""
         with session_scope() as session:
-            pricing_plans = session.query(PricingPlan).filter_by(establishment_id=establishment_id).all()
+            pricing_plans = session.query(
+                PricingPlan).filter_by(establishment_id=establishment_id).all()
             return [plan.to_dict() for plan in pricing_plans]
 
     @staticmethod
@@ -100,7 +112,8 @@ class PricingPlanRepository:
     def delete_pricing_plans(establishment_id: int):
         """Delete pricing plans of a parking establishment."""
         with session_scope() as session:
-            pricing_plans = session.query(PricingPlan).filter_by(establishment_id=establishment_id).all()
+            pricing_plans = session.query(
+                PricingPlan).filter_by(establishment_id=establishment_id).all()
             for plan in pricing_plans:
                 session.delete(plan)
             session.commit()

@@ -18,14 +18,15 @@ from sqlalchemy import (
     func,
     String,
 )
-from sqlalchemy.exc import DataError, DatabaseError, IntegrityError, OperationalError
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
-from app.models.vehicle_type import VehicleType
-from app.utils.engine import get_session
-from app.utils.uuid_utility import UUIDUtility
+from app.models.parking_slot import ParkingSlot
+from app.models.parking_establishment import ParkingEstablishment
 
+from app.models.vehicle_type import VehicleType
+from app.utils.uuid_utility import UUIDUtility
+from app.utils.db import session_scope
 
 # Define custom Enum types for 'payment_status' and 'transaction_status'
 class PaymentStatusEnum(str, PyEnum):
@@ -85,26 +86,20 @@ class ParkingTransaction(
     user = relationship("User", back_populates="transactions")
 
     def to_dict(self):
-        """
-        Convert the model instance to a dictionary.
-        """
+        """ Convert the model instance to a dictionary. """
         if self is None:
             return {}
         uuid_utility = UUIDUtility()
         return {
             "transaction_id": self.transaction_id,
-            "uuid": uuid_utility.format_uuid(
-                uuid_utility.binary_to_uuid(self.uuid)
-            ),
+            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
             "slot_id": self.slot_id,
             "vehicle_type_id": self.vehicle_type_id,
             "plate_number": self.plate_number,
             "entry_time": self.entry_time is not None
-            and self.entry_time.strftime("%Y-%m-%d %H:%M:%S")
-            or "Not Available",
+            and self.entry_time.strftime("%Y-%m-%d %H:%M:%S") or "Not Available",
             "exit_time": self.exit_time is not None
-            and self.exit_time.strftime("%Y-%m-%d %H:%M:%S")
-            or "Not Available",
+            and self.exit_time.strftime("%Y-%m-%d %H:%M:%S") or "Not Available",
             "amount_due": self.amount_due,
             "payment_status": str(self.payment_status).capitalize(),
             "status": self.status,
@@ -122,15 +117,12 @@ class ParkingTransactionOperation:
         Retrieve a parking transaction from the database by the vehicle plate number.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
-        from app.models.slot import Slot
-        from app.models.vehicle_type import VehicleType
 
-        session = get_session()
-        try:
+        with session_scope() as session:
             uuid_utility = UUIDUtility()
             transactions = (
                 session.query(ParkingTransaction)
-                .join(Slot, Slot.slot_id == ParkingTransaction.slot_id)
+                .join(ParkingSlot, ParkingSlot.slot_id == ParkingTransaction.slot_id)
                 .join(
                     VehicleType,
                     VehicleType.vehicle_id == ParkingTransaction.vehicle_type_id,
@@ -172,46 +164,27 @@ class ParkingTransactionOperation:
                 ]
             }
 
-        except (DatabaseError, OperationalError) as error:
-            raise error
-        finally:
-            session.close()
-
     @classmethod
     def get_transaction(cls, transaction_uuid_bin: bytes):
         """
         Retrieve a parking transaction from the database by its UUID.
         Returns dictionary with transaction details including related slot and vehicle info.
         """
-        from app.models.slot import Slot
-        from app.models.vehicle_type import VehicleType
-        from app.models.parking_establishment import ParkingEstablishment
 
-        session = get_session()
-        try:
+        with session_scope() as session:
             transaction = (
                 session.query(ParkingTransaction)
-                .join(Slot, Slot.slot_id == ParkingTransaction.slot_id)
+                .join(ParkingSlot, ParkingSlot.slot_id == ParkingTransaction.slot_id)
                 .join(
                     VehicleType,
                     VehicleType.vehicle_id == ParkingTransaction.vehicle_type_id,
-                )
-                .filter(ParkingTransaction.uuid == transaction_uuid_bin)
-                .first()
+                ).filter(ParkingTransaction.uuid == transaction_uuid_bin).first()
             )
             establishment_info = (
-                session.query(
-                    ParkingEstablishment.name,
-                    ParkingEstablishment.address,
-                    ParkingEstablishment.longitude,
-                    ParkingEstablishment.latitude,
-                    ParkingEstablishment.contact_number,
-                )
-                .join(
-                    Slot, Slot.establishment_id == ParkingEstablishment.establishment_id
-                )
-                .filter(Slot.slot_id == transaction.slot_id)
-                .first()
+                session.query(ParkingEstablishment).join(
+                    ParkingSlot,
+                    ParkingSlot.establishment_id == ParkingEstablishment.establishment_id
+                ).filter(ParkingSlot.slot_id == transaction.slot_id).first()
             )
 
             if not transaction:
@@ -250,23 +223,14 @@ class ParkingTransactionOperation:
                     },
                 }
             )
-
             return transaction_dict
-
-        except (DatabaseError, OperationalError) as error:
-            raise error
-        finally:
-            session.close()
 
     @classmethod
     def add_new_transaction_entry(cls, transaction_data):
         """
         Add a new parking transaction entry to the database.
         """
-        from app.models import Slot
-
-        session = get_session()
-        try:
+        with session_scope() as session:
             transaction = ParkingTransaction(
                 uuid=transaction_data.get("uuid"),
                 slot_id=transaction_data.get("slot_id"),
@@ -277,20 +241,13 @@ class ParkingTransactionOperation:
                 created_at=transaction_data.get("created_at"),
                 updated_at=transaction_data.get("updated_at"),
             )
-
             session.execute(
-                update(Slot)
+                update(ParkingSlot)
                 .values(slot_status="occupied")
-                .where(Slot.slot_id == transaction_data.get("slot_id"))
+                .where(ParkingSlot.slot_id == transaction_data.get("slot_id"))
             )
-
             session.add(transaction)
             session.commit()
-        except (DatabaseError, DataError, IntegrityError, OperationalError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
 
 class UpdateTransaction:  # pylint: disable=R0903
@@ -309,42 +266,31 @@ class UpdateTransaction:  # pylint: disable=R0903
         """
         Update the status of a parking transaction in the database.
         """
-        from app.models import Slot
-
-        session = get_session()
-        try:
+        with session_scope() as session:
             transaction_uuid_bin = bytes.fromhex(transaction_uuid)
             session.execute(
-                update(ParkingTransaction)
-                .values(status=transaction_status)
+                update(ParkingTransaction).values(status=transaction_status)
                 .where(ParkingTransaction.uuid == transaction_uuid_bin)
             )
             transaction_slot = (
                 session.query(ParkingTransaction)
-                .filter(ParkingTransaction.uuid == transaction_uuid_bin)
-                .first()
+                .filter(ParkingTransaction.uuid == transaction_uuid_bin).first()
             )
             session.execute(
-                update(Slot)
-                .values(slot_status="occupied")
-                .where(Slot.slot_id == transaction_slot.slot_id)  # type: ignore
+                update(ParkingSlot).values(slot_status="occupied")
+                .where(ParkingSlot.slot_id == transaction_slot.slot_id)
             )
             session.commit()
-        except (DatabaseError, DataError, IntegrityError, OperationalError) as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
 
-class ParkingTransactionRepository:  # pylint: disable=R0903
+class ParkingTransactionRepository:
     """Repository for ParkingTransaction model."""
     vehicle_type = VehicleType()
 
     @staticmethod
     def create_transaction(data: dict):
         """Create a parking transaction."""
-        with get_session() as session:
+        with session_scope() as session:
             transaction = ParkingTransaction(**data)
             session.add(transaction)
             session.commit()
@@ -359,21 +305,28 @@ class ParkingTransactionRepository:  # pylint: disable=R0903
     @overload
     def get_transaction(cls, transaction_id: int):
         """Get a parking transaction by ID."""
-        
+
     @classmethod
     def get_transaction(cls, transaction_uuid: bytes=None, transaction_id: int=None) -> dict:
         """Get a parking transaction."""
-        with get_session() as session:
+        with session_scope() as session:
+            transaction: ParkingTransaction
             if transaction_uuid:
                 transaction = (
                     session.query(ParkingTransaction)
                     .filter(ParkingTransaction.uuid == transaction_uuid)
-                    .join(cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id)
+                    .join(
+                        cls.vehicle_type,
+                        cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id
+                    )
                 )
             elif transaction_id:
                 transaction = session.query(ParkingTransaction).filter(
                     ParkingTransaction.transaction_id == transaction_id
-                ).join(cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id)
+                ).join(
+                    cls.vehicle_type,
+                    cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id
+                )
             transaction_dict = {}
             if transaction:
                 transaction_dict = transaction.to_dict()
@@ -393,16 +346,20 @@ class ParkingTransactionRepository:  # pylint: disable=R0903
     @classmethod
     def get_all_transactions(cls, user_id: int=None):
         """Get all parking transactions."""
-        with get_session() as session:
+        with session_scope() as session:
             if user_id:
                 transactions = (
                     session.query(ParkingTransaction)
                     .filter(ParkingTransaction.user_id == user_id)
-                    .join(cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id)
+                    .join(
+                        cls.vehicle_type,
+                        cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id
+                    )
                 )
             else:
                 transactions = session.query(ParkingTransaction).join(
-                    cls.vehicle_type, cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id
+                    cls.vehicle_type,
+                    cls.vehicle_type.vehicle_type_id == ParkingTransaction.vehicle_type_id
                 )
             transactions_arr_dict = []
             for transaction in transactions:
@@ -410,11 +367,13 @@ class ParkingTransactionRepository:  # pylint: disable=R0903
                 transaction_dict["vehicle_type"] = cls.vehicle_type.to_dict()
                 transactions_arr_dict.append(transaction_dict)
             return transactions_arr_dict
-        
+
     @classmethod
-    def update_transaction_status(cls, transaction_uuid: bytes, status: Literal["active", "completed", "cancelled"]):
+    def update_transaction_status(
+        cls, transaction_uuid: bytes, status: Literal["active", "completed", "cancelled"]
+    ):
         """Update the status of a parking transaction."""
-        with get_session() as session:
+        with session_scope() as session:
             session.execute(
                 update(ParkingTransaction)
                 .values(status=status)

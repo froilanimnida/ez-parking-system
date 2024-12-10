@@ -18,10 +18,9 @@
 
 # pylint: disable=R0801
 
-from typing import overload
-
 from datetime import datetime
 from enum import Enum as PyEnum
+from typing import overload
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -143,10 +142,6 @@ class User(Base):
             "verification_expiry": self.verification_expiry,
             "created_at": self.created_at,
         }
-
-    def __repr__(self):
-        """String representation of the User object."""
-        return f"<User(user_id={self.user_id}, email={self.email})>"
 
     @staticmethod
     def get_user_id(user_uuid: bytes):
@@ -274,7 +269,7 @@ class UserRepository:
         during the database operation.
         """
         with session_scope() as session:
-            user: User = None
+            user: User
             if user_id:
                 user = session.execute(select(User).where(User.user_id == user_id)).scalar()
             elif user_uuid:
@@ -287,7 +282,7 @@ class UserRepository:
                 ).scalar()
             return user.to_dict()
 
-class UserOperations:  # pylint: disable=R0903 disable=C0115
+class AuthOperations:  # pylint: disable=R0903 disable=C0115
     @classmethod
     def login_user(cls, email: str, role: str):
         """
@@ -324,7 +319,7 @@ class OTPOperations:
     """Class to handle operations related to OTP."""
 
     @classmethod
-    def get_otp(cls, email: str):
+    def get_otp(cls, email: str) -> dict:
         """
         Retrieve the OTP secret, expiry, user ID, and role for a given email.
 
@@ -339,18 +334,10 @@ class OTPOperations:
             DataError, IntegrityError, OperationalError, DatabaseError: If a database error occurs.
         """
         with session_scope() as session:
-            user = session.execute(
-                select(
-                    User.user_id,
-                    User.otp_secret,
-                    User.otp_expiry,
-                    User.role,
-                ).where(User.email == email)
-            ).first()
+            user: User = session.execute(select(User).where(User.email == email)).first()
             if user is None:
                 raise EmailNotFoundException("Email not found.")
-            user_id, otp_secret, otp_expiry, role = user
-            return otp_secret, otp_expiry, user_id, role
+            return user.to_dict()
 
     @classmethod
     def set_otp(cls, data: dict):

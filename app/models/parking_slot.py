@@ -24,6 +24,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.models.base import Base
 from app.models.vehicle_type import VehicleType
 from app.utils.db import session_scope
@@ -218,8 +219,7 @@ class ParkingSlotRepository:
             if slot:
                 session.delete(slot)
                 return slot.slot_id
-            else:
-                raise ValueError("Slot not found")
+            raise SlotNotFound("Slot not found")
 
     @staticmethod
     def update_slot(slot_data: dict) -> int:
@@ -238,8 +238,7 @@ class ParkingSlotRepository:
             ).update(slot_data)
             if result:
                 return result
-            else:
-                raise ValueError("Slot not found")
+            raise SlotNotFound("Slot not found")
 
 
     @staticmethod

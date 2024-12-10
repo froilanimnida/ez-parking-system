@@ -84,5 +84,6 @@ class PaymentMethodRepository:
     def get_payment_methods(establishment_id: int):
         """Get payment methods by establishment id."""
         with session_scope() as session:
-            payment_methods = session.query(PaymentMethod).filter_by(establishment_id=establishment_id).all()
+            payment_methods = session.query(
+                PaymentMethod).filter_by(establishment_id=establishment_id).all()
             return [method.to_dict() for method in payment_methods]

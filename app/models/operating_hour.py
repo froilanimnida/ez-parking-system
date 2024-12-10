@@ -40,7 +40,8 @@ class OperatingHour(Base):  # pylint: disable=too-few-public-methods
     __table_args__ = (
         UniqueConstraint('establishment_id', 'day_of_week', name='unique_establishment_day'),
         CheckConstraint(
-            "day_of_week IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')",
+            """day_of_week IN ('monday', 'tuesday',
+            'wednesday', 'thursday', 'friday', 'saturday', 'sunday')""",
             name='operating_hour_day_of_week_check'
         )
     )
@@ -68,7 +69,8 @@ class OperatingHoursRepository:
     def get_operating_hours(establishment_id):
         """Get operating hours of a parking establishment."""
         with session_scope() as session:
-            operating_hours = session.query(OperatingHour).filter_by(establishment_id=establishment_id).all()
+            operating_hours = session.query(
+                OperatingHour).filter_by(establishment_id=establishment_id).all()
             return [hour.to_dict() for hour in operating_hours]
 
     @staticmethod

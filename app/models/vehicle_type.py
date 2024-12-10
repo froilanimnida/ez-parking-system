@@ -39,7 +39,7 @@ class SizeCategory(PyEnum):
     MEDIUM = 'Medium'
     LARGE = 'Large'
 
-class VehicleType(Base):  # pylint: disable=R0903
+class VehicleType(Base):
     """ Represents the vehicle type entity in the database. """
     __tablename__ = 'vehicle_type'
 
@@ -76,6 +76,13 @@ class VehicleType(Base):  # pylint: disable=R0903
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+
+    @staticmethod
+    def get_vehicle_type_id(vehicle_type_uuid: bytes):
+        """Get vehicle type ID by UUID."""
+        with session_scope() as session:
+            vehicle_type = session.query(VehicleType).filter_by(uuid=vehicle_type_uuid).first()
+            return vehicle_type.vehicle_type_id if vehicle_type else None
 
 
 class VehicleTypeOperations:  # pylint: disable=R0903 disable=C0115
