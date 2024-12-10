@@ -3,10 +3,6 @@
 
 from marshmallow import Schema, fields, post_load
 
-from app.schema.common_registration_schema import (
-    ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
-    ParkingEstablishmentPaymentSchema
-)
 from app.utils.uuid_utility import UUIDUtility
 
 
@@ -59,8 +55,5 @@ class SlotCommonValidation(Schema):
         )
         return in_data
 
-class EstablishmentBaseInformationSchema(
-        ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
-        ParkingEstablishmentPaymentSchema
-    ):
+class EstablishmentBaseInformationSchema(Schema):
     """ Schema for establishment base information. """

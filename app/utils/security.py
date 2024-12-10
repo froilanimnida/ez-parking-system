@@ -69,3 +69,7 @@ def generate_otp() -> tuple:
 def generate_token():
     """ Generate url safe token """
     return urlsafe_b64encode(urandom(128)).decode("utf-8").rstrip("=")
+
+def get_random_string() -> str:
+    """ Generate a random string of 32 characters. """
+    return urandom(32).hex()

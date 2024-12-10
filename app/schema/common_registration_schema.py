@@ -1,8 +1,6 @@
 """ Common registration schema that can be used by all registration types. """
 
-from datetime import time
-
-from marshmallow import Schema, fields, post_load, validate, validates
+from marshmallow import Schema, fields, post_load, validate, validates, validates_schema
 from marshmallow.exceptions import ValidationError
 
 
@@ -57,20 +55,66 @@ class CommonRegistrationSchema(EmailBaseSchema):
             in_data["nickname"] = in_data["nickname"].capitalize()
         return in_data
 
-class DayScheduleSchema(Schema):
-    """Schema for single day operating hours"""
-    is_open = fields.Bool(required=True)
-    opening_time = fields.Time(required=True, allow_none=True)
-    closing_time = fields.Time(required=True, allow_none=True)
-    @validates("opening_time")
-    def validate_opening_time(self, value):
-        """Validate opening time is before closing time"""
-        if value and self.context.get("closing_time"):
-            if value >= self.context.get("closing_time"):
-                raise ValidationError("Opening time must be before closing time")
+class ContactInfoSchema(EmailBaseSchema):
+    """Schema for contact information. """
+    contact_number = fields.Str(required=True, validate=validate.Regexp(r"^\+?[0-9]\d{1,14}$"))
+    tax_identification_number = fields.Str(
+        required=True, validate=validate.Regexp(r"^\d{3}-\d{3}-\d{3}-\d{3}$")
+    )
 
-class WeeklyScheduleSchema(Schema):
-    """Schema for weekly operating schedule"""
+class CoordinatesSchema(Schema):
+    """Schema for coordinates."""
+    longitude = fields.Float(required=True)
+    latitude = fields.Float(required=True)
+
+class LocationInfoSchema(Schema):
+    """Schema for location information."""
+    street_address = fields.Str(required=True)
+    barangay = fields.Str(required=True)
+    city = fields.Str(required=True)
+    province = fields.Str(allow_none=True)
+    postal_code = fields.Str(required=True, validate=validate.Regexp(r"^\d{4}$"))
+    landmarks = fields.Str(allow_none=True)
+    coordinates = fields.Nested(CoordinatesSchema(), required=True)
+
+class ParkingDetailsSchema(Schema):
+    """Schema for parking details."""
+    space_type = fields.Str(
+        required=True, validate=validate.OneOf(["Indoor", "Outdoor", "Covered", "Uncovered"])
+    )
+    space_layout = fields.Str(
+        required=True, validate=validate.OneOf(["Parallel", "Perpendicular", "Angled", "Other"])
+    )
+    space_dimensions = fields.Str(required=True, validate=validate.Regexp(r"^\d{1,3}x\d{1,3}$"))
+    access_information = fields.Str(required=True)
+    is_24_7 = fields.Bool(required=False, missing=False)
+
+class FacilitiesInfoSchema(Schema):
+    """Schema for facilities information."""
+    lighting_and_security = fields.Str(required=True)
+    accessibility = fields.Str(required=True)
+    nearby_facilities = fields.Str(required=True)
+
+class DayScheduleSchema(Schema):
+    """Schema for day schedule."""
+    enabled = fields.Bool(required=True)
+    open = fields.Time(required=True)
+    close = fields.Time(required=True)
+
+    @validates_schema
+    def validate_times(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Method to validate the times."""
+        if data.get('enabled'):
+            # Check if times are provided when enabled
+            if not data.get('open') or not data.get('close'):
+                raise ValidationError('Operating hours are required when day is enabled')
+
+            # Check if open time is before close time
+            if data['open'] >= data['close']:
+                raise ValidationError('Opening time must be before closing time')
+
+class OperatingHoursSchema(Schema):
+    """Schema for operating hours."""
     monday = fields.Nested(DayScheduleSchema(), required=True)
     tuesday = fields.Nested(DayScheduleSchema(), required=True)
     wednesday = fields.Nested(DayScheduleSchema(), required=True)
@@ -79,104 +123,71 @@ class WeeklyScheduleSchema(Schema):
     saturday = fields.Nested(DayScheduleSchema(), required=True)
     sunday = fields.Nested(DayScheduleSchema(), required=True)
 
-class OperatingHoursSchema(Schema):
-    """Updated schema for operating hours"""
-    is_24_hours = fields.Bool(required=True)
-    weekly_schedule = fields.Nested(WeeklyScheduleSchema(), required=True)
-    @validates("weekly_schedule")
-    def validate_schedule(self, value):
-        """Validate schedule based on is_24_hours"""
-        if self.context.get("is_24_hours"):
-            for day, schedule in value.items():  # pylint: disable=unused-variable
-                if not schedule.get("is_open") or \
-                   schedule.get("opening_time") != time(0,0) or \
-                   schedule.get("closing_time") != time(23,59):
-                    raise ValidationError(
-                        "24-hour operation must have all days open with full hours"
-                    )
+    @validates_schema
+    def validate_has_enabled_day(self, data, **kwargs):  # pylint: disable=unused-argument
+        """ Method to validate if at least one day is enabled. """
+        if not any(day.get('enabled') for day in data.values()):
+            raise ValidationError('At least one day must be enabled')
+
+class RateSchema(Schema):
+    """Schema for rate."""
+    enabled = fields.Bool(required=True)
+    rate = fields.Float(required=True, validate=validate.Range(min=0))
+    @validates('rate')
+    def validate_rate(self, value, **kwargs):  # pylint: disable=unused-argument
+        """Method to validate the rate."""
+        if self.context.get('rate_type') == 'hourly' and value > 1000:
+            raise ValidationError('Hourly rate cannot exceed ₱1,000')
+        if self.context.get('rate_type') == 'daily' and value > 10000:
+            raise ValidationError('Daily rate cannot exceed ₱10,000')
+        if self.context.get('rate_type') == 'monthly' and value > 50000:
+            raise ValidationError('Monthly rate cannot exceed ₱50,000')
 
 class PricingSchema(Schema):
-    """Schema for pricing information."""
-    hourly_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
-    daily_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
-    monthly_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
+    """Schema for pricing."""
+    hourly = fields.Nested(RateSchema(), required=True)
+    daily = fields.Nested(RateSchema(), required=True)
+    monthly = fields.Nested(RateSchema(), required=True)
 
 class PaymentMethodsSchema(Schema):
     """Schema for payment methods."""
-    cash = fields.Boolean(required=True)
-    mobile = fields.Boolean(required=True)
-    other = fields.Boolean(required=True)
-    otherText = fields.Str(required=False, validate=validate.Length(min=3, max=255))
+    cash = fields.Bool(required=True)
+    mobile = fields.Bool(required=True)
+    other_payment = fields.Str(required=False)
 
-class ParkingEstablishmentAddressSchema(Schema):
-    """ Schema for parking establishment address. """
-    street_address = fields.Str(required=True)
-    barangay = fields.Str(required=True)
-    city = fields.Str(required=True)
-    province = fields.Str(allow_none=True)
-    postal_code = fields.Str(required=True, validate=validate.Regexp(r"^\d{4}$"))
-    landmarks = fields.Str(allow_none=True)
-    longitude = fields.Float(required=True)
-    latitude = fields.Float(required=True)
-
-class ParkingPhotoSchema(Schema):
-    """ Schema for parking establishment photos. """
-    parking_photo = fields.Raw(required=True, type="file")
-
-class ParkingEstablishmentFilesSchema(Schema):
-    """ Schema for parking establishment files. """
-    government_id = fields.Raw(required=True, type="file")
-    parking_photos = fields.List(fields.Nested(ParkingPhotoSchema()), required=True)
-    proof_of_ownership = fields.Raw(required=True, type="file")
-    business_certificate = fields.Raw(required=True, type="file")
-    bir_certification = fields.Raw(required=True, type="file")
-    liability_insurance = fields.Raw(required=True, type="file")
-
-
-class ParkingEstablishmentOtherDetailsSchema(Schema):
-    """ Schema for parking establishment other details. """
-    access_information = fields.Str(
-        required=True,
-        validate=validate.OneOf(
-            ["Gate Code", "Security Check", "Key Pickup", "No Special Access", "Other"]
-        )
-    )
-    access_information_custom = fields.Str(allow_none=True)
-    lighting_and_security_features = fields.Str(required=True)
-    accessibility_features = fields.Str(required=True)
-    nearby_facilities = fields.Str(required=True)
-    space_type = fields.Str(
-        required=True,
-        validate=validate.OneOf(["Indoor", "Outdoor", "Covered", "Uncovered"]),
-    )
-    space_layout = fields.Str(
-        required=True, validate=validate.OneOf(["Parallel", "Perpendicular", "Angled", "Other"])
-    )
-    space_layout_custom = fields.Str(allow_none=True)
-    space_dimensions = fields.Str(required=True, validate=validate.Regexp(r"^\d{1,3}x\d{1,3}$"))
-
-
-class ParkingEstablishmentPaymentSchema(Schema):
-    """ Schema for parking establishment payment. """
+class PaymentInfoSchema(Schema):
+    """Schema for payment information."""
     payment_methods = fields.Nested(PaymentMethodsSchema(), required=True)
     pricing = fields.Nested(PricingSchema(), required=True)
 
+class DocumentSchema(Schema):
+    """Schema for document."""
+    name = fields.Str(required=True)
+    file = fields.Raw(type="file", required=True)
 
-class CommonParkingManagerSchema(
-        ParkingEstablishmentAddressSchema, ParkingEstablishmentOtherDetailsSchema,
-        ParkingEstablishmentPaymentSchema, ParkingEstablishmentFilesSchema
-    ):
-    """ Schema for common parking manager fields. """
-    owner_type = fields.Str(
-        required=True, validate=validate.OneOf(["Individual", "Company"])
-    )
-    tax_identification_number = fields.Str(
-        required=False, missing=None, validate=validate.Length(min=2, max=20)
-    )
-    zoning_compliance = fields.Bool(required=True)
-    operating_hours = fields.Nested(OperatingHoursSchema(), required=True)
-    @post_load()
-    def add_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
-        """ Add role before processing it into database insertion """
-        in_data["role"] = "parking_manager"
-        return in_data
+class DocumentsSchema(Schema):
+    """Schema for documents."""
+    document = fields.List(fields.Nested(DocumentSchema()), required=True)
+    ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    @validates_schema
+    def check_sizes(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Method to check file sizes."""
+        for doc in data['document']:
+            if (
+                doc['file'].content_type not in self.ALLOWED_FILE_TYPES or
+                len(doc['file'].read()) > self.MAX_FILE_SIZE
+            ):
+                raise ValidationError('Invalid file type or file size.')
+
+class IndividualOwnerSchema(Schema):
+    """Schema for individual owner."""
+    first_name = fields.Str(required=True)
+    last_name = fields.Str(required=True)
+    middle_name = fields.Str(required=False)
+    suffix = fields.Str(required=False)
+
+class CompanyOwnerSchema(Schema):
+    """Schema for company owner."""
+    company_name = fields.Str(required=True)
+    company_registration_number = fields.Str(required=True)

@@ -9,23 +9,18 @@ from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
 from app.exceptions.qr_code_exceptions import (
-    InvalidQRContent,
-    InvalidTransactionStatus,
-    QRCodeExpired,
+    InvalidQRContent, InvalidTransactionStatus, QRCodeExpired,
 )
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
-from app.schema.parking_manager_validation import (
-    ParkingManagerIndividualOwnerSchema, ParkingManagerCompanyOwnerSchema
-)
+from app.schema.parking_manager_validation import ParkingManagerRequestSchema
 from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import ValidateEntrySchema
 from app.services.establishment_service import EstablishmentService
 from app.services.operating_hour_service import OperatingHourService
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
-    handle_invalid_qr_content,
-    handle_qr_code_expired,
+    handle_invalid_qr_content, handle_qr_code_expired,
 )
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
@@ -61,7 +56,7 @@ def parking_manager_required():
 
 @parking_manager_blp.route("/company/account/create")
 class CreateParkingManagerCompanyAccount(MethodView):
-    @parking_manager_blp.arguments(ParkingManagerCompanyOwnerSchema)
+    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location=["files", "form"])
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
         description="Create a new parking manager account.",
@@ -84,7 +79,7 @@ class CreateParkingManagerCompanyAccount(MethodView):
 
 @parking_manager_blp.route("/individual/account/create")
 class CreateParkingManagerIndividualAccount(MethodView):
-    @parking_manager_blp.arguments(ParkingManagerIndividualOwnerSchema)
+    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location=["files", "form"])
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
         description="Individual Parking Manager Account Creation",

@@ -8,24 +8,21 @@ from marshmallow.exceptions import ValidationError
 from app.schema.common_schema_validation import SlotCommonValidation
 from app.schema.slot_validation import CreateSlotSchema
 from app.schema.common_registration_schema import (
-    CommonRegistrationSchema, CommonParkingManagerSchema
+    ContactInfoSchema, LocationInfoSchema, ParkingDetailsSchema, FacilitiesInfoSchema,
+    OperatingHoursSchema, PaymentInfoSchema, DocumentsSchema,
 )
 
 
-class ParkingManagerIndividualOwnerSchema(CommonRegistrationSchema, CommonParkingManagerSchema):
-    """Schema for individual owner details."""
-
-
-class ParkingManagerCompanyOwnerSchema(CommonParkingManagerSchema):
-    """Schema for company owner details."""
-    company_name = fields.Str(required=True, validate=validate.Length(min=2, max=255))
-    company_reg_number = fields.Str(required=True)
-    @post_load
-    def normalize_data(self, in_data, **kwargs):
-        """Method to normalize the input data."""
-        if "company_name" in in_data:
-            in_data["company_name"] = in_data["company_name"].capitalize()
-        return in_data
+class ParkingManagerRequestSchema(Schema):
+    """Validation schema for parking manager request."""
+    owner_info = fields.Dict(required=True)
+    contact_info = fields.Nested(ContactInfoSchema(), required=True)
+    location_info = fields.Nested(LocationInfoSchema(), required=True)
+    parking_details = fields.Nested(ParkingDetailsSchema(), required=True)
+    facilities_info = fields.Nested(FacilitiesInfoSchema(), required=True)
+    operating_hours = fields.Nested(OperatingHoursSchema(), required=True)
+    payment_info = fields.Nested(PaymentInfoSchema(), required=True)
+    documents = fields.Nested(DocumentsSchema(), required=True)
 
 
 class UpdateSlotSchema(SlotCommonValidation, CreateSlotSchema):
