@@ -2,7 +2,9 @@
 
 from marshmallow import Schema, fields, validate
 
-from app.schema.common_schema_validation import TransactionCommonValidation, EstablishmentCommonValidation
+from app.schema.common_schema_validation import (
+    TransactionCommonValidation, EstablishmentCommonValidation
+)
 
 
 class CancelReservationSchema(TransactionCommonValidation):

@@ -45,7 +45,7 @@ class PricingPlan(Base):  # pylint: disable=too-few-public-methods
     __table_args__ = (
         UniqueConstraint('establishment_id', 'rate_type', name='unique_establishment_rate_type'),
         CheckConstraint('rate >= 0', name='pricing_plan_rate_check'),
-        CheckConstraint('rate_type IN (%s, %s, %s)' % (
+        CheckConstraint('rate_type IN (%s, %s, %s)' % (  # pylint: disable=consider-using-f-string
             RateType.HOURLY.value, RateType.DAILY.value, RateType.MONTHLY.value),
                         name='pricing_plan_rate_type_check'
         )

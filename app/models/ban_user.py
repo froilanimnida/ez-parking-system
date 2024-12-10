@@ -21,14 +21,16 @@ class BanUser(Base):  # pylint: disable=too-few-public-methods
         server_default=func.nextval('ban_user_ban_id_seq')
     )
     user_id = Column(
-        Integer, ForeignKey("user.user_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("user.user_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False
     )
     ban_reason = Column(Text, nullable=False)
     ban_start = Column(TIMESTAMP, nullable=False, default=func.current_timestamp())
     ban_end = Column(TIMESTAMP, nullable=True)
     is_permanent = Column(Boolean, nullable=False, default=False)
     banned_by = Column(
-        Integer, ForeignKey("user.user_id", ondelete="SET NULL", onupdate="CASCADE"), nullable=True
+        Integer,
+        ForeignKey("user.user_id", ondelete="SET NULL", onupdate="CASCADE"), nullable=True
     )
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(

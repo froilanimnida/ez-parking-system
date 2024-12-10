@@ -4,6 +4,7 @@ from typing import overload, Union
 
 from app.models.address import AddressRepository
 from app.models.company_profile import CompanyProfileRepository
+from app.models.establishment_document import EstablishmentDocumentRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import (
     ParkingEstablishmentRepository, GetEstablishmentOperations
@@ -11,7 +12,6 @@ from app.models.parking_establishment import (
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.payment_method import PaymentMethodRepository
 from app.models.pricing_plan import PricingPlanRepository
-from app.models.establishment_document import EstablishmentDocumentRepository
 
 
 class EstablishmentService:
@@ -53,7 +53,9 @@ class GetEstablishmentService:
     @classmethod
     def get_establishment(cls, establishment_uuid: bytes):
         """Get parking establishment information."""
-        establishment = ParkingEstablishmentRepository.get_establishment(establishment_uuid=establishment_uuid)
+        establishment = ParkingEstablishmentRepository.get_establishment(
+            establishment_uuid=establishment_uuid
+        )
         establishment_id = establishment.get("establishment_id")
         establishment_slots = ParkingSlotRepository.get_slots(establishment_id=establishment_id)
         pricing_plan = PricingPlanRepository.get_pricing_plans(establishment_id)

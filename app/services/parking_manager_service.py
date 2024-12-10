@@ -7,7 +7,6 @@ class ParkingManagerService:  # pylint: disable=R0903
     def get_establishment_info(manager_id: int):
         """ Get parking establishment information """
         # return ParkingManagerOperations.get_establishment_info(manager_id)
-    
 
 class EstablishmentService:
     """ Wraps all the services that the parking manager can call """

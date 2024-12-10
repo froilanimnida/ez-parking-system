@@ -8,7 +8,7 @@ from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
 from app.models.audit_log import UUIDUtility
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.parking_slot import ParkingSlotRepository
-from app.models.parking_transaction import ParkingTransactionOperation, UpdateTransaction, ParkingTransactionRepository
+from app.models.parking_transaction import ParkingTransactionOperation, ParkingTransactionRepository
 from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
 
@@ -166,17 +166,16 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
             SlotStatusTaken: If slot is not available
             ValueError: If UUID format is invalid
         """
-        status = ParkingSlotRepository.get_slot(slot_code=slot_code).get("status")
+        status = ParkingSlotRepository().get_slot(slot_code).get("status")
         if status in ["reserved", "occupied"]:
             raise SlotStatusTaken("Invalid slot status.")
 
-        establishment_info = ParkingEstablishmentRepository.get_establishment(establishment_uuid=establishment_uuid_bin)
+        establishment_info = ParkingEstablishmentRepository.get_establishment(
+            establishment_uuid=establishment_uuid_bin
+        )
 
         slot_info = ParkingSlotRepository.get_slot(slot_code)
-        return {
-            "establishment_info": establishment_info,
-            "slot_info": slot_info,
-        }
+        return {"establishment_info": establishment_info, "slot_info": slot_info}
 
 
 class Transaction:  # pylint: disable=too-few-public-methods

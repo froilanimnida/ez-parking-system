@@ -46,10 +46,9 @@ class GetEstablishments(MethodView):
         return set_response(
             200,
             {
-                "code": "success",
-                "message": "Establishments retrieved successfully.",
-                "establishments": establishments,
-            },
+                "code": "success", "message": "Establishments retrieved successfully.",
+                "establishments": establishments
+            }
         )
 
 
@@ -65,14 +64,15 @@ class GetEstablishmentInfo(MethodView):
         },
     )
     def get(self, query_params):
-        establishment = EstablishmentService.get_establishment(query_params.get("establishment_uuid"))
+        establishment = EstablishmentService.get_establishment(
+            query_params.get("establishment_uuid")
+        )
         return set_response(
             200,
             {
-                "code": "success",
-                "message": "Establishment information retrieved successfully.",
+                "code": "success", "message": "Establishment information retrieved successfully.",
                 "establishment": establishment,
-            },
+            }
         )
 
 

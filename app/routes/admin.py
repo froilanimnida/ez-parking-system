@@ -39,7 +39,7 @@ def admin_role_required():
 
 
 @admin_blp.route("/ban-user")
-class BanPlateNumber(MethodView):
+class BanUser(MethodView):
     @admin_blp.arguments(BanQueryValidation)
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
@@ -79,8 +79,9 @@ class UnbanUser(MethodView):
     @admin_role_required()
     @jwt_required(False)
     def post(self, ban_data, admin_id):
-        admin_service = AdminService()
-        admin_service.unban_user(ban_data, admin_id)
+        # admin_service = AdminService()
+        print(ban_data, admin_id)
+        # admin_service.unban_user(ban_data, admin_id)
         return set_response(
             201, {"code": "success", "message": "User unbanned."}
         )

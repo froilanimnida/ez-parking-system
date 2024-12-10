@@ -56,7 +56,6 @@ class UserLoginService:  # pylint: disable=R0903
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
         email = login_data.get("email")
         role = login_data.get("role")
-        
         user_email = AuthOperations.login_user(email, role).get("email")
         return UserOTPService.generate_otp(email=user_email)  # type: ignore
 
@@ -93,7 +92,7 @@ class UserOTPService:
     def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
         """Function to verify an OTP for a user."""
         res = OTPOperations.get_otp(email=email)
-        user_id, role, retrieved_otp, expiry = res.get("user_id"), res.get("role"), res.get("otp"), res.get("expiry")
+        user_id, role, retrieved_otp, expiry = res.get("user_id"), res.get("role"), res.get("otp"), res.get("expiry")  # pylint: disable=C0301:
         if expiry is None or retrieved_otp is None:
             raise RequestNewOTPException("Please request for a new OTP.")
         if datetime.now() > expiry:
@@ -184,6 +183,7 @@ class UserRegistration:  # pylint: disable=R0903
             pricing_plan_id = self.add_pricing_plan(
                 parking_establishment_id, sign_up_data.get("pricing_plan")
             )
+            print(parking_establishment_id, pricing_plan_id, address_id)
             self.add_operating_hours(parking_establishment_id, sign_up_data.get("operating_hours"))
         return send_mail(user_email, template, "Welcome to EZ Parking")
 

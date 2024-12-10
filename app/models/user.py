@@ -1,40 +1,16 @@
 """
     Represents a user in the database.
-
-    Attributes:
-        id (int): Primary key for the user.
-        uuid (bytes): Unique identifier for the user.
-        nickname (str): Optional nickname for the user.
-        first_name (str): First name of the user.
-        last_name (str): Last name of the user.
-        email (str): Unique email address of the user.
-        phone_number (str): Unique phone number of the user.
-        role (Enum): Role of the user, can be 'user', 'parking_manager', or 'admin'.
-        otp_secret (str): Optional one-time password secret.
-        otp_expiry (datetime): Optional expiry time for the OTP.
-        creation_date (datetime): Date when the user was created.
-        parking_establishment (relationship): Relationship to the ParkingEstablishment model.
 """
 
 # pylint: disable=R0801
 
-from datetime import datetime
 from enum import Enum as PyEnum
 from typing import overload
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    Enum,
-    select,
-    update,
-    CheckConstraint,
-    UniqueConstraint,
-    UUID,
-    String,
-    DateTime,
-    Boolean, and_,
+    Column, Integer, Enum, select, update, CheckConstraint, UniqueConstraint,
+    UUID, String, DateTime, Boolean, and_, func
 )
 from sqlalchemy.orm import relationship
 
@@ -71,7 +47,7 @@ class User(Base):
     plate_number = Column(String(10), nullable=True, unique=True)
     otp_secret = Column(String(6), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=func.current_timestamp()) # pylint: disable=E1102
     verification_token = Column(String(175), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)

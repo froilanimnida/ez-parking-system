@@ -1,5 +1,5 @@
 """ Wraps the operations that can be performed by the admin. """
-
+# pylint: disable=C0116
 from app.models.ban_user import BanUserRepository
 
 
@@ -7,13 +7,12 @@ class AdminService:
     """Service class for admin operations."""
 
     @staticmethod
-    def ban_user(ban_data: dict, admin_id) -> None: # pylint: disable=C0116
-        return PlateBanningService.ban_user(ban_data)
+    def ban_user(ban_data: dict, admin_id) -> None:
+        return PlateBanningService.ban_user(ban_data.update({"admin_id": admin_id}))
 
     @staticmethod
-    def unban_user(  # pylint: disable=C0116
-        plate_number: str,
-    ) -> None:
+    def unban_user(plate_number: str, admin_id: int) -> None:
+        print(admin_id)
         return PlateBanningService.unban_user(plate_number)
 
 

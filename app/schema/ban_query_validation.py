@@ -12,14 +12,12 @@ class BanQueryValidation(Schema):
     ban_start = fields.DateTime(required=True)
     ban_end = fields.DateTime(required=True)
     is_permanent = fields.Bool(required=True)
-    
     @post_load
     def normalize_ban_reason(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Normalize ban reason by removing leading and trailing whitespaces."""
         if "ban_reason" in in_data:
             in_data["ban_reason"] = in_data["ban_reason"].strip()
         return in_data
-    
     @post_load
     def validate_ban_start_end(self, in_data, **kwargs): # pylint: disable=unused-argument
         """Validate if the ban end is greater than the ban start."""
@@ -34,7 +32,6 @@ class BanQueryValidation(Schema):
 class UnbanQueryValidation(Schema):
     """Validation schema for unbanning the plate numbers by the admin."""
     ban_uuid = fields.Str(required=True)
-    
     @post_load
     def normalize_uuid(self, in_data, **kwargs): # pylint: disable=unused-argument
         """Normalize the ban_uuid by removing hyphens."""

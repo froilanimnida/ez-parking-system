@@ -15,7 +15,6 @@ class EmailBaseSchema(Schema):
         in_data["email"] = in_data["email"].lower()
         return in_data
 
-
 class CommonRegistrationSchema(EmailBaseSchema):
     """Schema for common registration fields.
         Consists of:
@@ -58,7 +57,6 @@ class CommonRegistrationSchema(EmailBaseSchema):
             in_data["nickname"] = in_data["nickname"].capitalize()
         return in_data
 
-
 class DayScheduleSchema(Schema):
     """Schema for single day operating hours"""
     is_open = fields.Bool(required=True)
@@ -71,7 +69,6 @@ class DayScheduleSchema(Schema):
             if value >= self.context.get("closing_time"):
                 raise ValidationError("Opening time must be before closing time")
 
-
 class WeeklyScheduleSchema(Schema):
     """Schema for weekly operating schedule"""
     monday = fields.Nested(DayScheduleSchema(), required=True)
@@ -81,7 +78,6 @@ class WeeklyScheduleSchema(Schema):
     friday = fields.Nested(DayScheduleSchema(), required=True)
     saturday = fields.Nested(DayScheduleSchema(), required=True)
     sunday = fields.Nested(DayScheduleSchema(), required=True)
-
 
 class OperatingHoursSchema(Schema):
     """Updated schema for operating hours"""
@@ -99,13 +95,11 @@ class OperatingHoursSchema(Schema):
                         "24-hour operation must have all days open with full hours"
                     )
 
-
 class PricingSchema(Schema):
     """Schema for pricing information."""
     hourly_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
     daily_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
     monthly_rate = fields.Float(allow_none=True, validate=validate.Range(min=0))
-
 
 class PaymentMethodsSchema(Schema):
     """Schema for payment methods."""
@@ -113,7 +107,6 @@ class PaymentMethodsSchema(Schema):
     mobile = fields.Boolean(required=True)
     other = fields.Boolean(required=True)
     otherText = fields.Str(required=False, validate=validate.Length(min=3, max=255))
-
 
 class ParkingEstablishmentAddressSchema(Schema):
     """ Schema for parking establishment address. """
@@ -125,14 +118,13 @@ class ParkingEstablishmentAddressSchema(Schema):
     landmarks = fields.Str(allow_none=True)
     longitude = fields.Float(required=True)
     latitude = fields.Float(required=True)
-    
 
 class ParkingPhotoSchema(Schema):
     """ Schema for parking establishment photos. """
     parking_photo = fields.Raw(required=True, type="file")
 
-
 class ParkingEstablishmentFilesSchema(Schema):
+    """ Schema for parking establishment files. """
     government_id = fields.Raw(required=True, type="file")
     parking_photos = fields.List(fields.Nested(ParkingPhotoSchema()), required=True)
     proof_of_ownership = fields.Raw(required=True, type="file")
@@ -145,7 +137,9 @@ class ParkingEstablishmentOtherDetailsSchema(Schema):
     """ Schema for parking establishment other details. """
     access_information = fields.Str(
         required=True,
-        validate=validate.OneOf(["Gate Code", "Security Check", "Key Pickup", "No Special Access", "Other"])
+        validate=validate.OneOf(
+            ["Gate Code", "Security Check", "Key Pickup", "No Special Access", "Other"]
+        )
     )
     access_information_custom = fields.Str(allow_none=True)
     lighting_and_security_features = fields.Str(required=True)

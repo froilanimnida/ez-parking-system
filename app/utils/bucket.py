@@ -1,3 +1,7 @@
+""" Module to handle transactional-like uploads to R2 """
+
+# pylint: disable=W0718
+
 import logging
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
@@ -41,7 +45,7 @@ class R2TransactionalUpload:
         try:
             # First phase: Upload all files
             for file in files:
-                self.logger.info(f"Uploading {file.file_path} to {file.destination_key}")
+                self.logger.info("Uploading %s to %s", file.file_path, file.destination_key)
 
                 with open(file.file_path, 'rb') as f:
                     self.s3_client.upload_fileobj(
@@ -56,7 +60,7 @@ class R2TransactionalUpload:
             return True, {"message": "All files uploaded successfully"}
 
         except Exception as e:
-            self.logger.error(f"Error during upload: {str(e)}")
+            self.logger.error("Error during upload: %s", str(e))
 
             # Rollback: Delete any files that were uploaded
             self.logger.info("Starting rollback process")
@@ -67,9 +71,9 @@ class R2TransactionalUpload:
                         Bucket=self.bucket_name,
                         Key=key
                     )
-                    self.logger.info(f"Rolled back upload for {key}")
+                    self.logger.info("Rolled back upload for %s", key)
                 except Exception as delete_error:
-                    self.logger.error(f"Error during rollback of {key}: {str(delete_error)}")
+                    self.logger.error("Error during rollback of %s: %s", key, str(delete_error))
                     # Continue with other deletions even if one fails
 
             return False, {"error": str(e)}

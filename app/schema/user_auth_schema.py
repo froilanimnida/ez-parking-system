@@ -29,7 +29,6 @@ class UserRegistrationSchema(CommonRegistrationSchema):
             ),
         ],
     )
-    
     @post_load
     def normalize_data(
         self, in_data, **kwargs
@@ -40,7 +39,6 @@ class UserRegistrationSchema(CommonRegistrationSchema):
         if "nickname" in in_data:
             in_data["nickname"] = in_data["nickname"].capitalize()
         return in_data
-    
     @post_load()
     def add_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Method to add role to the user."""
@@ -50,7 +48,11 @@ class UserRegistrationSchema(CommonRegistrationSchema):
 
 class UserLoginSchema(EmailBaseSchema):
     """Schema for user login."""
-    role = fields.Str(required=True, validate=[validate.Length(min=3, max=50), validate.OneOf(["user", "admin", "parking_manager"])])
+    role = fields.Str(
+        required=True, validate=[
+            validate.Length(min=3, max=50),validate.OneOf(["user", "admin", "parking_manager"])
+        ]
+    )
 
 
 class OTPLoginBaseSchema(EmailBaseSchema):

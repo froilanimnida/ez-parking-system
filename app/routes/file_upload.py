@@ -38,6 +38,7 @@ class FileUpload(MethodView):
 
         if file:
             filename = secure_filename(file.filename)
+            print(f"File uploaded: {filename}")
 
             return set_response(
                 201,
@@ -46,3 +47,7 @@ class FileUpload(MethodView):
                     "message": "File uploaded successfully",
                 },
             )
+
+        return set_response(
+            500, {"code": "upload_failed", "message": "Failed to upload file"}
+        )

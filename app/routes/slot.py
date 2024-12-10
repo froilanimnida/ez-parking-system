@@ -14,7 +14,9 @@ from app.exceptions.slot_lookup_exceptions import (
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.routes.parking_manager import parking_manager_required
-from app.schema.parking_manager_validation import CreateSlotSchema, DeleteSlotSchema, UpdateSlotSchema
+from app.schema.parking_manager_validation import (
+    CreateSlotSchema, DeleteSlotSchema, UpdateSlotSchema
+)
 from app.schema.query_validation import (
     EstablishmentQueryValidation,
     EstablishmentSlotTypeValidation,
