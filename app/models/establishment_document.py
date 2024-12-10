@@ -22,7 +22,6 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
-from app.utils.uuid_utility import UUIDUtility
 
 
 class DocumentTypeEnum(str, PyEnum):
@@ -107,10 +106,9 @@ class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
         """Convert the establishment document object to a dictionary."""
         if self is None:
             return {}
-        uuid_utility = UUIDUtility()
         return {
             "document_id": self.document_id,
-            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "uuid": str(self.uuid),
             "establishment_id": self.establishment_id,
             "document_type": self.document_type,
             "bucket_path": self.bucket_path,

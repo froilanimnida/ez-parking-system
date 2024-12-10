@@ -28,7 +28,6 @@ from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.models.base import Base
 from app.models.vehicle_type import VehicleType
 from app.utils.db import session_scope
-from app.utils.uuid_utility import UUIDUtility
 
 
 # Enum for slot status
@@ -91,10 +90,11 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
         """
         Return the parking slot object as a dictionary.
         """
-        uuid_utility = UUIDUtility()
+        if self is None:
+            return {}
         return {
             "slot_id": self.slot_id,
-            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "uuid": str(self.uuid),
             "establishment_id": self.establishment_id,
             "slot_code": self.slot_code,
             "vehicle_type_id": self.vehicle_type_id,

@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from app.exceptions.qr_code_exceptions import QRCodeError
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
-from app.models.audit_log import UUIDUtility
+from app.utils.uuid_utility import UUIDUtility
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.parking_transaction import ParkingTransactionOperation, ParkingTransactionRepository

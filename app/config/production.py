@@ -9,4 +9,3 @@ class ProductionConfig(BaseConfig):  # pylint: disable=R0903
 
     DEBUG = False
     MAIL_USERNAME = getenv("MAIL_USERNAME")
-    R2_ENDPOINT_URL = f"https://{getenv("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com"

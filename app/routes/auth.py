@@ -121,14 +121,7 @@ class VerifyOTP(MethodView):
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me
         )
-        response = set_response(
-            200,
-            {
-                "code": "success",
-                "message": "OTP verified.",
-                "role": role,
-            },
-        )
+        response = set_response(200, {"code": "success", "message": "OTP verified.", "role": role})
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response

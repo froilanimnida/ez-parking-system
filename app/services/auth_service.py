@@ -5,14 +5,12 @@
 from datetime import datetime, timedelta
 from os import getenv
 
+import pytz
 from flask import render_template
 from flask_jwt_extended import create_access_token, create_refresh_token
 
 from app.exceptions.authorization_exceptions import (
-    EmailAlreadyTaken,
-    ExpiredOTPException,
-    IncorrectOTPException,
-    PhoneNumberAlreadyTaken,
+    EmailAlreadyTaken, ExpiredOTPException, IncorrectOTPException, PhoneNumberAlreadyTaken,
     RequestNewOTPException,
 )
 from app.models.address import AddressRepository
@@ -57,7 +55,7 @@ class UserLoginService:  # pylint: disable=R0903
         email = login_data.get("email")
         role = login_data.get("role")
         user_email = AuthOperations.login_user(email, role).get("email")
-        return UserOTPService.generate_otp(email=user_email)  # type: ignore
+        return UserOTPService.generate_otp(email=user_email)
 
 
 class SessionTokenService:  # pylint: disable=R0903
@@ -79,7 +77,6 @@ class UserOTPService:
     @classmethod
     def generate_otp(cls, email: str):
         """Function to generate an OTP for a user."""
-        email = email.lower()
         otp_code, otp_expiry = generate_otp()
         one_time_password_template = render_template(
             template_name_or_list="auth/one-time-password.html", otp=otp_code, user_name=email,
@@ -87,19 +84,42 @@ class UserOTPService:
         OTPOperations.set_otp({"email": email, "otp_secret": otp_code, "otp_expiry": otp_expiry})
         send_mail(message=one_time_password_template, email=email, subject="One Time Password")
 
-
     @classmethod
-    def verify_otp(cls, otp: str, email: str):  # pylint: disable=W0613
-        """Function to verify an OTP for a user."""
+    def verify_otp(cls, otp: str, email: str) -> tuple[int, str]:
+        """
+        Verify OTP for a user.
+
+        Args:
+            otp: The OTP to verify
+            email: User's email
+
+        Returns:
+            tuple: (user_id, role)
+
+        Raises:
+            RequestNewOTPException: If OTP not found
+            ExpiredOTPException: If OTP expired
+            IncorrectOTPException: If OTP incorrect
+        """
         res = OTPOperations.get_otp(email=email)
-        user_id, role, retrieved_otp, expiry = res.get("user_id"), res.get("role"), res.get("otp"), res.get("expiry")  # pylint: disable=C0301:
-        if expiry is None or retrieved_otp is None:
+        user_id = res.get("user_id")
+        role = res.get("role")
+        retrieved_otp = res.get("otp_secret")
+        expiry_str = res.get("otp_expiry")
+
+        if not retrieved_otp or not expiry_str:
             raise RequestNewOTPException("Please request for a new OTP.")
-        if datetime.now() > expiry:
+
+        expiry = datetime.fromisoformat(expiry_str)
+        current_time = datetime.now(pytz.UTC) if expiry.tzinfo else datetime.now()
+
+        if current_time > expiry:
             OTPOperations.delete_otp(email=email)
             raise ExpiredOTPException(message="OTP has expired.")
+
         if retrieved_otp != otp or not otp:
             raise IncorrectOTPException(message="Incorrect OTP.")
+
         OTPOperations.delete_otp(email=email)
         return user_id, role
 

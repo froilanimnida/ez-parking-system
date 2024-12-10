@@ -49,14 +49,15 @@ class VehicleType(Base):
         if self is None:
             return {}
         return {
-            "vehicle_type_id": self.vehicle_type_id,
-            "code": self.code,
-            "name": self.name,
-            "description": self.description,
-            "size_category": self.size_category,
-            "is_active": self.is_active,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            'vehicle_type_id': self.vehicle_type_id,
+            'uuid': str(self.uuid),
+            'code': self.code,
+            'name': self.name,
+            'description': self.description,
+            'size_category': self.size_category,
+            'is_active': self.is_active,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
         }
 
     @staticmethod

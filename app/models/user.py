@@ -2,7 +2,7 @@
     Represents a user in the database.
 """
 
-# pylint: disable=R0801
+# pylint: disable=R0801, C0103
 
 from enum import Enum as PyEnum
 from typing import overload
@@ -15,7 +15,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException, BannedUserException
-from app.models.audit_log import UUIDUtility
 from app.models.ban_user import BanUser
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
@@ -24,9 +23,9 @@ from app.utils.engine import get_session
 
 
 class UserRole(PyEnum):  # pylint: disable=C0115
-    USER = "user"
-    PARKING_MANAGER = "parking_manager"
-    ADMIN = "admin"
+    user = "user"
+    parking_manager = "parking_manager"
+    admin = "admin"
 
 
 class User(Base):
@@ -43,7 +42,7 @@ class User(Base):
     suffix = Column(String(5), nullable=True)
     email = Column(String(75), nullable=False, unique=True)
     phone_number = Column(String(15), nullable=False, unique=True)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.USER)
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.user)
     plate_number = Column(String(10), nullable=True, unique=True)
     otp_secret = Column(String(6), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
@@ -100,23 +99,23 @@ class User(Base):
         """Converts the user object to a dictionary."""
         if self is None:
             return {}
-        uuid_utility = UUIDUtility()
         return {
             "user_id": self.user_id,
-            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "uuid": str(self.uuid),
             "nickname": self.nickname,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "email": self.email,
             "phone_number": self.phone_number,
-            "role": self.role,
+            "role": self.role.value if self.role else None,
             "plate_number": self.plate_number,
             "otp_secret": self.otp_secret,
-            "otp_expiry": self.otp_expiry,
+            "otp_expiry": self.otp_expiry.isoformat() if self.otp_expiry else None,
             "is_verified": self.is_verified,
             "verification_token": self.verification_token,
-            "verification_expiry": self.verification_expiry,
-            "created_at": self.created_at,
+            "verification_expiry": self.verification_expiry.isoformat()
+            if self.verification_expiry else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
     @staticmethod
@@ -197,11 +196,8 @@ class UserRepository:
         """
         with session_scope() as session:
             session.execute(
-                update(User)
-                .where(User.verification_token == token)
-                .values(
-                    verification_token=None, verification_expiry=None, is_verified=True
-                )
+                update(User).where(User.verification_token == token)
+                .values(verification_token=None, verification_expiry=None, is_verified=True)
             )
 
     @staticmethod
@@ -276,7 +272,7 @@ class AuthOperations:  # pylint: disable=R0903 disable=C0115
         OperationalError, DatabaseError: If there is an error during the database operation.
         """
         with session_scope() as session:
-            user = session.execute(
+            user: User = session.execute(
                 statement=select(User).where(and_(User.email == email, User.role == role))
             ).scalar()
             is_banned_user = session.execute(
@@ -310,7 +306,7 @@ class OTPOperations:
             DataError, IntegrityError, OperationalError, DatabaseError: If a database error occurs.
         """
         with session_scope() as session:
-            user: User = session.execute(select(User).where(User.email == email)).first()
+            user: User = session.execute(select(User).where(User.email == email)).scalar()
             if user is None:
                 raise EmailNotFoundException("Email not found.")
             return user.to_dict()
@@ -330,11 +326,8 @@ class OTPOperations:
         """
         with session_scope() as session:
             session.execute(
-                update(User)
-                .where(User.email == data.get("email"))
-                .values(
-                    otp_secret=data.get("otp_secret"), otp_expiry=data.get("otp_expiry")
-                )
+                update(User).where(User.email == data.get("email"))
+                .values(otp_secret=data.get("otp_secret"), otp_expiry=data.get("otp_expiry"))
             )
             session.commit()
 
@@ -352,8 +345,6 @@ class OTPOperations:
         """
         with get_session() as session:
             session.execute(
-                update(User)
-                .where(User.email == email)
-                .values(otp_secret=None, otp_expiry=None)
+                update(User).where(User.email == email).values(otp_secret=None, otp_expiry=None)
             )
             session.commit()

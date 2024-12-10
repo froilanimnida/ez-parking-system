@@ -7,7 +7,6 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
-from app.utils.uuid_utility import UUIDUtility
 
 
 class AuditLog(Base):  # pylint: disable=too-few-public-methods
@@ -37,10 +36,9 @@ class AuditLog(Base):  # pylint: disable=too-few-public-methods
     def to_dict(self):  # pylint: disable=missing-function-docstring
         if self is None:
             return {}
-        uuid_utility = UUIDUtility()
         return {
             "audit_id": self.audit_id,
-            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "uuid": str(self.uuid),
             "action_type": self.action_type,
             "performed_by": self.performed_by,
             "target_user": self.target_user,

@@ -49,9 +49,7 @@ class UserRegistrationSchema(CommonRegistrationSchema):
 class UserLoginSchema(EmailBaseSchema):
     """Schema for user login."""
     role = fields.Str(
-        required=True, validate=[
-            validate.Length(min=3, max=50),validate.OneOf(["user", "admin", "parking_manager"])
-        ]
+        required=True, validate=validate.OneOf(["user", "admin", "parking_manager"])
     )
 
 
