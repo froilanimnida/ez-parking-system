@@ -24,6 +24,12 @@ class ParkingManagerRequestSchema(Schema):
     payment_info = fields.Nested(PaymentInfoSchema, required=True)
     documents = fields.List(fields.Dict(), required=True)
 
+    @post_load()
+    def add_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to add role to the user."""
+        in_data["role"] = "user"
+        return in_data
+
 
 class UpdateSlotSchema(SlotCommonValidation, CreateSlotSchema):
     """Validation schema for update slot."""

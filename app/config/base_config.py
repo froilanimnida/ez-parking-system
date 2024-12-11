@@ -35,7 +35,6 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_COOKIE_SECURE = True
     JWT_SESSION_COOKIE = False
     JWT_COOKIE_CSRF_PROTECT = True
-    JWT_COOKIE_DOMAIN = "localhost"
     JWT_COOKIE_SAMESITE = "None"
     JWT_CSRF_CHECK_FORM = False
     JWT_CSRF_IN_COOKIES = True
@@ -49,8 +48,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     LOGGING_PATH = path.join(getcwd(), "logs", "authentication.log")
     IS_PRODUCTION = getenv("ENVIRONMENT", "") == "production"
 
-    DEVELOPMENT_URL = getenv("DEVELOPMENT_URL", "http://localhost:5000")
-    PRODUCTION_URL = getenv("PRODUCTION_URL", "")
+    FRONTEND_URL = getenv("FRONTEND_URL", "http://localhost:5000")
 
     CELERY_BROKER_URL = getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     CELERY_RESULT_BACKEND = getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")

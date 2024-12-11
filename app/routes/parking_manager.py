@@ -2,10 +2,8 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
-from os import path
-import tempfile
 from functools import wraps
-from flask import request, json, current_app
+from flask import request, json
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
@@ -13,6 +11,7 @@ from flask_smorest import Blueprint
 from app.exceptions.qr_code_exceptions import (
     InvalidQRContent, InvalidTransactionStatus, QRCodeExpired,
 )
+from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import ParkingManagerRequestSchema
@@ -24,10 +23,9 @@ from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
     handle_invalid_qr_content, handle_qr_code_expired,
 )
+from app.utils.error_handlers.general_error_handler import handle_file_size_too_big
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
-from app.utils.security import check_file_size, get_random_string
-from app.utils.bucket import R2TransactionalUpload, UploadFile
 
 
 parking_manager_blp = Blueprint(
@@ -85,7 +83,7 @@ class CreateParkingManagerIndividualAccount(MethodView):
         },
     )
     @jwt_required(optional=True)
-    def post(self):  # pylint: disable=too-many-locals
+    def post(self):
         try:
             form_data = json.loads(request.form['data'])
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -93,63 +91,59 @@ class CreateParkingManagerIndividualAccount(MethodView):
                 400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
             )
         parking_manager_request_schema = ParkingManagerRequestSchema()
-        validated_data = parking_manager_request_schema.load(form_data)
-        check_file_size(request)
-        documents = []
-        temp_files = []
-        upload_files = []
+        validated_sign_up_data = parking_manager_request_schema.load(form_data)
+        # store the files in the variable for now since we need to pass it on the service layer
+        # document_file = request.files.get('documents')
+        # check_file_size(request)
+        # documents = []
+        # temp_files = []
+        # upload_files = []
 
-        for key, file in request.files.items():
-            unique_id = get_random_string()[:8]
-            original_filename = file.filename
-            filename_parts = path.splitext(original_filename)
-            unique_filename = f"{unique_id}_{filename_parts[0]}{filename_parts[1]}"
+        # for key, file in request.files.items():
+        #     unique_id = get_random_string()[:8]
+        #     original_filename = file.filename
+        #     filename_parts = path.splitext(original_filename)
+        #     unique_filename = f"{unique_id}_{filename_parts[0]}{filename_parts[1]}"
 
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                temp_files.append(temp_file.name)
-                file.save(temp_file.name)
+        #     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        #         temp_files.append(temp_file.name)
+        #         file.save(temp_file.name)
 
-            destination_key = unique_filename
-            r2_url = f"""
-            https://{current_app.config['R2_BUCKET_NAME']}.
-            {current_app.config['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com/{destination_key}
-            """
+        #     destination_key = unique_filename
+        #     r2_url = f"""
+        #     https://{current_app.config['R2_BUCKET_NAME']}.
+        #     {current_app.config['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com/{destination_key}
+        #     """
 
-            upload_files.append(UploadFile(
-                file_path=temp_file.name,
-                destination_key=destination_key,
-                content_type=file.content_type
-            ))
+        #     upload_files.append(UploadFile(
+        #         file_path=temp_file.name,
+        #         destination_key=destination_key,
+        #         content_type=file.content_type
+        #     ))
 
-            documents.append({
-                "name": key,
-                "file_url": r2_url,
-                "original_filename": original_filename,
-                "stored_filename": unique_filename
-            })
+        #     documents.append({
+        #         "name": key,
+        #         "file_url": r2_url,
+        #         "original_filename": original_filename,
+        #         "stored_filename": unique_filename
+        #     })
 
-        r2_upload = R2TransactionalUpload()
-        success, message, details = r2_upload.upload(upload_files)
-        if not success:
-            return set_response(
-                400, {"code": "error", "message": "File upload failed", "errors": message}
-            )
-        print(message, details, success)
+        # r2_upload = R2TransactionalUpload()
+        # success, message, details = r2_upload.upload(upload_files)
+        # if not success:
+        #     return set_response(
+        #         400, {"code": "error", "message": "File upload failed", "errors": message}
+        #     )
+        # print(message, details, success)
 
-        validated_data['documents'] = documents
-
-        # for day, hours in validated_data.get('operating_hours', {}).items():
-        #     if 'open' in hours and isinstance(hours['open'], time):
-        #         hours['open'] = hours['open'].strftime('%H:%M')
-        #     if 'close' in hours and isinstance(hours['close'], time):
-        #         hours['close'] = hours['close'].strftime('%H:%M')
+        # validated_sign_up_data['documents'] = documents
 
         return set_response(
             201,
             {
                 "code": "success",
                 "message": "Account created successfully.",
-                "data": validated_data
+                "data": validated_sign_up_data
             },
         )
 
@@ -269,3 +263,4 @@ parking_manager_blp.register_error_handler(
     InvalidTransactionStatus, handle_invalid_transaction_status
 )
 parking_manager_blp.register_error_handler(QRCodeExpired, handle_qr_code_expired)
+parking_manager_blp.register_error_handler(FileSizeTooBig, handle_file_size_too_big)

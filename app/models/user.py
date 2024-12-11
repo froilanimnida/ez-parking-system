@@ -147,19 +147,7 @@ class UserRepository:
         during the database operation, the session is rolled back and the exception is raised.
         """
         with session_scope() as session:
-            new_user = User(
-                first_name=user_data.get("first_name"),
-                last_name=user_data.get("last_name"),
-                nickname=user_data.get("nickname"),
-                plate_number=user_data.get("plate_number"),
-                email=user_data.get("email"),
-                phone_number=user_data.get("phone_number"),
-                role=user_data.get("role"),
-                created_at=user_data.get("created_at"),
-                verification_token=user_data.get("verification_token"),
-                verification_expiry=user_data.get("verification_expiry"),
-                is_verified=user_data.get("is_verified"),
-            )
+            new_user = User(**user_data)
             session.add(new_user)
             return new_user.user_id
 

@@ -2,11 +2,12 @@
 
 # pylint disable=R0401
 
+from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
-from os import getenv
+from os import path
 
 import pytz
-from flask import render_template
+from flask import render_template, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token
 
 from app.exceptions.authorization_exceptions import (
@@ -20,7 +21,8 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.pricing_plan import PricingPlanRepository
 from app.models.user import AuthOperations, OTPOperations, UserRepository
 from app.tasks import send_mail
-from app.utils.security import generate_otp, generate_token
+from app.utils.security import generate_otp, generate_token, check_file_size, get_random_string
+from app.utils.bucket import R2TransactionalUpload, UploadFile
 
 
 class AuthService:
@@ -129,6 +131,7 @@ class UserRegistration:  # pylint: disable=R0903
 
     def create_new_user(self, sign_up_data: dict):
         """Create a new user account."""
+        NOW = datetime.now()  # pylint: disable=C0103
         user_email = sign_up_data.get("email")
         role = sign_up_data.get("role")
         UserRepository.is_field_taken("email", user_email, EmailAlreadyTaken)
@@ -136,17 +139,17 @@ class UserRegistration:  # pylint: disable=R0903
             "phone_number", sign_up_data.get("phone_number"), PhoneNumberAlreadyTaken
         )
         verification_token = generate_token()
-        is_production = getenv("ENVIRONMENT") == "production"
-        base_url = (getenv("PRODUCTION_URL") if is_production else getenv("DEVELOPMENT_URL"))
         template = render_template(
             "auth/onboarding.html",
-            verification_url=f"{base_url}/auth/verify-email/{verification_token}"
+            verification_url=f"""
+            {current_app.config["FRONTEND_URL"]}/auth/verify-email/{verification_token}
+            """
         )
         sign_up_data.update({
             "is_verified": False,
-            "created_at": datetime.now(),
+            "created_at": NOW,
             "verification_token": verification_token,
-            "verification_expiry": datetime.now() + timedelta(days=7),
+            "verification_expiry": NOW + timedelta(days=7),
         })
         user_id = UserRepository.create_user(sign_up_data)
         if role == "parking_manager":
@@ -155,8 +158,8 @@ class UserRegistration:  # pylint: disable=R0903
                 "profile_id": user_id,
                 "owner_type": owner_type,
                 "tin": sign_up_data.get("tin"),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
+                "created_at": NOW,
+                "updated_at": NOW,
             }
             if owner_type == "company":
                 company_profile.update({
@@ -169,8 +172,8 @@ class UserRegistration:  # pylint: disable=R0903
                 "company_name": sign_up_data.get("company_name"),
                 "company_reg_number": sign_up_data.get("company_reg_number"),
                 "tin": sign_up_data.get("tin"),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
+                "created_at": NOW,
+                "updated_at": NOW,
             })
             address_id = self.add_new_address({
                 "profile_id": company_profile_id,
@@ -179,8 +182,8 @@ class UserRegistration:  # pylint: disable=R0903
                 "city": sign_up_data.get("city"),
                 "province": sign_up_data.get("province"),
                 "postal_code": sign_up_data.get("postal_code"),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
+                "created_at": NOW,
+                "updated_at": NOW,
             })
             parking_establishment_id = self.add_new_parking_establishment({
                 "profile_id": company_profile_id,
@@ -197,8 +200,8 @@ class UserRegistration:  # pylint: disable=R0903
                 "nearby_landmarks": sign_up_data.get("nearby_landmarks"),
                 "longitude": sign_up_data.get("longitude"),
                 "latitude": sign_up_data.get("latitude"),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
+                "created_at": NOW,
+                "updated_at": NOW,
             })
             pricing_plan_id = self.add_pricing_plan(
                 parking_establishment_id, sign_up_data.get("pricing_plan")
@@ -226,6 +229,49 @@ class UserRegistration:  # pylint: disable=R0903
     def add_pricing_plan(establisment_id: int, pricing_plan_data: dict):
         """Add a pricing plan."""
         return PricingPlanRepository.create_pricing_plan(establisment_id, pricing_plan_data)
+
+    @staticmethod
+    def upload_to_bucket(request: dict) -> dict:
+        """Upload a file to the bucket."""
+        check_file_size(request)
+        documents = []
+        temp_files = []
+        upload_files = []
+        for key, file in request.files.items():
+            filename_parts = path.splitext(file.filename)
+            unique_filename = f"{get_random_string()[:8]}_{filename_parts[0]}{filename_parts[1]}"
+
+            with NamedTemporaryFile(delete=False) as temp_file:
+                temp_files.append(temp_file.name)
+                file.save(temp_file.name)
+
+            destination_key = unique_filename
+            r2_url = f"""
+            https://{current_app.config['R2_BUCKET_NAME']}.
+            {current_app.config['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com/{destination_key}
+            """
+
+            upload_files.append(UploadFile(
+                file_path=temp_file.name,
+                destination_key=destination_key,
+                content_type=file.content_type
+            ))
+
+            documents.append({
+                "name": key,
+                "file_url": r2_url,
+                "original_filename": file.filename,
+                "stored_filename": unique_filename
+            })
+
+        r2_upload = R2TransactionalUpload()
+        success, message, details = r2_upload.upload(upload_files)
+        print(success, message, details)
+        return documents
+        # if not success:
+        #     return set_response(
+        #         400, {"code": "error", "message": "File upload failed", "errors": message}
+        #     )
 
 
 class EmailVerification:  # pylint: disable=R0903
