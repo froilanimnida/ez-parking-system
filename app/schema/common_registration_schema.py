@@ -1,5 +1,7 @@
 """ Common registration schema that can be used by all registration types. """
 
+# pylint: disable=unused-argument
+
 from marshmallow import Schema, fields, post_load, validate, validates, validates_schema
 from marshmallow.exceptions import ValidationError
 
@@ -8,7 +10,7 @@ class EmailBaseSchema(Schema):
     """Schema for email."""
     email = fields.Email(required=True, validate=validate.Length(min=3, max=75))
     @post_load
-    def normalize_email(self, in_data, **kwargs):  # pylint: disable=unused-argument
+    def normalize_email(self, in_data, **kwargs):
         """Method to convert email to lowercase."""
         in_data["email"] = in_data["email"].lower()
         return in_data
@@ -41,7 +43,7 @@ class CommonRegistrationSchema(EmailBaseSchema):
         ],
     )
     @post_load
-    def normalize_data(self, in_data, **kwargs):  # pylint: disable=unused-argument
+    def normalize_data(self, in_data, **kwargs):
         """Method to normalize the input data."""
         if "first_name" in in_data:
             in_data["first_name"] = in_data["first_name"].capitalize()
@@ -80,14 +82,31 @@ class LocationInfoSchema(Schema):
 class ParkingDetailsSchema(Schema):
     """Schema for parking details."""
     space_type = fields.Str(
-        required=True, validate=validate.OneOf(["Indoor", "Outdoor", "Covered", "Uncovered"])
+        required=True, validate=validate.OneOf(["indoor", "outdoor", "covered", "uncovered"])
     )
     space_layout = fields.Str(
-        required=True, validate=validate.OneOf(["Parallel", "Perpendicular", "Angled", "Other"])
+        required=True, validate=validate.OneOf(["parallel", "perpendicular", "angled", "other"])
     )
-    space_dimensions = fields.Str(required=True, validate=validate.Regexp(r"^\d{1,3}x\d{1,3}$"))
-    access_information = fields.Str(required=True)
+    custom_space_layout = fields.Str(required=False)
+    space_dimensions = fields.Str(
+        required=True, validate=validate.Regexp(r"^\d+(\.\d+)?m x \d+(\.\d+)?m$")
+    )
+    access_information = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            ["gate_code", "security_check", "key_pickup", "other", "no_special_access"]
+        )
+    )
+    custom_access_information = fields.Str(required=True)
     is_24_7 = fields.Bool(required=False, missing=False)
+
+    @post_load
+    def normalize_data(self, in_data, **kwargs):
+        """Method to normalize the input data."""
+        in_data["space_type"] = in_data["space_type"].capitalize()
+        in_data["space_layout"] = in_data["space_layout"].capitalize()
+        in_data["access_information"] = in_data["access_information"].replace("_", " ").capitalize()
+        return in_data
 
 class FacilitiesInfoSchema(Schema):
     """Schema for facilities information."""
@@ -102,7 +121,7 @@ class DayScheduleSchema(Schema):
     close = fields.Time(required=True)
 
     @validates_schema
-    def validate_times(self, data, **kwargs):  # pylint: disable=unused-argument
+    def validate_times(self, data, **kwargs):
         """Method to validate the times."""
         if data.get('enabled'):
             # Check if times are provided when enabled
@@ -124,7 +143,7 @@ class OperatingHoursSchema(Schema):
     sunday = fields.Nested(DayScheduleSchema(), required=True)
 
     @validates_schema
-    def validate_has_enabled_day(self, data, **kwargs):  # pylint: disable=unused-argument
+    def validate_has_enabled_day(self, data, **kwargs):
         """ Method to validate if at least one day is enabled. """
         if not any(day.get('enabled') for day in data.values()):
             raise ValidationError('At least one day must be enabled')
@@ -134,7 +153,7 @@ class RateSchema(Schema):
     enabled = fields.Bool(required=True)
     rate = fields.Float(required=True, validate=validate.Range(min=0))
     @validates('rate')
-    def validate_rate(self, value, **kwargs):  # pylint: disable=unused-argument
+    def validate_rate(self, value, **kwargs):
         """Method to validate the rate."""
         if self.context.get('rate_type') == 'hourly' and value > 1000:
             raise ValidationError('Hourly rate cannot exceed ₱1,000')
@@ -160,34 +179,19 @@ class PaymentInfoSchema(Schema):
     payment_methods = fields.Nested(PaymentMethodsSchema(), required=True)
     pricing = fields.Nested(PricingSchema(), required=True)
 
-class DocumentSchema(Schema):
-    """Schema for document."""
-    name = fields.Str(required=True)
-    file = fields.Raw(type="file", required=True)
-
-class DocumentsSchema(Schema):
-    """Schema for documents."""
-    document = fields.List(fields.Nested(DocumentSchema()), required=True)
-    ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
-    MAX_FILE_SIZE = 10 * 1024 * 1024
-    @validates_schema
-    def check_sizes(self, data, **kwargs):  # pylint: disable=unused-argument
-        """Method to check file sizes."""
-        for doc in data['document']:
-            if (
-                doc['file'].content_type not in self.ALLOWED_FILE_TYPES or
-                len(doc['file'].read()) > self.MAX_FILE_SIZE
-            ):
-                raise ValidationError('Invalid file type or file size.')
-
-class IndividualOwnerSchema(Schema):
+class BasicParkingOwnerSchema(Schema):
     """Schema for individual owner."""
-    first_name = fields.Str(required=True)
-    last_name = fields.Str(required=True)
+    first_name = fields.Str(required=False)
+    last_name = fields.Str(required=False)
     middle_name = fields.Str(required=False)
     suffix = fields.Str(required=False)
+    company_name = fields.Str(required=False)
+    company_registration_number = fields.Str(required=False)
+    owner_type = fields.Str(required=True, validate=validate.OneOf(['individual', 'company']))
 
-class CompanyOwnerSchema(Schema):
-    """Schema for company owner."""
-    company_name = fields.Str(required=True)
-    company_registration_number = fields.Str(required=True)
+    @post_load
+    def normalize_data(self, in_data, **kwargs):
+        """Method to normalize the input data."""
+        if in_data.get('company_name'):
+            in_data["company_name"] = in_data["company_name"].capitalize()
+        return in_data

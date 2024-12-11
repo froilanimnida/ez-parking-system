@@ -9,20 +9,20 @@ from app.schema.common_schema_validation import SlotCommonValidation
 from app.schema.slot_validation import CreateSlotSchema
 from app.schema.common_registration_schema import (
     ContactInfoSchema, LocationInfoSchema, ParkingDetailsSchema, FacilitiesInfoSchema,
-    OperatingHoursSchema, PaymentInfoSchema, DocumentsSchema,
+    OperatingHoursSchema, PaymentInfoSchema, BasicParkingOwnerSchema
 )
 
 
 class ParkingManagerRequestSchema(Schema):
     """Validation schema for parking manager request."""
-    owner_info = fields.Dict(required=True)
-    contact_info = fields.Nested(ContactInfoSchema(), required=True)
-    location_info = fields.Nested(LocationInfoSchema(), required=True)
-    parking_details = fields.Nested(ParkingDetailsSchema(), required=True)
-    facilities_info = fields.Nested(FacilitiesInfoSchema(), required=True)
-    operating_hours = fields.Nested(OperatingHoursSchema(), required=True)
-    payment_info = fields.Nested(PaymentInfoSchema(), required=True)
-    documents = fields.Nested(DocumentsSchema(), required=True)
+    owner_info = fields.Nested(BasicParkingOwnerSchema, required=True)
+    contact_info = fields.Nested(ContactInfoSchema, required=True)
+    location_info = fields.Nested(LocationInfoSchema, required=True)
+    parking_details = fields.Nested(ParkingDetailsSchema, required=True)
+    facilities_info = fields.Nested(FacilitiesInfoSchema, required=True)
+    operating_hours = fields.Nested(OperatingHoursSchema, required=True)
+    payment_info = fields.Nested(PaymentInfoSchema, required=True)
+    documents = fields.List(fields.Dict(), required=True)
 
 
 class UpdateSlotSchema(SlotCommonValidation, CreateSlotSchema):

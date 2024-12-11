@@ -2,9 +2,10 @@
 
 # pylint: disable=W0718
 
+from io import BytesIO
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -35,7 +36,7 @@ class R2TransactionalUpload:
         self.bucket_name = current_app.config["R2_BUCKET_NAME"]
         self.logger = logging.getLogger(__name__)
 
-    def upload(self, files: List[UploadFile]) -> Tuple[bool, Dict[str, str]]:
+    def upload(self, files: List[UploadFile]) -> Tuple[bool, Dict[str, str], Dict[str, List[str]]]:
         """
         Perform transactional-like upload of multiple files.
         Returns (success_status, error_message_if_any)
@@ -43,9 +44,9 @@ class R2TransactionalUpload:
         uploaded_keys = []
 
         try:
-            # First phase: Upload all files
             for file in files:
                 self.logger.info("Uploading %s to %s", file.file_path, file.destination_key)
+                print("Uploading %s to %s", file.file_path, file.destination_key)
 
                 with open(file.file_path, 'rb') as f:
                     self.s3_client.upload_fileobj(
@@ -56,13 +57,14 @@ class R2TransactionalUpload:
                     )
                 uploaded_keys.append(file.destination_key)
 
-            # If we reach here, all uploads were successful
-            return True, {"message": "All files uploaded successfully"}
+            return (
+                True,
+                {"message": "All files uploaded successfully"}, {"uploaded_keys": uploaded_keys}
+            )
 
         except Exception as e:
             self.logger.error("Error during upload: %s", str(e))
 
-            # Rollback: Delete any files that were uploaded
             self.logger.info("Starting rollback process")
 
             for key in uploaded_keys:
@@ -74,9 +76,49 @@ class R2TransactionalUpload:
                     self.logger.info("Rolled back upload for %s", key)
                 except Exception as delete_error:
                     self.logger.error("Error during rollback of %s: %s", key, str(delete_error))
-                    # Continue with other deletions even if one fails
 
             return False, {"error": str(e)}
+
+    def download(self, key: str) -> Tuple[Optional[BytesIO], Optional[str], Optional[str]]:
+        """
+        Download a file from R2 bucket and return it as a BytesIO object
+
+        Args:
+            key: The key of the file in the bucket
+
+        Returns:
+            Tuple of (file_object, content_type, filename)
+            Returns (None, None, None) if file not found or error occurs
+        """
+        try:
+            # Get object metadata first to check existence and get content type
+            response = self.s3_client.head_object(
+                Bucket=self.bucket_name,
+                Key=key
+            )
+
+            # Get the actual object
+            file_obj = BytesIO()
+            self.s3_client.download_fileobj(
+                self.bucket_name,
+                key,
+                file_obj
+            )
+
+            # Reset file pointer to beginning
+            file_obj.seek(0)
+
+            content_type = response.get('ContentType', 'application/octet-stream')
+            filename = key.split('/')[-1]  # Get filename from key
+
+            return file_obj, content_type, filename
+
+        except ClientError as e:
+            self.logger.error("Error downloading file %s: %s", key, str(e))
+            return None, None, None
+        except Exception as e:
+            self.logger.error("Unexpected error downloading file %s: %s", key, str(e))
+            return None, None, None
 
     def verify_uploads(self, keys: List[str]) -> bool:
         """

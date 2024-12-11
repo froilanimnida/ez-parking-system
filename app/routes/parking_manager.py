@@ -2,8 +2,10 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
+from os import path
+import tempfile
 from functools import wraps
-
+from flask import request, json, current_app
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
@@ -24,6 +26,9 @@ from app.utils.error_handlers.qr_code_error_handlers import (
 )
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
+from app.utils.security import check_file_size, get_random_string
+from app.utils.bucket import R2TransactionalUpload, UploadFile
+
 
 parking_manager_blp = Blueprint(
     "parking_manager",
@@ -56,19 +61,9 @@ def parking_manager_required():
 
 @parking_manager_blp.route("/company/account/create")
 class CreateParkingManagerCompanyAccount(MethodView):
-    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location=["files", "form"])
+    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location="form")
     @parking_manager_blp.response(201, ApiResponse)
-    @parking_manager_blp.doc(
-        description="Create a new parking manager account.",
-        responses={
-            201: "Company parking manager account created successfully.",
-            400: "Bad Request",
-            422: "Unprocessable Entity",
-        },
-    )
-    def post(self, company_account_data):
-        print(company_account_data)
-        # AuthService.create_new_user(company_account_data)
+    def post(self):
         return set_response(
             201,
             {
@@ -77,9 +72,9 @@ class CreateParkingManagerCompanyAccount(MethodView):
             },
         )
 
+
 @parking_manager_blp.route("/individual/account/create")
 class CreateParkingManagerIndividualAccount(MethodView):
-    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location=["files", "form"])
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
         description="Individual Parking Manager Account Creation",
@@ -89,18 +84,74 @@ class CreateParkingManagerIndividualAccount(MethodView):
             422: "Unprocessable Entity",
         },
     )
-    @jwt_required(True)
-    def post(self, individual_account_data):
-        print(individual_account_data)
-        # AuthService.create_new_user(individual_account_data)
+    @jwt_required(optional=True)
+    def post(self):  # pylint: disable=too-many-locals
+        try:
+            form_data = json.loads(request.form['data'])
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return set_response(
+                400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
+            )
+        parking_manager_request_schema = ParkingManagerRequestSchema()
+        validated_data = parking_manager_request_schema.load(form_data)
+        check_file_size(request)
+        documents = []
+        temp_files = []
+        upload_files = []
+
+        for key, file in request.files.items():
+            unique_id = get_random_string()[:8]
+            original_filename = file.filename
+            filename_parts = path.splitext(original_filename)
+            unique_filename = f"{unique_id}_{filename_parts[0]}{filename_parts[1]}"
+
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_files.append(temp_file.name)
+                file.save(temp_file.name)
+
+            destination_key = unique_filename
+            r2_url = f"""
+            https://{current_app.config['R2_BUCKET_NAME']}.
+            {current_app.config['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com/{destination_key}
+            """
+
+            upload_files.append(UploadFile(
+                file_path=temp_file.name,
+                destination_key=destination_key,
+                content_type=file.content_type
+            ))
+
+            documents.append({
+                "name": key,
+                "file_url": r2_url,
+                "original_filename": original_filename,
+                "stored_filename": unique_filename
+            })
+
+        r2_upload = R2TransactionalUpload()
+        success, message, details = r2_upload.upload(upload_files)
+        if not success:
+            return set_response(
+                400, {"code": "error", "message": "File upload failed", "errors": message}
+            )
+        print(message, details, success)
+
+        validated_data['documents'] = documents
+
+        # for day, hours in validated_data.get('operating_hours', {}).items():
+        #     if 'open' in hours and isinstance(hours['open'], time):
+        #         hours['open'] = hours['open'].strftime('%H:%M')
+        #     if 'close' in hours and isinstance(hours['close'], time):
+        #         hours['close'] = hours['close'].strftime('%H:%M')
+
         return set_response(
             201,
             {
                 "code": "success",
-                "message": "Individual parking manager account created successfully.",
+                "message": "Account created successfully.",
+                "data": validated_data
             },
         )
-
 
 @parking_manager_blp.route("/validate/entry")
 class EstablishmentEntry(MethodView):

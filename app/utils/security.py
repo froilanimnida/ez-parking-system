@@ -10,6 +10,7 @@ from time import time_ns, time, perf_counter_ns
 from psutil import Process
 from pyotp import TOTP
 
+from app.exceptions.general_exceptions import FileSizeTooBig
 
 def get_otp_seed() -> str:
     """
@@ -73,3 +74,9 @@ def generate_token():
 def get_random_string() -> str:
     """ Generate a random string of 32 characters. """
     return urandom(32).hex()
+
+def check_file_size(request: dict) -> dict:
+    """ Check the size of the files in the request. """
+    for key, file in request.files.items():
+        if file.content_length > 1024 * 1024 * 10:
+            raise FileSizeTooBig(f"File size too large: {key}")
