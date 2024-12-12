@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     Column, Integer, Enum, select, update, CheckConstraint, UniqueConstraint,
-    UUID, String, DateTime, Boolean, and_, func
+    UUID, String, DateTime, Boolean, func
 )
 from sqlalchemy.orm import relationship
 
