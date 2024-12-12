@@ -67,7 +67,7 @@ class BanUserRepository:
         with session_scope() as session:
             ban_user = BanUser(**data)
             session.add(ban_user)
-            session.commit()
+            session.flush()
             return ban_user.ban_id
 
     @staticmethod

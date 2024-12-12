@@ -65,7 +65,7 @@ class AddressRepository:
         with session_scope() as session:
             address = Address(**address_data)
             session.add(address)
-            session.commit()
+            session.flush()
             return address.address_id
 
     @staticmethod
