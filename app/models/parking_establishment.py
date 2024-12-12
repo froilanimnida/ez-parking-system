@@ -269,7 +269,7 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
         with session_scope() as session:
             new_parking_establishment = ParkingEstablishment(**establishment_data)
             session.add(new_parking_establishment)
-            session.flush()
+            session.commit()
             return new_parking_establishment.establishment_id
 
     @staticmethod
