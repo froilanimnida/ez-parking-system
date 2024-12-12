@@ -82,8 +82,8 @@ class PricingPlanRepository:
                     rate=plan.get('rate')
                 )
                 session.add(pricing_plan)
+                session.flush()
                 pricing_plan_ids.append(pricing_plan.plan_id)
-            session.commit()
             return pricing_plan_ids
 
     @staticmethod
