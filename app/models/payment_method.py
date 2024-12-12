@@ -59,7 +59,7 @@ class PaymentMethodRepository:
             payment_method = PaymentMethod(**payment_method_data)
             session.add(payment_method)
             session.flush()
-            return payment_method
+            return payment_method.method_id
 
     @staticmethod
     def update_payment_method(payment_method_id: int, payment_method_data: dict):
