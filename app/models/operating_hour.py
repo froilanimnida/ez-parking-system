@@ -86,7 +86,6 @@ class OperatingHoursRepository:
                     closing_time=hours.get('closing_time')
                 )
                 session.add(operating_hour)
-            session.commit()
 
     @staticmethod
     def update_operating_hours(establishment_id, operating_hours: dict):
