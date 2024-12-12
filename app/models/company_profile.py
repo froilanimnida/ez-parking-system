@@ -68,7 +68,7 @@ class CompanyProfileRepository:
         with session_scope() as session:
             company_profile = CompanyProfile(**profile_data)
             session.add(company_profile)
-            session.commit()
+            session.flush()
             return company_profile.profile_id
 
     @staticmethod
