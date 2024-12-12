@@ -52,9 +52,6 @@ class UserRegistrationSchema(Schema):
 
 class UserLoginSchema(EmailBaseSchema):
     """Schema for user login."""
-    role = fields.Str(
-        required=True, validate=validate.OneOf(["user", "admin", "parking_manager"])
-    )
 
 
 class OTPLoginBaseSchema(EmailBaseSchema):

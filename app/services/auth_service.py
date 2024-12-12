@@ -57,8 +57,7 @@ class UserLoginService:  # pylint: disable=R0903
     @classmethod
     def login_user(cls, login_data: dict):  # pylint: disable=C0116
         email = login_data.get("email")
-        role = login_data.get("role")
-        user_email = AuthOperations.login_user(email, role).get("email")
+        user_email = AuthOperations.login_user(email).get("email")
         return UserOTPService.generate_otp(email=user_email)
 
 

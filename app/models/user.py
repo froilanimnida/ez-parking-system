@@ -244,13 +244,12 @@ class UserRepository:
 
 class AuthOperations:  # pylint: disable=R0903 disable=C0115
     @classmethod
-    def login_user(cls, email: str, role: str):
+    def login_user(cls, email: str):
         """
         Authenticates a user by their email address.
 
         Parameters:
         email (str): The email address of the user attempting to log in.
-        role (str): The role of the user attempting to log in.
 
         Returns:
         dict: A dictionary containing the user information
@@ -261,7 +260,7 @@ class AuthOperations:  # pylint: disable=R0903 disable=C0115
         """
         with session_scope() as session:
             user: User = session.execute(
-                statement=select(User).where(and_(User.email == email, User.role == role))
+                statement=select(User).where(User.email == email)
             ).scalar()
             is_banned_user = session.execute(
                 select(BanUser).where(BanUser.user_id == user.user_id)
