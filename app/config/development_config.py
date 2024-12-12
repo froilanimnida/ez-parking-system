@@ -1,7 +1,7 @@
 """Development configuration."""
 
-from os import getenv
 from datetime import timedelta
+from os import getenv
 
 from app.config.base_config import BaseConfig
 

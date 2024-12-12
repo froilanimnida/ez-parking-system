@@ -46,14 +46,13 @@ class GetEstablishments(MethodView):
         return set_response(
             200,
             {
-                "code": "success",
-                "message": "Establishments retrieved successfully.",
-                "establishments": establishments,
-            },
+                "code": "success", "message": "Establishments retrieved successfully.",
+                "establishments": establishments
+            }
         )
 
 
-@establishment_blp.route("/get-establishment-info")
+@establishment_blp.route("/info")
 class GetEstablishmentInfo(MethodView):
     @establishment_blp.arguments(EstablishmentQueryValidation, location="query")
     @establishment_blp.response(200, EstablishmentResponseSchema)
@@ -65,17 +64,15 @@ class GetEstablishmentInfo(MethodView):
         },
     )
     def get(self, query_params):
-        establishment = EstablishmentService.get_establishment_info(
+        establishment = EstablishmentService.get_establishment(
             query_params.get("establishment_uuid")
         )
-
         return set_response(
             200,
             {
-                "code": "success",
-                "message": "Establishment information retrieved successfully.",
+                "code": "success", "message": "Establishment information retrieved successfully.",
                 "establishment": establishment,
-            },
+            }
         )
 
 

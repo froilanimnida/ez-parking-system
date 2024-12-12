@@ -4,38 +4,31 @@
 
 from functools import wraps
 
+from flask import request, json
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
+from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.qr_code_exceptions import (
-    InvalidQRContent,
-    InvalidTransactionStatus,
-    QRCodeExpired,
+    InvalidQRContent, InvalidTransactionStatus, QRCodeExpired,
 )
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
-from app.schema.parking_manager_validation import (
-    CreateSlotSchema,
-    EstablishmentValidationSchema,
-    UpdateEstablishmentInfoSchema,
-    UpdateSlotSchema,
-    ValidateEntrySchema,
-    DeleteEstablishmentSchema,
-    DeleteSlotSchema,
-    ValidateNewScheduleSchema,
-)
+from app.schema.parking_manager_validation import ParkingManagerRequestSchema
 from app.schema.response_schema import ApiResponse
+from app.schema.transaction_validation import ValidateEntrySchema
 from app.services.establishment_service import EstablishmentService
-from app.services.parking_manager_service import ParkingManagerService
-from app.services.slot_service import SlotService
+from app.services.operating_hour_service import OperatingHourService
+from app.services.auth_service import AuthService
 from app.services.transaction_service import TransactionService
+from app.utils.error_handlers.general_error_handler import handle_file_size_too_big
 from app.utils.error_handlers.qr_code_error_handlers import (
-    handle_invalid_qr_content,
-    handle_qr_code_expired,
+    handle_invalid_qr_content, handle_qr_code_expired,
 )
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
+from app.utils.security import check_file_size
 
 parking_manager_blp = Blueprint(
     "parking_manager",
@@ -62,158 +55,92 @@ def parking_manager_required():
                 )
             user_id = jwt_data.get("sub", {}).get("user_id")
             return fn(*args, user_id=user_id, **kwargs)
-
         return decorator
-
     return wrapper
 
 
-@parking_manager_blp.route("/establishment/create")
-class CreateEstablishment(MethodView):
-    @parking_manager_blp.arguments(EstablishmentValidationSchema)
+@parking_manager_blp.route("/company/account/create")
+class CreateParkingManagerCompanyAccount(MethodView):
+    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location="form")
     @parking_manager_blp.response(201, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Create a new parking establishment.",
-        responses={
-            201: "Establishment created successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(True)
-    @parking_manager_required()
-    def post(self, new_establishment_data, manager_id):
-        new_establishment_data["manager_id"] = manager_id
-        EstablishmentService.create_new_parking_establishment(new_establishment_data)
+    def post(self):
         return set_response(
             201,
             {
                 "code": "success",
-                "message": "Parking establishment created successfully.",
+                "message": "Company parking manager account created successfully.",
             },
         )
 
 
-@parking_manager_blp.route("/establishment/delete")
-class DeleteEstablishment(MethodView):
-    @parking_manager_blp.arguments(DeleteEstablishmentSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Delete parking establishment.",
-        responses={
-            200: "Parking establishment deleted successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(False)
-    @parking_manager_required()
-    def delete(self, data):
-        EstablishmentService.delete_establishment(data.get("establishment_uuid"))
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Parking establishment deleted successfully.",
-            },
-        )
-
-
-@parking_manager_blp.route("/establishment/update")
-class UpdateEstablishment(MethodView):
-    @parking_manager_blp.arguments(UpdateEstablishmentInfoSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update parking establishment information.",
-        responses={
-            200: "Establishment updated successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(False)
-    @parking_manager_required()
-    def patch(self, establishment_data, user_id):  # pylint: disable=unused-argument
-        EstablishmentService.update_establishment(establishment_data)
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Establishment updated successfully.",
-            },
-        )
-
-
-@parking_manager_blp.route("/slot/create")
-class CreateSlot(MethodView):
-    @parking_manager_blp.arguments(CreateSlotSchema)
+@parking_manager_blp.route("/individual/account/create")
+class CreateParkingManagerIndividualAccount(MethodView):
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Create a new slot.",
+        description="Individual Parking Manager Account Creation",
         responses={
-            201: "Slot created successfully.",
+            201: "Individual parking manager account created successfully.",
             400: "Bad Request",
-            401: "Unauthorized",
+            422: "Unprocessable Entity",
         },
     )
-    @parking_manager_required()
-    @jwt_required(False)
-    def post(self, new_slot_data):
-        SlotService.create_slot(new_slot_data)
+    @jwt_required(optional=True)
+    def post(self):
+        check_file_size(request)
+        try:
+            # Initialize documents list (schema expects a list of dicts)
+            documents_list = []
+
+            # Handle single file fields
+            single_file_fields = [
+                'gov_id',
+                'proof_of_ownership',
+                'bir_cert',
+                'liability_insurance',
+                'business_cert'
+            ]
+
+            # Process single files
+            for field in single_file_fields:
+                if field in request.files:
+                    file = request.files[field]
+                    documents_list.append({
+                        "type": field,
+                        "file": file,
+                        "filename": file.filename
+                    })
+
+            # Handle parking photos array
+            for key in request.files:
+                if key.startswith('parking_photos['):
+                    file = request.files[key]
+                    documents_list.append({
+                        "type": "parking_photo",
+                        "file": file,
+                        "filename": file.filename
+                    })
+
+            form_data = json.loads(request.form.get("sign_up_data"))
+
+            form_data['documents'] = documents_list
+
+            # Validate complete data
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return set_response(
+                400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
+            )
+        parking_manager_request_schema = ParkingManagerRequestSchema()
+        validated_sign_up_data = parking_manager_request_schema.load(form_data)
+        auth_service = AuthService()
+        auth_service.create_new_user(validated_sign_up_data)
+
         return set_response(
-            201, {"code": "success", "message": "Slot created successfully."}
+            201,
+            {
+                "code": "success",
+                "message": "Account created successfully.",
+            },
         )
-
-
-@parking_manager_blp.route("/slot/delete")
-class DeleteSlot(MethodView):
-    @parking_manager_blp.arguments(DeleteSlotSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Delete a slot.",
-        responses={
-            200: "Slot deleted successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @parking_manager_required()
-    @jwt_required(False)
-    def delete(self, data, user_id):
-        data.update({"manager_id": user_id})
-        SlotService.delete_slot(data)
-        return set_response(
-            200, {"code": "success", "message": "Slot deleted successfully."}
-        )
-
-
-@parking_manager_blp.route("/slot/update")
-class UpdateSlot(MethodView):
-
-    @parking_manager_blp.arguments(UpdateSlotSchema)
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update a slot.",
-        responses={
-            200: "Slot updated successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @parking_manager_required()
-    @jwt_required(False)
-    def post(self, request, user_id):
-        print(user_id, request)
-        return set_response(
-            200, {"code": "success", "message": "Slot updated successfully."}
-        )
-
 
 @parking_manager_blp.route("/validate/entry")
 class EstablishmentEntry(MethodView):
@@ -269,7 +196,7 @@ class GetQRContentOverview(MethodView):
         )
 
 
-@parking_manager_blp.route("/get-all-establishments-info")
+@parking_manager_blp.route("/get-establishment")
 class GetAllEstablishmentsInfo(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
@@ -288,7 +215,7 @@ class GetAllEstablishmentsInfo(MethodView):
     @jwt_required(False)
     @parking_manager_required()
     def get(self, user_id):
-        data = ParkingManagerService.get_all_establishment_info(user_id)
+        data = EstablishmentService.get_establishment(user_id)
         return set_response(
             200,
             {
@@ -299,14 +226,14 @@ class GetAllEstablishmentsInfo(MethodView):
         )
 
 
-@parking_manager_blp.route("/get-schedule-hours")
+@parking_manager_blp.route("/get-operating-hours")
 class GetScheduleHours(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
-        description="Get the schedule hours of the establishment.",
+        description="Get the operating hours of the establishment.",
         responses={
-            200: "Schedule hours retrieved successfully.",
+            200: "Operating hours retrieved successfully.",
             400: "Bad Request",
             401: "Unauthorized",
         },
@@ -314,40 +241,13 @@ class GetScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_required()
     def get(self, user_id):
-        data = EstablishmentService.get_schedule_hours(user_id)
+        operating_hours = OperatingHourService.get_operating_hours(user_id)
         return set_response(
             200,
             {
                 "code": "success",
                 "message": "Schedule hours retrieved successfully.",
-                "data": data,
-            },
-        )
-
-
-@parking_manager_blp.route("/update-schedule-hours")
-class UpdateScheduleHours(MethodView):
-
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.arguments(ValidateNewScheduleSchema)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update the schedule hours of the establishment.",
-        responses={
-            200: "Schedule hours updated successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(False)
-    @parking_manager_required()
-    def patch(self, data, user_id):
-        EstablishmentService.update_establishment_schedule(user_id, data)
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Schedule hours updated successfully.",
+                "operating_hours": operating_hours,
             },
         )
 
@@ -358,3 +258,4 @@ parking_manager_blp.register_error_handler(
     InvalidTransactionStatus, handle_invalid_transaction_status
 )
 parking_manager_blp.register_error_handler(QRCodeExpired, handle_qr_code_expired)
+parking_manager_blp.register_error_handler(FileSizeTooBig, handle_file_size_too_big)

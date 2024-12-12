@@ -1,107 +1,111 @@
 """ This module contains the logic for getting the list of slots. """
 
+# pylint: disable=missing-function-docstring, too-few-public-methods
+
 from datetime import datetime
 
-from app.exceptions.slot_lookup_exceptions import (
-    NoSlotsFoundInTheGivenSlotCode,
-    NoSlotsFoundInTheGivenVehicleType,
-)
-from app.models.parking_establishment import ParkingEstablishment, GetEstablishmentOperations
-from app.models.slot import GettingSlotsOperations, SlotOperation
+from app.exceptions.slot_lookup_exceptions import NoSlotsFoundInTheGivenSlotCode
+from app.models.audit_log import AuditLogRepository
+from app.models.company_profile import CompanyProfileRepository
+from app.models.parking_establishment import ParkingEstablishmentRepository
+from app.models.parking_slot import ParkingSlotRepository
 
 
-class SlotService:
+class ParkingSlotService:
     """Wraps the logic for getting the list of slots."""
-
     @staticmethod
-    def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
+    def get_all_slots(establishment_uuid: bytes):
         return GetSlotService.get_all_slots(establishment_uuid)
-
     @staticmethod
-    def get_slots_by_vehicle_type(
-        vehicle_type_id: int, establishment_id: int
-    ):  # pylint: disable=C0116
-        return GetSlotService.get_slots_by_vehicle_type(
-            vehicle_type_id, establishment_id
-        )
-
+    def get_slots_by_vehicle_type(vehicle_type_id: int, establishment_id: int):
+        return GetSlotService.get_slots_by_vehicle_type(vehicle_type_id, establishment_id)
     @staticmethod
-    def get_slot_by_slot_code(
-        slot_code: str, establishment_uuid: bytes
-    ):  # pylint: disable=C0116
-        return GetSlotService.get_slot_by_slot_code(slot_code, establishment_uuid)
+    def get_slot(slot_uuid: bytes):
+        return GetSlotService.get_slot(slot_uuid)
     @staticmethod
-    def create_slot(new_slot_data: dict):  # pylint: disable=C0116
-        return ParkingManagerService.create_slot(new_slot_data)
+    def create_slot(new_slot_data: dict, user_id: int, ip_address):
+        return AddingSlotService.create_slot(new_slot_data, user_id, ip_address)
     @staticmethod
-    def delete_slot(slot_data):
+    def delete_slot(slot_data: dict):
         """Delete a slot."""
-        return ParkingManagerService.delete_slot(slot_data)
+        return DeleteSlotService.delete_slot(slot_data)
     @staticmethod
-    def get_specific_slot(slot_code: str):
-        """Get specific slot by slot code."""
-        return GetSlotService.get_specific_slot(slot_code)
+    def update_slot(slot_data: dict):
+        """Update a slot."""
+        return UpdateSlotService.update_slot(slot_data)
 
 class GetSlotService:
     """Wraps the logic for getting the list of slots, calling the model layer classes."""
     @staticmethod
-    def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
-        establishment_uuid_bytes = establishment_uuid.encode("utf-8")
-        establishment_id = ParkingEstablishment.get_establishment_id_by_uuid(
-            establishment_uuid_bytes
-        )
-        return GettingSlotsOperations.get_all_slots(establishment_id)  # type: ignore
+    def get_all_slots(establishment_uuid: bytes):  # pylint: disable=C0116
+        return ParkingSlotRepository.get_slots(
+            establishment_id=ParkingEstablishmentRepository.get_establishment(
+            establishment_uuid
+        ).get("establishment_id"))
     @staticmethod
-    def get_slots_by_vehicle_type(
-        vehicle_type_id: int, establishment_id: int
-    ):  # pylint: disable=C0116
-        slots = GettingSlotsOperations.get_slots_by_vehicle_type(
-            vehicle_type_id, establishment_id
-        )
-        if slots is None:
-            raise NoSlotsFoundInTheGivenVehicleType(
-                "No slots found in the given vehicle type."
-            )
-        return slots
+    def get_slots_by_vehicle_type(vehicle_type_id: int, establishment_uuid: bytes):
+        return ParkingSlotRepository.get_slots_by_criteria({
+            "vehicle_type_id": vehicle_type_id,
+            "establishment_id": ParkingEstablishmentRepository.get_establishment(
+                establishment_uuid
+            ).get("establishment_id")
+        })
     @staticmethod
-    def get_slot_by_slot_code(
-        slot_code: str, establishment_uuid_binary: bytes
-    ):
+    def get_slot(slot_uuid: bytes):
         """Get slot by slot code."""
-        establishment_id = ParkingEstablishment.get_establishment_id_by_uuid(
-            establishment_uuid_binary
-        )
-        establishment_info = GetEstablishmentOperations.get_establishment_info(
-            establishment_uuid_binary
-        )
-        slot = GettingSlotsOperations.get_slot_by_slot_code(
-            slot_code, establishment_id
-        )
+        slot = ParkingSlotRepository.get_slot(slot_uuid)
         if slot is None:
             raise NoSlotsFoundInTheGivenSlotCode(
-                "No slots found in the given slot code."
+                "No slots found.."
             )
-        return {
-            "slot_info": slot,
-            "establishment_info": establishment_info,
-        }
-    @staticmethod
-    def get_specific_slot(slot_code: str):  # pylint: disable=C0116
-        pass
+        return {"slot_info": slot}
 
-class ParkingManagerService:  # pylint: disable=R0903
+
+class AddingSlotService:
     """Wraps the logic for creating a new slot."""
     @staticmethod
-    def create_slot(new_slot_data: dict):  # pylint: disable=C0116
+    def create_slot(new_slot_data: dict, user_id: int, ip_address):  # pylint: disable=C0116
+        company_profile_id = CompanyProfileRepository.get_company_profile(
+            user_id=user_id
+        ).get("profile_id")
         new_slot_data.update({
-            "establishment_id": ParkingEstablishment.get_establishment_id_by_uuid(
-                new_slot_data.get("establishment_uuid")
-            )
+            "establishment_id": ParkingEstablishmentRepository.get_establishment(
+                profile_id=company_profile_id
+            ).get("establishment_id"),
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
         })
-        new_slot_data["created_at"] = datetime.now()
-        new_slot_data["updated_at"] = datetime.now()
-        return SlotOperation.create_slot(new_slot_data)
+        ParkingSlotRepository.create_slot(new_slot_data)
+        AuditLogRepository.create_audit_log({
+            "action_type": "CREATE",
+            "performed_by": user_id,
+            "details": f"Created new slot with slot code {new_slot_data.get('slot_code')}",
+            "performed_at": datetime.now(),
+            "ip_address": ip_address,
+        })
+class DeleteSlotService:
+    """Wraps the logic for deleting a slot."""
     @staticmethod
     def delete_slot(slot_data):
         """Delete a slot."""
-        return SlotOperation.delete_slot(slot_data)
+        slot_id = ParkingSlotRepository.delete_slot(slot_data.get("slot_uuid"))
+        AuditLogRepository.create_audit_log({
+            "action_type": "DELETE",
+            "performed_by": slot_data.get("user_id"),
+            "details": f"Deleted slot with slot id: {slot_id}",
+            "performed_at": datetime.now(),
+            "ip_address": slot_data.get("ip_address"),
+        })
+
+class UpdateSlotService:  # pylint: disable=R0903
+    """Update a slot."""
+    @staticmethod
+    def update_slot(slot_data):
+        slot_id = ParkingSlotRepository.update_slot(slot_data)
+        return AuditLogRepository.create_audit_log({
+            "action_type": "UPDATE",
+            "performed_by": slot_data.get("user_id"),
+            "details": f"Updated slot with slot code {slot_id}",
+            "performed_at": datetime.now(),
+            "ip_address": slot_data.get("ip_address"),
+        })

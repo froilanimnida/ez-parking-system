@@ -1,33 +1,15 @@
 """ Wraps all query related to slots and establishments, and their validations. """
 
-from marshmallow import Schema, fields, post_load, validate
+from marshmallow import Schema, fields, validate
 
-from app.utils.uuid_utility import UUIDUtility
-
-
-class EstablishmentQueryValidationBase(Schema):
-    """Validation schema for slot ID."""
-
-    establishment_uuid = fields.Str(required=True)
-
-    @post_load
-    def remove_hyphen(self, data, **kwargs):  # pylint: disable=unused-argument
-        """Remove hyphen from the establishment_uuid."""
-        uuid_utility = UUIDUtility()
-        data["establishment_uuid"] = uuid_utility.remove_hyphens_from_uuid(
-            data["establishment_uuid"]
-        )
-        data["establishment_uuid"] = uuid_utility.uuid_to_binary(
-            data["establishment_uuid"]
-        )
-        return data
+from app.schema.common_schema_validation import EstablishmentCommonValidation, SlotCommonValidation
 
 
-class EstablishmentQueryValidation(EstablishmentQueryValidationBase):
+class EstablishmentQueryValidation(EstablishmentCommonValidation):
     """Validation schema for establishment query parameters."""
 
 
-class EstablishmentSlotTypeValidation(EstablishmentQueryValidationBase):
+class EstablishmentSlotTypeValidation(EstablishmentCommonValidation):
     """Validation schema for slot type."""
 
     vehicle_size = fields.Str(
@@ -36,10 +18,8 @@ class EstablishmentSlotTypeValidation(EstablishmentQueryValidationBase):
     )
 
 
-class SlotCodeValidationQuerySchema(EstablishmentQueryValidationBase):
+class SlotCodeValidationQuerySchema(SlotCommonValidation):
     """Slot code validation query schema."""
-
-    slot_code = fields.Str(required=True, validate=validate.Length(min=1, max=45))
 
 
 class EstablishmentQuerySchema(Schema):

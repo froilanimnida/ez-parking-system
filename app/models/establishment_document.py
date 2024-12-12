@@ -1,0 +1,116 @@
+"""Establishment Document Model."""
+
+# pylint: disable=not-callable
+
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    TIMESTAMP,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+
+from app.models.base import Base
+from app.utils.db import session_scope
+
+
+class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
+    """Establishment Document Model."""
+    __tablename__ = "establishment_document"
+    __table_args__ = (
+        CheckConstraint(
+            "document_type IN ('gov_id', 'parking_photos', 'proof_of_ownership', 'business_certificate', 'bir_certificate', 'liability_insurance')",  # pylint: disable=line-too-long
+            name="establishment_document_document_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected')",
+            name="establishment_document_status_check",
+        ),
+        {'schema': 'public'},
+    )
+
+    document_id = Column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        server_default=text("nextval('establishment_document_document_id_seq'::regclass)"),
+    )
+    uuid = Column(
+        UUID(as_uuid=True),
+        unique=True,
+        nullable=False,
+        default=func.uuid_generate_v4(),
+    )
+    establishment_id = Column(
+        Integer,
+        ForeignKey("parking_establishment.establishment_id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    document_type = Column(String(50), nullable=False)
+    bucket_path = Column(Text, nullable=False)
+    filename = Column(Text, nullable=False)
+    mime_type = Column(String(100), nullable=True)
+    file_size = Column(BigInteger, nullable=True)
+    uploaded_at = Column(TIMESTAMP(timezone=False), nullable=True, server_default=func.now())
+    verified_at = Column(TIMESTAMP(timezone=False), nullable=True)
+    verified_by = Column(
+        Integer,
+        ForeignKey("user.user_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+        nullable=True,
+    )
+    status = Column(
+        String(20),
+        nullable=True,
+        server_default=text("'pending'::character varying"),
+    )
+
+    verification_notes = Column(Text, nullable=True)
+    user = relationship("User", back_populates="establishment_documents")
+    parking_establishment = relationship("ParkingEstablishment", back_populates="documents")
+
+    def to_dict(self):
+        """Convert the establishment document object to a dictionary."""
+        if self is None:
+            return {}
+        return {
+            "document_id": self.document_id,
+            "uuid": str(self.uuid),
+            "establishment_id": self.establishment_id,
+            "document_type": self.document_type,
+            "bucket_path": self.bucket_path,
+            "filename": self.filename,
+            "mime_type": self.mime_type,
+            "file_size": self.file_size,
+            "uploaded_at": self.uploaded_at,
+            "verified_at": self.verified_at,
+            "verified_by": self.verified_by,
+            "status": self.status,
+            "verification_notes": self.verification_notes,
+        }
+
+class EstablishmentDocumentRepository:
+    """Repository for establishment document model."""
+
+    @staticmethod
+    def create_establishment_document(data: dict):
+        """Create a new establishment document."""
+        with session_scope() as session:
+            new_document = EstablishmentDocument(**data)
+            session.add(new_document)
+            session.flush()
+            return new_document
+
+    @staticmethod
+    def get_establishment_documents(establishment_id):
+        """Get all establishment documents by establishment id."""
+        with session_scope() as session:
+            documents = session.query(EstablishmentDocument
+                ).filter_by(establishment_id=establishment_id).all()
+            return [document.to_dict() for document in documents]

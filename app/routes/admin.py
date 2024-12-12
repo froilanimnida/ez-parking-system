@@ -4,15 +4,14 @@
 
 from functools import wraps
 
+from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
-from flask.views import MethodView
 
 from app.schema.ban_query_validation import BanQueryValidation
-from app.schema.parking_manager_validation import CreateSlotSchema, UpdateSlotSchema
 from app.services.admin_service import AdminService
+from app.services.vehicle_type_service import VehicleTypeService
 from app.utils.response_util import set_response
-
 
 admin_blp = Blueprint(
     "admin",
@@ -40,8 +39,8 @@ def admin_role_required():
     return wrapper
 
 
-@admin_blp.route("/ban-plate-number")
-class BanPlateNumber(MethodView):
+@admin_blp.route("/ban-user")
+class BanUser(MethodView):
     @admin_blp.arguments(BanQueryValidation)
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
@@ -59,20 +58,19 @@ class BanPlateNumber(MethodView):
     @jwt_required(False)
     def post(self, ban_data, admin_id):
         admin_service = AdminService()
-        ban_data["banned_by"] = admin_id
-        admin_service.ban_plate_number(ban_data)
+        admin_service.ban_user(ban_data, admin_id)
         return set_response(201, {"code": "success", "message": "Plate number banned."})
 
 
-@admin_blp.route("/unban-plate-number")
-class UnbanPlateNumber(MethodView):
+@admin_blp.route("/unban-user")
+class UnbanUser(MethodView):
     @admin_blp.arguments(BanQueryValidation)
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],
-        description="Unban a plate number.",
+        description="Unban a user.",
         responses={
-            200: "Plate number unbanned.",
+            200: "User unbanned.",
             401: "Unauthorized",
             403: "Forbidden",
             500: "Internal Server Error",
@@ -82,23 +80,43 @@ class UnbanPlateNumber(MethodView):
     @admin_role_required()
     @jwt_required(False)
     def post(self, ban_data, admin_id):
-        admin_service = AdminService()
-        print(admin_id)
-        admin_service.unban_plate_number(ban_data["plate_number"])
+        # admin_service = AdminService()
+        print(ban_data, admin_id)
+        # admin_service.unban_user(ban_data, admin_id)
         return set_response(
-            201, {"code": "success", "message": "Plate number unbanned."}
+            201, {"code": "success", "message": "User unbanned."}
         )
 
 
-@admin_blp.route("/add-slot")
-class AddSlot(MethodView):
-    @admin_blp.arguments(CreateSlotSchema)
+@admin_blp.route("/get-banned-users")
+class GetBannedUsers(MethodView):
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],
-        description="Add a slot.",
+        description="Get all banned users.",
         responses={
-            200: "Slot added.",
+            200: "Banned users retrieved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+            422: "Unprocessable",
+        },
+    )
+    @admin_role_required()
+    @jwt_required(False)
+    def get(self, admin_id):  # pylint: disable=unused-argument
+        # admin_service = AdminService()
+        # banned_users = admin_service.get_banned_users(admin_id)
+        return set_response(200, {"code": "success", "data": "HELLO"})
+
+@admin_blp.route("/get-all-vehicle-types")
+class GetAllVehicleTypes(MethodView):
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get all vehicle types.",
+        responses={
+            200: "Vehicle types retrieved.",
             401: "Unauthorized",
             403: "Forbidden",
             500: "Internal Server Error",
@@ -107,36 +125,7 @@ class AddSlot(MethodView):
     )
     @jwt_required(False)
     @admin_role_required()
-    def post(self, slot_data, admin_id):
-        print(slot_data)
-        admin_service = AdminService()
-        print(admin_id)  # this is for auditing
-        admin_service.add_slot(slot_data)
-        return set_response(201, {"code": "success", "message": "Slot added."})
-
-
-@admin_blp.route("/update-slot")
-class UpdateParkingSlot(MethodView):
-
-    @admin_blp.arguments(UpdateSlotSchema)
-    @admin_blp.response(200, {"message": str})
-    @admin_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update a parking slot.",
-        responses={
-            200: "Parking slot updated.",
-            401: "Unauthorized",
-            403: "Forbidden",
-            500: "Internal Server Error",
-            422: "Unprocessable",
-        },
-    )
     @jwt_required(False)
-    @admin_role_required()
-    def patch(self, slot_data, admin_id):
-        admin_service = AdminService()
-        print(admin_id)  # this is for auditing
-        admin_service.update_parking_slot(slot_data)
-        return set_response(
-            201, {"code": "success", "message": "Parking slot updated."}
-        )
+    def get(self, admin_id):  # pylint: disable=unused-argument
+        vehicle_types = VehicleTypeService().get_all_vehicle_types()
+        return set_response(200, {"code": "success", "data": vehicle_types})

@@ -25,14 +25,10 @@ from app.exceptions.authorization_exceptions import (
     IncorrectOTPException,
     RequestNewOTPException,
 )
-from app.schema.auth_validation import (
-    OTPGenerationSchema,
-    LoginWithEmailValidationSchema,
-    OTPSubmissionSchema,
-    SignUpValidationSchema,
-    EmailVerificationSchema,
-)
 from app.schema.response_schema import ApiResponse
+from app.schema.user_auth_schema import (
+    UserLoginSchema, OTPLoginSchema, EmailVerificationSchema, GenerateOTPBaseSchema
+)
 from app.services.auth_service import AuthService
 from app.services.token_service import TokenService
 from app.utils.error_handlers.auth_error_handlers import (
@@ -56,30 +52,9 @@ auth_blp = Blueprint(
 )
 
 
-@auth_blp.route("/create-new-account")
-class CreateNewAccount(MethodView):
-
-    @auth_blp.arguments(SignUpValidationSchema)
-    @auth_blp.response(201, ApiResponse)
-    @auth_blp.doc(
-        description="Create a new user account.",
-        responses={
-            201: {"description": "User created successfully."},
-            400: {"description": "Bad Request"},
-        },
-    )
-    @jwt_required(True)
-    def post(self, sign_up_data):
-        auth_service = AuthService()
-        auth_service.create_new_user(sign_up_data)
-        return set_response(
-            201, {"code": "success", "message": "Check your email for verification."}
-        )
-
-
 @auth_blp.route("/login")
 class Login(MethodView):
-    @auth_blp.arguments(LoginWithEmailValidationSchema)
+    @auth_blp.arguments(UserLoginSchema)
     @auth_blp.response(200, ApiResponse)
     @auth_blp.doc(
         description="Login with email.",
@@ -90,8 +65,7 @@ class Login(MethodView):
     )
     @jwt_required(True)
     def post(self, login_data):
-        auth_service = AuthService()
-        auth_service.login_user(login_data)
+        AuthService.login_user(login_data)
         response = set_response(
             200, {"code": "otp_sent", "message": "OTP sent successfully."}
         )
@@ -103,7 +77,7 @@ class Login(MethodView):
 
 @auth_blp.route("/generate-otp")
 class GenerateOTP(MethodView):
-    @auth_blp.arguments(OTPGenerationSchema)
+    @auth_blp.arguments(GenerateOTPBaseSchema)
     @auth_blp.response(200, ApiResponse)
     @auth_blp.doc(
         description="Generate an OTP.",
@@ -124,7 +98,7 @@ class GenerateOTP(MethodView):
 
 @auth_blp.route("/verify-otp")
 class VerifyOTP(MethodView):
-    @auth_blp.arguments(OTPSubmissionSchema)
+    @auth_blp.arguments(OTPLoginSchema)
     @auth_blp.response(200, ApiResponse)
     @auth_blp.doc(
         description="Verify the OTP.",
@@ -147,14 +121,7 @@ class VerifyOTP(MethodView):
         ) = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me
         )
-        response = set_response(
-            200,
-            {
-                "code": "success",
-                "message": "OTP verified.",
-                "role": role,
-            },
-        )
+        response = set_response(200, {"code": "success", "message": "OTP verified.", "role": role})
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response
@@ -172,9 +139,7 @@ class Logout(MethodView):
     @jwt_required(False)
     def post(self):
         get_jwt()
-        response = set_response(
-            200, {"code": "success", "message": "Logged out successfully."}
-        )
+        response = set_response(200, {"code": "success", "message": "Logged out successfully."})
         unset_access_cookies(response)
         unset_refresh_cookies(response)
         unset_jwt_cookies(response)
@@ -196,12 +161,7 @@ class VerifyToken(MethodView):
     def post(self):
         role = get_jwt().get("role")
         return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Token verified successfully.",
-                "role": role,
-            },
+            200, {"code": "success", "message": "Token verified successfully.", "role": role}
         )
 
 
@@ -219,14 +179,7 @@ class VerifyEmail(MethodView):
     @jwt_required(True)
     def patch(self, data):
         AuthService.verify_email(data.get("verification_token"))
-        return set_response(
-            200,
-            {
-                "code": "success",
-                "message": "Email verified successfully.",
-            },
-        )
-
+        return set_response(200, {"code": "success", "message": "Email verified successfully."})
 
 auth_blp.register_error_handler(BannedUserException, handle_banned_user)
 auth_blp.register_error_handler(EmailNotFoundException, handle_email_not_found)

@@ -5,13 +5,10 @@ from uuid import uuid4
 
 from app.exceptions.qr_code_exceptions import QRCodeError
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
-from app.models.audit import UUIDUtility
-from app.models.parking_establishment import GetEstablishmentOperations
-from app.models.parking_transaction import (
-    ParkingTransactionOperation,
-    UpdateTransaction,
-)
-from app.models.slot import GettingSlotsOperations, SlotOperation
+from app.utils.uuid_utility import UUIDUtility
+from app.models.parking_establishment import ParkingEstablishmentRepository
+from app.models.parking_slot import ParkingSlotRepository
+from app.models.parking_transaction import ParkingTransactionOperation, ParkingTransactionRepository
 from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
 
@@ -50,9 +47,7 @@ class TransactionService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data):
         """Get the transaction details from a QR code."""
-        return TransactionVerification.get_transaction_details_from_qr_code(
-            qr_code_data
-        )
+        return TransactionVerification.get_transaction_details_from_qr_code(qr_code_data)
 
     @staticmethod
     def view_transaction(transaction_uuid: bytes):
@@ -82,13 +77,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         slot_reservation_data.update({"uuid": uuid4().bytes})
         slot_reservation_data.update({"created_at": now})
         slot_reservation_data.update({"updated_at": now})
-        return ParkingTransactionOperation.add_new_transaction_entry(
-            slot_reservation_data
-        )
-
-    @staticmethod
-    def occupy_slot(slot_data):
-        """Occupies the slot for a user."""
+        return ParkingTransactionOperation.add_new_transaction_entry(slot_reservation_data)
 
     @staticmethod
     def release_slot(slot_data):
@@ -97,13 +86,15 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def cancel_transaction(transaction_uuid: bytes):
         """Cancels the transaction for a user."""
-        return UpdateTransaction.cancel_transaction(transaction_uuid)
+        return ParkingTransactionRepository.update_transaction_status(
+            transaction_uuid, "cancelled"
+        )
 
     @staticmethod
-    def view_transaction(transaction_id: bytes):
+    def view_transaction(transaction_uuid: bytes):
         """View the transaction for a user."""
-        transaction_data = ParkingTransactionOperation.get_transaction(transaction_id)
-        if transaction_data.get("status") not in ["active", "reserved"]:  # type: ignore
+        transaction_data = ParkingTransactionOperation.get_transaction(transaction_uuid)
+        if transaction_data.get("status") not in ["active", "reserved"]:
             return {"transaction_data": transaction_data}
         qr_code_utils = QRCodeUtils()
         qr_data = qr_code_utils.generate_qr_content(
@@ -111,7 +102,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
                 "uuid": transaction_data.get("uuid"),
                 "status": transaction_data.get("status"),
                 "plate_number": transaction_data.get("plate_number"),
-            }  # type: ignore
+            }
         )
         base64_image = qr_code_utils.generate_qr_code(qr_data)
         return {"transaction_data": transaction_data, "qr_code": base64_image}
@@ -125,10 +116,11 @@ class TransactionVerification:
         """Verifies the entry transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
-        if transaction_data.get("status") != "reserved":  # type: ignore
+        if transaction_data.get("status") != "reserved":
             raise QRCodeError("Invalid transaction status.")
-        return UpdateTransaction.update_transaction_status(
-            "active", transaction_data.get("uuid")  # type: ignore
+        transaction_uuid = UUIDUtility().uuid_to_binary(transaction_data.get("uuid"))
+        return ParkingTransactionRepository.update_transaction_status(
+            transaction_uuid, "active",
         )
 
     @staticmethod
@@ -136,7 +128,7 @@ class TransactionVerification:
         """Verifies the exit transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
-        if transaction_data.get("status") != "active":  # type: ignore
+        if transaction_data.get("status") != "active":
             raise QRCodeError("Invalid transaction status.")
 
     @staticmethod
@@ -145,14 +137,12 @@ class TransactionVerification:
         qr_code_utils = QRCodeUtils()
         uuid_utils = UUIDUtility()
         transaction_data = qr_code_utils.verify_qr_content(qr_code_data)
-        transaction_uuid = transaction_data.get("uuid")  # type: ignore
-        transaction_uuid_bin = uuid_utils.uuid_to_binary(transaction_uuid)  # type: ignore
-        transaction_data = ParkingTransactionOperation.get_transaction(
-            transaction_uuid_bin
+        transaction_uuid = transaction_data.get("uuid")
+        transaction_data = ParkingTransactionRepository.get_transaction(
+            transaction_uuid=uuid_utils.uuid_to_binary(transaction_uuid)
         )
-        user_info = UserRepository.get_by_plate_number(
-            plate_number=transaction_data.get("plate_number"),  # type: ignore
-        )
+        user_id = transaction_data.get("user_id")
+        user_info = UserRepository.get_user(user_id=user_id)
         return {
             "transaction_uuid": transaction_uuid,
             "user_info": user_info,
@@ -176,22 +166,16 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
             SlotStatusTaken: If slot is not available
             ValueError: If UUID format is invalid
         """
-        establishment_id = GetEstablishmentOperations.get_establishment_id_by_uuid(
-            establishment_uuid_bin
-        )
-        status = GettingSlotsOperations.get_slot_status(slot_code)
+        status = ParkingSlotRepository().get_slot(slot_code).get("status")
         if status in ["reserved", "occupied"]:
             raise SlotStatusTaken("Invalid slot status.")
 
-        establishment_info = GetEstablishmentOperations.get_establishment_info(
-            establishment_uuid_bin
+        establishment_info = ParkingEstablishmentRepository.get_establishment(
+            establishment_uuid=establishment_uuid_bin
         )
 
-        slot_info = SlotOperation.get_slot_info(slot_code, establishment_id)
-        return {
-            "establishment_info": establishment_info,
-            "slot_info": slot_info,
-        }
+        slot_info = ParkingSlotRepository.get_slot(slot_code)
+        return {"establishment_info": establishment_info, "slot_info": slot_info}
 
 
 class Transaction:  # pylint: disable=too-few-public-methods
@@ -200,7 +184,4 @@ class Transaction:  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
-        user_plate_number = UserRepository.get_by_id(user_id).get("plate_number")
-        return ParkingTransactionOperation.get_transaction_by_plate_number(
-            user_plate_number
-        )
+        return ParkingTransactionRepository.get_all_transactions(user_id=user_id)
