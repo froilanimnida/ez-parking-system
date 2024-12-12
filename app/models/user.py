@@ -149,6 +149,7 @@ class UserRepository:
         with session_scope() as session:
             new_user = User(**user_data)
             session.add(new_user)
+            session.commit()
             return new_user.user_id
 
     @staticmethod
