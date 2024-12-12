@@ -2,9 +2,9 @@
 
 # pylint disable=R0401
 
-from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
 from os import path
+from tempfile import NamedTemporaryFile
 
 import pytz
 from flask import render_template, current_app
@@ -16,13 +16,15 @@ from app.exceptions.authorization_exceptions import (
 )
 from app.models.address import AddressRepository
 from app.models.company_profile import CompanyProfileRepository
+from app.models.establishment_document import EstablishmentDocumentRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
+from app.models.payment_method import PaymentMethodRepository
 from app.models.pricing_plan import PricingPlanRepository
 from app.models.user import AuthOperations, OTPOperations, UserRepository
 from app.tasks import send_mail
-from app.utils.security import generate_otp, generate_token, check_file_size, get_random_string
 from app.utils.bucket import R2TransactionalUpload, UploadFile
+from app.utils.security import generate_otp, generate_token, get_random_string
 
 
 class AuthService:
@@ -131,12 +133,15 @@ class UserRegistration:  # pylint: disable=R0903
 
     def create_new_user(self, sign_up_data: dict):
         """Create a new user account."""
-        NOW = datetime.now()  # pylint: disable=C0103
-        user_email = sign_up_data.get("email")
-        role = sign_up_data.get("role")
-        UserRepository.is_field_taken("email", user_email, EmailAlreadyTaken)
+        user_data = sign_up_data.get("user", {})
+
         UserRepository.is_field_taken(
-            "phone_number", sign_up_data.get("phone_number"), PhoneNumberAlreadyTaken
+            "email", sign_up_data.get("user", {}).get("email"), EmailAlreadyTaken
+        )
+        UserRepository.is_field_taken(
+            "phone_number",
+            sign_up_data.get("user", {}).get("phone_number"),
+            PhoneNumberAlreadyTaken
         )
         verification_token = generate_token()
         template = render_template(
@@ -145,70 +150,41 @@ class UserRegistration:  # pylint: disable=R0903
             {current_app.config["FRONTEND_URL"]}/auth/verify-email/{verification_token}
             """
         )
-        sign_up_data.update({
+        user_data.update({
             "is_verified": False,
-            "created_at": NOW,
             "verification_token": verification_token,
-            "verification_expiry": NOW + timedelta(days=7),
+            "verification_expiry": datetime.now() + timedelta(days=7),
         })
-        user_id = UserRepository.create_user(sign_up_data)
-        if role == "parking_manager":
-            owner_type = sign_up_data.get("owner_type")
-            company_profile = {
-                "profile_id": user_id,
-                "owner_type": owner_type,
-                "tin": sign_up_data.get("tin"),
-                "created_at": NOW,
-                "updated_at": NOW,
-            }
-            if owner_type == "company":
-                company_profile.update({
-                    "company_name": sign_up_data.get("company_name"),
-                    "company_reg_number": sign_up_data.get("company_reg_number"),
-                })
-            company_profile_id = CompanyProfileRepository.create_new_company_profile({
-                "profile_id": user_id,
-                "owner_type": owner_type,
-                "company_name": sign_up_data.get("company_name"),
-                "company_reg_number": sign_up_data.get("company_reg_number"),
-                "tin": sign_up_data.get("tin"),
-                "created_at": NOW,
-                "updated_at": NOW,
-            })
-            address_id = self.add_new_address({
-                "profile_id": company_profile_id,
-                "street": sign_up_data.get("street"),
-                "barangay": sign_up_data.get("barangay"),
-                "city": sign_up_data.get("city"),
-                "province": sign_up_data.get("province"),
-                "postal_code": sign_up_data.get("postal_code"),
-                "created_at": NOW,
-                "updated_at": NOW,
-            })
-            parking_establishment_id = self.add_new_parking_establishment({
-                "profile_id": company_profile_id,
-                "space_type": sign_up_data.get("space_type"),
-                "space_layout": sign_up_data.get("space_layout"),
-                "custom_layout": sign_up_data.get("custom_layout"),
-                "dimension": sign_up_data.get("dimension"),
-                "is_24_hours": sign_up_data.get("is_24_hours"),
-                "access_info": sign_up_data.get("access_info"),
-                "custom_access_info": sign_up_data.get("custom_access_info"),
-                "status": "pending",
-                "lighting": sign_up_data.get("lighting"),
-                "accessibility": sign_up_data.get("accessibility"),
-                "nearby_landmarks": sign_up_data.get("nearby_landmarks"),
-                "longitude": sign_up_data.get("longitude"),
-                "latitude": sign_up_data.get("latitude"),
-                "created_at": NOW,
-                "updated_at": NOW,
-            })
-            pricing_plan_id = self.add_pricing_plan(
-                parking_establishment_id, sign_up_data.get("pricing_plan")
+        user_id = UserRepository.create_user(user_data)
+        if sign_up_data.get("user", {}).get("role") == "parking_manager":
+            company_profile = sign_up_data.get("company_profile", {})
+            company_profile.update({"profile_id": user_id,})
+            company_profile_id = self.add_new_company_profile(company_profile)
+
+            address = sign_up_data.get("address", {})
+            address.update({"profile_id": company_profile_id,})
+            self.add_new_address(address)
+
+            parking_establishment = sign_up_data.get("parking_establishment", {})
+            parking_establishment.update({"profile_id": company_profile_id})
+            parking_establishment_id = self.add_new_parking_establishment(parking_establishment)
+
+            pricing_plan = sign_up_data.get("pricing_plan", {})
+            self.add_pricing_plan(parking_establishment_id, pricing_plan)
+
+            payment_method = sign_up_data.get("payment_method", {})
+            payment_method.update({"establishment_id": parking_establishment_id})
+            self.add_payment_method(payment_method)
+
+            operating_hours = sign_up_data.get("operating_hour", {})
+            self.add_operating_hours(parking_establishment_id, operating_hours)
+
+            documents = sign_up_data.get("documents", [])
+            self.add_establishment_documents(parking_establishment_id, documents)
+
+        return send_mail(
+                sign_up_data.get("user", {}).get("email"), template, "Welcome to EZ Parking"
             )
-            print(parking_establishment_id, pricing_plan_id, address_id)
-            self.add_operating_hours(parking_establishment_id, sign_up_data.get("operating_hours"))
-        return send_mail(user_email, template, "Welcome to EZ Parking")
 
     @staticmethod
     def add_new_address(address_data: dict):
@@ -221,58 +197,91 @@ class UserRegistration:  # pylint: disable=R0903
         return ParkingEstablishmentRepository.create_establishment(establishment_data)
 
     @staticmethod
-    def add_operating_hours(establishment_id: int, operating_hours: dict):
-        """Add operating hours for a parking establishment."""
-        return OperatingHoursRepository.create_operating_hours(establishment_id, operating_hours)
-
-    @staticmethod
-    def add_pricing_plan(establisment_id: int, pricing_plan_data: dict):
-        """Add a pricing plan."""
-        return PricingPlanRepository.create_pricing_plan(establisment_id, pricing_plan_data)
-
-    @staticmethod
-    def upload_to_bucket(request: dict) -> dict:
-        """Upload a file to the bucket."""
-        check_file_size(request)
-        documents = []
-        temp_files = []
-        upload_files = []
-        for key, file in request.files.items():
-            filename_parts = path.splitext(file.filename)
-            unique_filename = f"{get_random_string()[:8]}_{filename_parts[0]}{filename_parts[1]}"
-
-            with NamedTemporaryFile(delete=False) as temp_file:
-                temp_files.append(temp_file.name)
-                file.save(temp_file.name)
-
-            destination_key = unique_filename
-            r2_url = f"""
-            https://{current_app.config['R2_BUCKET_NAME']}.
-            {current_app.config['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com/{destination_key}
-            """
-
-            upload_files.append(UploadFile(
-                file_path=temp_file.name,
-                destination_key=destination_key,
-                content_type=file.content_type
-            ))
-
-            documents.append({
-                "name": key,
-                "file_url": r2_url,
-                "original_filename": file.filename,
-                "stored_filename": unique_filename
+    def add_pricing_plan(establishment_id: int, pricing_plan_data: dict):
+        """Add pricing plans for a parking establishment."""
+        pricing_plans = []
+        for rate_type, plan in pricing_plan_data.items(): # pylint: disable=W0612
+            pricing_plans.append({
+                'rate_type': plan['rate_type'],
+                'is_enabled': bool(plan['is_enabled']),
+                'rate': float(plan['rate'])
             })
 
-        r2_upload = R2TransactionalUpload()
-        success, message, details = r2_upload.upload(upload_files)
-        print(success, message, details)
-        return documents
-        # if not success:
-        #     return set_response(
-        #         400, {"code": "error", "message": "File upload failed", "errors": message}
-        #     )
+        return PricingPlanRepository.create_pricing_plan(establishment_id, pricing_plans)
 
+    @staticmethod
+    def add_new_company_profile(company_profile_data: dict):
+        """Add a new company profile."""
+        return CompanyProfileRepository.create_new_company_profile(company_profile_data)
+
+    @staticmethod
+    def add_operating_hours(establishment_id: int, operating_hours: dict):
+        """Add operating hours for a parking establishment."""
+        formatted_hours = {}
+        for day, hours in operating_hours.items():
+            formatted_hours[day] = {
+                'is_enabled': bool(hours.get('enabled')),
+                'opening_time': hours.get('open'),
+                'closing_time': hours.get('close')
+            }
+        return OperatingHoursRepository.create_operating_hours(establishment_id, formatted_hours)
+
+    @staticmethod
+    def add_payment_method(payment_method_data: dict):
+        """Add payment methods."""
+        return PaymentMethodRepository.create_payment_method(payment_method_data)
+    @staticmethod
+    def add_establishment_documents(
+         establishment_id: int, documents: list
+    ):  # pylint: disable=too-many-locals
+        """Add establishment documents."""
+        r2_client = R2TransactionalUpload()
+        upload_files = []
+
+        for doc in documents:
+            print(doc)
+            file = doc['file']
+            doc_type = doc['type'].lower()
+
+            unique_id = get_random_string()[:8]
+            base_name = path.splitext(file.filename)[0]
+            extension = path.splitext(file.filename)[1]
+            unique_filename = f"{unique_id}_{base_name}{extension}"
+
+            with NamedTemporaryFile(delete=False) as temp_file:
+                file.save(temp_file.name)
+                upload_files.append(UploadFile(
+                    file_path=temp_file.name,
+                    destination_key=f"establishments/{establishment_id}/{unique_filename}",
+                    content_type=file.content_type
+                ))
+
+            doc_type_map = {
+                'gov_id': 'gov_id',
+                'parking_photo': 'parking_photos',
+                'proof_of_ownership': 'proof_of_ownership',
+                'business_cert': 'business_certificate',
+                'bir_cert': 'bir_certificate',
+                'liability_insurance': 'liability_insurance'
+            }
+
+            if doc_type not in doc_type_map:
+                raise ValueError(f"Invalid document type: {doc_type}")
+
+            doc_data = {
+                'establishment_id': establishment_id,
+                'document_type': doc_type_map[doc_type].lower(),
+                'bucket_path': f"establishments/{establishment_id}/{unique_filename}",
+                'filename': file.filename,
+                'mime_type': file.content_type,
+                'file_size': file.content_length if hasattr(file, 'content_length') else 0,
+                'status': 'pending'
+            }
+            EstablishmentDocumentRepository.create_establishment_document(doc_data)
+
+        success, message, details = r2_client.upload(upload_files)  # pylint: disable=W0612
+        if not success:
+            raise Exception(f"Failed to upload documents: {message}")  # pylint: disable=W0719
 
 class EmailVerification:  # pylint: disable=R0903
     """Email Verification Service"""

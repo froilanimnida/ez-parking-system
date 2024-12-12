@@ -10,9 +10,8 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import (
     Column, Integer, Numeric, Boolean, TIMESTAMP, func, ForeignKey,
-    UniqueConstraint, CheckConstraint
+    UniqueConstraint, CheckConstraint, String
 )
-from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -34,7 +33,7 @@ class PricingPlan(Base):  # pylint: disable=too-few-public-methods
     establishment_id = Column(
         Integer, ForeignKey('parking_establishment.establishment_id'), nullable=True
     )
-    rate_type = Column(ENUM(RateType), nullable=True)
+    rate_type = Column(String(10), nullable=True)
     is_enabled = Column(Boolean, default=False)
     rate = Column(Numeric(10, 2), nullable=False)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
@@ -45,9 +44,9 @@ class PricingPlan(Base):  # pylint: disable=too-few-public-methods
     __table_args__ = (
         UniqueConstraint('establishment_id', 'rate_type', name='unique_establishment_rate_type'),
         CheckConstraint('rate >= 0', name='pricing_plan_rate_check'),
-        CheckConstraint('rate_type IN (%s, %s, %s)' % (  # pylint: disable=consider-using-f-string
-            RateType.HOURLY.value, RateType.DAILY.value, RateType.MONTHLY.value),
-                        name='pricing_plan_rate_type_check'
+        CheckConstraint(
+            "rate_type IN ('hourly', 'daily', 'monthly')",
+            name='pricing_plan_rate_type_check'
         )
     )
 

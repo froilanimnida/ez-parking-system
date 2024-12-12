@@ -15,7 +15,7 @@ class EmailBaseSchema(Schema):
         in_data["email"] = in_data["email"].lower()
         return in_data
 
-class CommonRegistrationSchema(EmailBaseSchema):
+class UserSchema(EmailBaseSchema):
     """Schema for common registration fields.
         Consists of:
         - email
@@ -57,62 +57,75 @@ class CommonRegistrationSchema(EmailBaseSchema):
             in_data["nickname"] = in_data["nickname"].capitalize()
         return in_data
 
-class ContactInfoSchema(EmailBaseSchema):
-    """Schema for contact information. """
-    contact_number = fields.Str(required=True, validate=validate.Regexp(r"^\+?[0-9]\d{1,14}$"))
-    tax_identification_number = fields.Str(
-        required=True, validate=validate.Regexp(r"^\d{3}-\d{3}-\d{3}-\d{3}$")
+
+class UserData(UserSchema):
+    """Schema for individual owner."""
+    first_name = fields.Str(required=False, validate=validate.Length(min=3, max=50))
+    last_name = fields.Str(required=False, validate=validate.Length(min=3, max=100))
+    middle_name = fields.Str(required=False)
+    suffix = fields.Str(required=False)
+
+    @post_load()
+    def add_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Method to add role to the user."""
+        in_data["role"] = "parking_manager"
+        return in_data
+
+class CompanyProfile(Schema):
+    """Schema for company profile."""
+    owner_type = fields.Str(required=True, validate=validate.OneOf(['individual', 'company']))
+    company_name = fields.Str(required=False)
+    company_reg_number = fields.Str(required=False)
+    tin = fields.Str(
+        required=False, validate=validate.Regexp(r"^\d{3}-\d{3}-\d{3}-\d{3}$")
     )
 
-class CoordinatesSchema(Schema):
-    """Schema for coordinates."""
-    longitude = fields.Float(required=True)
-    latitude = fields.Float(required=True)
+    @post_load
+    def normalize_data(self, in_data, **kwargs):
+        """Method to normalize the input data."""
+        if in_data.get('company_name'):
+            in_data["company_name"] = in_data["company_name"].capitalize()
+        return in_data
 
-class LocationInfoSchema(Schema):
-    """Schema for location information."""
-    street_address = fields.Str(required=True)
+
+class Address(Schema):
+    """Schema for address."""
+    street = fields.Str(required=True)
     barangay = fields.Str(required=True)
     city = fields.Str(required=True)
-    province = fields.Str(allow_none=True)
+    province = fields.Str(required=False)
     postal_code = fields.Str(required=True, validate=validate.Regexp(r"^\d{4}$"))
-    landmarks = fields.Str(allow_none=True)
-    coordinates = fields.Nested(CoordinatesSchema(), required=True)
 
-class ParkingDetailsSchema(Schema):
-    """Schema for parking details."""
+
+class ParkingEstablishment(Schema):
+    """Schema for parking establishment."""
     space_type = fields.Str(
         required=True, validate=validate.OneOf(["indoor", "outdoor", "covered", "uncovered"])
     )
     space_layout = fields.Str(
         required=True, validate=validate.OneOf(["parallel", "perpendicular", "angled", "other"])
     )
-    custom_space_layout = fields.Str(required=False)
-    space_dimensions = fields.Str(
-        required=True, validate=validate.Regexp(r"^\d+(\.\d+)?m x \d+(\.\d+)?m$")
+    custom_layout = fields.Str(required=False)
+    dimensions = fields.Str(
+        required=True, validate=validate.Regexp(r".*\d.*")
     )
-    access_information = fields.Str(
-        required=True,
+    is24_7 = fields.Bool(required=False, missing=False)
+    access_info = fields.Str(
+        required=False,
         validate=validate.OneOf(
             ["gate_code", "security_check", "key_pickup", "other", "no_special_access"]
         )
     )
-    custom_access_information = fields.Str(required=True)
-    is_24_7 = fields.Bool(required=False, missing=False)
-
-    @post_load
-    def normalize_data(self, in_data, **kwargs):
-        """Method to normalize the input data."""
-        in_data["space_type"] = in_data["space_type"].capitalize()
-        in_data["space_layout"] = in_data["space_layout"].capitalize()
-        in_data["access_information"] = in_data["access_information"].replace("_", " ").capitalize()
-        return in_data
-
-class FacilitiesInfoSchema(Schema):
-    """Schema for facilities information."""
-    lighting_and_security = fields.Str(required=True)
+    custom_access = fields.Str(required=False)
+    status = fields.Str(required=False, missing="pending")
+    name = fields.Str(required=True, validate=validate.Length(min=3, max=50))
+    lighting = fields.Str(required=True)
     accessibility = fields.Str(required=True)
-    nearby_facilities = fields.Str(required=True)
+    facilities = fields.Str(required=True)
+    nearby_landmarks = fields.Str(required=False)
+    longitude = fields.Float(required=True, validate=validate.Range(min=-180, max=180))
+    latitude = fields.Float(required=True, validate=validate.Range(min=-90, max=90))
+
 
 class DayScheduleSchema(Schema):
     """Schema for day schedule."""
@@ -132,7 +145,7 @@ class DayScheduleSchema(Schema):
             if data['open'] >= data['close']:
                 raise ValidationError('Opening time must be before closing time')
 
-class OperatingHoursSchema(Schema):
+class OperatingHour(Schema):
     """Schema for operating hours."""
     monday = fields.Nested(DayScheduleSchema(), required=True)
     tuesday = fields.Nested(DayScheduleSchema(), required=True)
@@ -148,10 +161,21 @@ class OperatingHoursSchema(Schema):
         if not any(day.get('enabled') for day in data.values()):
             raise ValidationError('At least one day must be enabled')
 
+
+class PaymentMethod(Schema):
+    """Schema for payment method."""
+    accepts_cash = fields.Bool(required=True)
+    accepts_mobile = fields.Bool(required=True)
+    accepts_other = fields.Bool(required=False)
+    other_methods = fields.Str(required=False)
+
+
 class RateSchema(Schema):
     """Schema for rate."""
-    enabled = fields.Bool(required=True)
+    rate_type = fields.Str(required=True, validate=validate.OneOf(['hourly', 'daily', 'monthly']))
+    is_enabled = fields.Bool(required=True)
     rate = fields.Float(required=True, validate=validate.Range(min=0))
+
     @validates('rate')
     def validate_rate(self, value, **kwargs):
         """Method to validate the rate."""
@@ -162,36 +186,25 @@ class RateSchema(Schema):
         if self.context.get('rate_type') == 'monthly' and value > 50000:
             raise ValidationError('Monthly rate cannot exceed ₱50,000')
 
-class PricingSchema(Schema):
-    """Schema for pricing."""
-    hourly = fields.Nested(RateSchema(), required=True)
-    daily = fields.Nested(RateSchema(), required=True)
-    monthly = fields.Nested(RateSchema(), required=True)
 
-class PaymentMethodsSchema(Schema):
-    """Schema for payment methods."""
-    cash = fields.Bool(required=True)
-    mobile = fields.Bool(required=True)
-    other_payment = fields.Str(required=False)
+class PricingPlan(Schema):
+    """Schema for pricing plan."""
+    hourly = fields.Nested(RateSchema, required=False, context={'rate_type': 'hourly'})
+    daily = fields.Nested(RateSchema, required=False, context={'rate_type': 'daily'})
+    monthly = fields.Nested(RateSchema, required=False, context={'rate_type': 'monthly'})
 
-class PaymentInfoSchema(Schema):
-    """Schema for payment information."""
-    payment_methods = fields.Nested(PaymentMethodsSchema(), required=True)
-    pricing = fields.Nested(PricingSchema(), required=True)
+    @validates_schema
+    def validate_at_least_one_rate(self, data, **kwargs):
+        """Validate that at least one rate type is enabled."""
+        enabled_rates = [
+            rate['is_enabled']
+            for rate in [
+                data.get('hourly', {}),
+                data.get('daily', {}),
+                data.get('monthly', {})
+            ]
+            if rate
+        ]
 
-class BasicParkingOwnerSchema(Schema):
-    """Schema for individual owner."""
-    first_name = fields.Str(required=False)
-    last_name = fields.Str(required=False)
-    middle_name = fields.Str(required=False)
-    suffix = fields.Str(required=False)
-    company_name = fields.Str(required=False)
-    company_registration_number = fields.Str(required=False)
-    owner_type = fields.Str(required=True, validate=validate.OneOf(['individual', 'company']))
-
-    @post_load
-    def normalize_data(self, in_data, **kwargs):
-        """Method to normalize the input data."""
-        if in_data.get('company_name'):
-            in_data["company_name"] = in_data["company_name"].capitalize()
-        return in_data
+        if not any(enabled_rates):
+            raise ValidationError('At least one rate type must be enabled')

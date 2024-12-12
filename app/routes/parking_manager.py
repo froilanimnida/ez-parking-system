@@ -3,15 +3,16 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
 from functools import wraps
+
 from flask import request, json
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
+from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.qr_code_exceptions import (
     InvalidQRContent, InvalidTransactionStatus, QRCodeExpired,
 )
-from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import ParkingManagerRequestSchema
@@ -19,14 +20,15 @@ from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import ValidateEntrySchema
 from app.services.establishment_service import EstablishmentService
 from app.services.operating_hour_service import OperatingHourService
+from app.services.auth_service import AuthService
 from app.services.transaction_service import TransactionService
+from app.utils.error_handlers.general_error_handler import handle_file_size_too_big
 from app.utils.error_handlers.qr_code_error_handlers import (
     handle_invalid_qr_content, handle_qr_code_expired,
 )
-from app.utils.error_handlers.general_error_handler import handle_file_size_too_big
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
-
+from app.utils.security import check_file_size
 
 parking_manager_blp = Blueprint(
     "parking_manager",
@@ -84,66 +86,59 @@ class CreateParkingManagerIndividualAccount(MethodView):
     )
     @jwt_required(optional=True)
     def post(self):
+        check_file_size(request)
         try:
-            form_data = json.loads(request.form['data'])
+            # Initialize documents list (schema expects a list of dicts)
+            documents_list = []
+
+            # Handle single file fields
+            single_file_fields = [
+                'gov_id',
+                'proof_of_ownership',
+                'bir_cert',
+                'liability_insurance',
+                'business_cert'
+            ]
+
+            # Process single files
+            for field in single_file_fields:
+                if field in request.files:
+                    file = request.files[field]
+                    documents_list.append({
+                        "type": field,
+                        "file": file,
+                        "filename": file.filename
+                    })
+
+            # Handle parking photos array
+            for key in request.files:
+                if key.startswith('parking_photos['):
+                    file = request.files[key]
+                    documents_list.append({
+                        "type": "parking_photo",
+                        "file": file,
+                        "filename": file.filename
+                    })
+
+            form_data = json.loads(request.form.get("sign_up_data"))
+
+            form_data['documents'] = documents_list
+
+            # Validate complete data
         except Exception as e:  # pylint: disable=broad-exception-caught
             return set_response(
                 400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
             )
         parking_manager_request_schema = ParkingManagerRequestSchema()
         validated_sign_up_data = parking_manager_request_schema.load(form_data)
-        # store the files in the variable for now since we need to pass it on the service layer
-        # document_file = request.files.get('documents')
-        # check_file_size(request)
-        # documents = []
-        # temp_files = []
-        # upload_files = []
-
-        # for key, file in request.files.items():
-        #     unique_id = get_random_string()[:8]
-        #     original_filename = file.filename
-        #     filename_parts = path.splitext(original_filename)
-        #     unique_filename = f"{unique_id}_{filename_parts[0]}{filename_parts[1]}"
-
-        #     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        #         temp_files.append(temp_file.name)
-        #         file.save(temp_file.name)
-
-        #     destination_key = unique_filename
-        #     r2_url = f"""
-        #     https://{current_app.config['R2_BUCKET_NAME']}.
-        #     {current_app.config['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com/{destination_key}
-        #     """
-
-        #     upload_files.append(UploadFile(
-        #         file_path=temp_file.name,
-        #         destination_key=destination_key,
-        #         content_type=file.content_type
-        #     ))
-
-        #     documents.append({
-        #         "name": key,
-        #         "file_url": r2_url,
-        #         "original_filename": original_filename,
-        #         "stored_filename": unique_filename
-        #     })
-
-        # r2_upload = R2TransactionalUpload()
-        # success, message, details = r2_upload.upload(upload_files)
-        # if not success:
-        #     return set_response(
-        #         400, {"code": "error", "message": "File upload failed", "errors": message}
-        #     )
-        # print(message, details, success)
-
-        # validated_sign_up_data['documents'] = documents
+        auth_service = AuthService()
+        auth_service.create_new_user(validated_sign_up_data)
 
         return set_response(
             201,
             {
                 "code": "success",
                 "message": "Account created successfully.",
-                "data": validated_sign_up_data
             },
         )
 

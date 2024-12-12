@@ -5,30 +5,25 @@
 from marshmallow import Schema, fields, post_load, validates_schema, validate
 from marshmallow.exceptions import ValidationError
 
+from app.schema.common_registration_schema import (
+    CompanyProfile, UserData, Address, ParkingEstablishment, OperatingHour, PaymentMethod,
+    PricingPlan
+)
 from app.schema.common_schema_validation import SlotCommonValidation
 from app.schema.slot_validation import CreateSlotSchema
-from app.schema.common_registration_schema import (
-    ContactInfoSchema, LocationInfoSchema, ParkingDetailsSchema, FacilitiesInfoSchema,
-    OperatingHoursSchema, PaymentInfoSchema, BasicParkingOwnerSchema
-)
 
 
 class ParkingManagerRequestSchema(Schema):
     """Validation schema for parking manager request."""
-    owner_info = fields.Nested(BasicParkingOwnerSchema, required=True)
-    contact_info = fields.Nested(ContactInfoSchema, required=True)
-    location_info = fields.Nested(LocationInfoSchema, required=True)
-    parking_details = fields.Nested(ParkingDetailsSchema, required=True)
-    facilities_info = fields.Nested(FacilitiesInfoSchema, required=True)
-    operating_hours = fields.Nested(OperatingHoursSchema, required=True)
-    payment_info = fields.Nested(PaymentInfoSchema, required=True)
+    user = fields.Nested(UserData, required=True)
+    company_profile = fields.Nested(CompanyProfile, required=True)
+    address = fields.Nested(Address, required=True)
+    parking_establishment = fields.Nested(ParkingEstablishment, required=True)
+    operating_hour = fields.Nested(OperatingHour, required=True)
+    payment_method = fields.Nested(PaymentMethod, required=True)
+    pricing_plan = fields.Nested(PricingPlan, required=True)
     documents = fields.List(fields.Dict(), required=True)
 
-    @post_load()
-    def add_role(self, in_data, **kwargs):  # pylint: disable=unused-argument
-        """Method to add role to the user."""
-        in_data["role"] = "user"
-        return in_data
 
 
 class UpdateSlotSchema(SlotCommonValidation, CreateSlotSchema):

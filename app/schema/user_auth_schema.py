@@ -2,10 +2,9 @@
 
 from marshmallow import fields, validate, Schema, post_load
 
-from app.schema.common_registration_schema import CommonRegistrationSchema, EmailBaseSchema
+from app.schema.common_registration_schema import UserSchema, EmailBaseSchema
 
-
-class UserRegistrationSchema(CommonRegistrationSchema):
+class UserBaseSchema(UserSchema):
     """Schema for user registration."""
     nickname = fields.Str(required=True, validate=validate.Length(min=3, max=24))
     plate_number = fields.Str(
@@ -44,6 +43,11 @@ class UserRegistrationSchema(CommonRegistrationSchema):
         """Method to add role to the user."""
         in_data["role"] = "user"
         return in_data
+
+class UserRegistrationSchema(Schema):
+    """Schema for user registration."""
+    user = fields.Nested(UserBaseSchema, required=True)
+
 
 
 class UserLoginSchema(EmailBaseSchema):

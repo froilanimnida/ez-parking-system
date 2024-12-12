@@ -1,14 +1,11 @@
-"""This module contains the SQLAlchemy model for the establishment_document table."""
+"""Establishment Document Model."""
 
-# pylint: disable=E1102
-
-from enum import Enum as PyEnum
+# pylint: disable=not-callable
 
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
     Column,
-    Enum,
     ForeignKey,
     Integer,
     String,
@@ -24,40 +21,16 @@ from app.models.base import Base
 from app.utils.db import session_scope
 
 
-class DocumentTypeEnum(str, PyEnum):
-    """Encapsulate enumerate types of document types."""
-    GOV_ID = "gov_id"
-    PARKING_PHOTOS = "parking_photos"
-    PROOF_OF_OWNERSHIP = "proof_of_ownership"
-    BUSINESS_CERTIFICATE = "business_certificate"
-    BIR_CERTIFICATE = "bir_certificate"
-    LIABILITY_INSURANCE = "liability_insurance"
-
-
-class DocumentStatusEnum(str, PyEnum):
-    """Encapsulate enumerate types of document status."""
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-
 class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
     """Establishment Document Model."""
     __tablename__ = "establishment_document"
     __table_args__ = (
         CheckConstraint(
-            f"document_type IN ('{DocumentTypeEnum.GOV_ID}', '{DocumentTypeEnum.PARKING_PHOTOS}', "
-            f"'{DocumentTypeEnum.PROOF_OF_OWNERSHIP}', '{DocumentTypeEnum.BUSINESS_CERTIFICATE}', "
-            f"'{DocumentTypeEnum.BIR_CERTIFICATE}', '{DocumentTypeEnum.LIABILITY_INSURANCE}')",
+            "document_type IN ('gov_id', 'parking_photos', 'proof_of_ownership', 'business_certificate', 'bir_certificate', 'liability_insurance')",  # pylint: disable=line-too-long
             name="establishment_document_document_type_check",
         ),
         CheckConstraint(
-            f"""
-            status IN (
-                '{DocumentStatusEnum.PENDING}',
-                '{DocumentStatusEnum.APPROVED}',
-                '{DocumentStatusEnum.REJECTED}'
-            )
-            """,
+            "status IN ('pending', 'approved', 'rejected')",
             name="establishment_document_status_check",
         ),
         {'schema': 'public'},
@@ -80,7 +53,7 @@ class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
         ForeignKey("parking_establishment.establishment_id", ondelete="CASCADE"),
         nullable=True,
     )
-    document_type = Column(Enum(DocumentTypeEnum), nullable=False)
+    document_type = Column(String(50), nullable=False)
     bucket_path = Column(Text, nullable=False)
     filename = Column(Text, nullable=False)
     mime_type = Column(String(100), nullable=True)
@@ -93,7 +66,7 @@ class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
         nullable=True,
     )
     status = Column(
-        Enum(DocumentStatusEnum),
+        String(20),
         nullable=True,
         server_default=text("'pending'::character varying"),
     )
@@ -122,12 +95,11 @@ class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
             "verification_notes": self.verification_notes,
         }
 
-
 class EstablishmentDocumentRepository:
     """Repository for establishment document model."""
 
     @staticmethod
-    def create_establishment_document(data):
+    def create_establishment_document(data: dict):
         """Create a new establishment document."""
         with session_scope() as session:
             new_document = EstablishmentDocument(**data)

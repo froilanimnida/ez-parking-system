@@ -44,12 +44,11 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
     profile_id = Column(
         Integer, ForeignKey("company_profile.profile_id"), nullable=False
     )
-    name = Column(String(255), nullable=False)
     space_type = Column(String(20), nullable=False)
     space_layout = Column(String(20), nullable=False)
     custom_layout = Column(Text)
     dimensions = Column(Text)
-    is_24_hours = Column(Boolean, default=False)
+    is24_7 = Column(Boolean, default=False)
     access_info = Column(Text)
     custom_access = Column(Text)
     status = Column(String(20), default="pending")
@@ -57,20 +56,22 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
+    name = Column(String(255), nullable=False)
     lighting = Column(Text, nullable=False)
     accessibility = Column(Text, nullable=False)
     nearby_landmarks = Column(Text, nullable=True)
     longitude = Column(DECIMAL(precision=9, scale=6), nullable=False)
     latitude = Column(DECIMAL(precision=9, scale=6), nullable=False)
+    facilities = Column(Text, nullable=False)
 
     # Constraints (Space Layout, Space Type, and Status check constraints)
     __table_args__ = (
         CheckConstraint(
-            "space_layout IN ('parallel', 'perpendicular', 'angled', 'custom')",
+            "space_layout IN ('parallel', 'perpendicular', 'angled', 'other')",
             name="parking_establishment_space_layout_check",
         ),
         CheckConstraint(
-            "space_type IN ('Indoor', 'Outdoor', 'Both')",
+            "space_type IN ('indoor', 'outdoor', 'covered', 'uncovered')",
             name="parking_establishment_space_type_check",
         ),
         CheckConstraint(
@@ -93,22 +94,23 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             "establishment_id": self.establishment_id,
             "uuid": str(self.uuid),
             "profile_id": self.profile_id,
-            "name": self.name,
             "space_type": self.space_type,
             "space_layout": self.space_layout,
             "custom_layout": self.custom_layout,
             "dimensions": self.dimensions,
-            "is_24_hours": self.is_24_hours,
+            "is24_7": self.is24_7,
             "access_info": self.access_info,
             "custom_access": self.custom_access,
             "status": self.status,
             "created_at": str(self.created_at),
             "updated_at": str(self.updated_at),
+            "name": self.name,
             "lighting": self.lighting,
             "accessibility": self.accessibility,
             "nearby_landmarks": self.nearby_landmarks,
             "longitude": float(self.longitude),
             "latitude": float(self.latitude),
+            "facilities": self.facilities,
         }
 
     def calculate_distance_from(self, latitude: float, longitude: float) -> float:

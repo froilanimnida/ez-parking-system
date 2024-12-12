@@ -27,22 +27,18 @@ def create_ssl_context():
 
 ENVIRONMENT = getenv("ENVIRONMENT", "")
 
-IS_PRODUCTION = ENVIRONMENT == "production"
-
-URL = IS_PRODUCTION and getenv("PRODUCTION_URL") or getenv("DEVELOPMENT_URL")
-
 app = create_app()
 CORS(
     app,
     supports_credentials=True,
-    origins=URL,
+    origins=getenv("FRONTEND_URL"),
     allow_headers=["Content-Type", "X-CSRF-TOKEN", "Accept"],
     expose_headers=["Set-Cookie", "Authorization"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 )
 
 if __name__ == "__main__":
-    if IS_PRODUCTION:
+    if ENVIRONMENT == "production":
         app.run(host="0.0.0.0", port=5000)
     else:
         run_simple(
