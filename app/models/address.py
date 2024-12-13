@@ -66,6 +66,7 @@ class AddressRepository:
             address = Address(**address_data)
             session.add(address)
             session.flush()
+            session.refresh(address)
             return address.address_id
 
     @staticmethod

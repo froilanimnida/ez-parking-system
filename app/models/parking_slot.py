@@ -140,6 +140,7 @@ class ParkingSlotRepository:
             new_slot = ParkingSlot(**slot_data)
             session.add(new_slot)
             session.flush()
+            session.refresh(new_slot)
             return new_slot.slot_id
 
     @staticmethod

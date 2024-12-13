@@ -68,6 +68,7 @@ class BanUserRepository:
             ban_user = BanUser(**data)
             session.add(ban_user)
             session.flush()
+            session.refresh(ban_user)
             return ban_user.ban_id
 
     @staticmethod

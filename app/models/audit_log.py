@@ -57,6 +57,7 @@ class AuditLogRepository:  # pylint: disable=too-few-public-methods
             new_audit_log = AuditLog(**log_data)
             session.add(new_audit_log)
             session.flush()
+            session.refresh(new_audit_log)
             return new_audit_log.audit_id
 
     @staticmethod
