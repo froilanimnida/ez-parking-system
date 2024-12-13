@@ -8,7 +8,6 @@ from os import getenv
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import QueuePool
 
 file_handler = FileHandler("authentication.logs")
 file_handler.setLevel(logging.WARNING)
