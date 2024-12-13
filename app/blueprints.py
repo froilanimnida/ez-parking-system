@@ -10,6 +10,7 @@ from app.routes.transaction import transactions_blp
 from app.routes.admin import admin_blp
 from app.routes.user import user_auth_blp
 from app.routes.vehicle_type import vehicle_type_blp
+from app.routes.health import health
 
 
 def register_blueprints(app: Api):
@@ -22,3 +23,4 @@ def register_blueprints(app: Api):
     app.register_blueprint(admin_blp)
     app.register_blueprint(vehicle_type_blp)
     app.register_blueprint(user_auth_blp)
+    app.register_blueprint(health)
