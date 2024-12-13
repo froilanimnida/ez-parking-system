@@ -107,6 +107,7 @@ class VehicleTypeRepository:  # pylint: disable=R0903
             vehicle_type = VehicleType(**vehicle_type_data)
             session.add(vehicle_type)
             session.flush()
+            session.refresh(vehicle_type)
             return vehicle_type.vehicle_type_id
 
     @staticmethod

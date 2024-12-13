@@ -59,6 +59,7 @@ class PaymentMethodRepository:
             payment_method = PaymentMethod(**payment_method_data)
             session.add(payment_method)
             session.flush()
+            session.refresh(payment_method)
             return payment_method.method_id
 
     @staticmethod

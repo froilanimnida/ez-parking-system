@@ -69,6 +69,7 @@ class CompanyProfileRepository:
             company_profile = CompanyProfile(**profile_data)
             session.add(company_profile)
             session.flush()
+            session.refresh(company_profile)
             return company_profile.profile_id
 
     @staticmethod

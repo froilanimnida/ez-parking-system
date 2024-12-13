@@ -150,6 +150,7 @@ class UserRepository:
             new_user = User(**user_data)
             session.add(new_user)
             session.flush()
+            session.refresh(new_user)
             return new_user.user_id
 
     @staticmethod

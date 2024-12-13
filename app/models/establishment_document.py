@@ -105,6 +105,7 @@ class EstablishmentDocumentRepository:
             new_document = EstablishmentDocument(**data)
             session.add(new_document)
             session.flush()
+            session.refresh(new_document)
             return new_document
 
     @staticmethod
