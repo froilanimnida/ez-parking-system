@@ -40,3 +40,7 @@ class ParkingApplicantService:
     def get_parking_applicants() -> list:
         """Get all parking applicants."""
         # non_verified_parking_establishments = ParkingEstablishment
+    @staticmethod
+    def approve_parking_applicant(parking_establishment_id: int) -> None:
+        """Approve a parking applicant."""
+        # parking_establishment = ParkingEstablishmentRepository.get_parking_establishment_by_id
