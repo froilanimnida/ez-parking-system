@@ -117,7 +117,6 @@ class ParkingEstablishment(Schema):
         )
     )
     custom_access = fields.Str(required=False)
-    status = fields.Str(required=False, missing="pending")
     name = fields.Str(required=True, validate=validate.Length(min=3, max=50))
     lighting = fields.Str(required=True)
     accessibility = fields.Str(required=True)
@@ -125,6 +124,12 @@ class ParkingEstablishment(Schema):
     nearby_landmarks = fields.Str(required=False)
     longitude = fields.Float(required=True, validate=validate.Range(min=-180, max=180))
     latitude = fields.Float(required=True, validate=validate.Range(min=-90, max=90))
+
+    @post_load
+    def add_verified_status(self, in_data, **kwargs):
+        """Method to add verified status to the parking establishment."""
+        in_data["verified"] = False
+        return in_data
 
 
 class DayScheduleSchema(Schema):

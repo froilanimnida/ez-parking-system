@@ -15,6 +15,11 @@ class AdminService:
         print(admin_id)
         return PlateBanningService.unban_user(plate_number)
 
+    @staticmethod
+    def get_parking_applicants() -> list:
+        """Get all parking applicants."""
+
+
 
 class PlateBanningService:
     """Service class for banning plate numbers."""
@@ -26,3 +31,16 @@ class PlateBanningService:
     @staticmethod
     def unban_user(plate_number: str) -> None:  # pylint: disable=C0116
         return BanUserRepository.unban_user(plate_number)
+
+
+class ParkingApplicantService:
+    """Service class for parking applicant operations."""
+
+    @staticmethod
+    def get_parking_applicants() -> list:
+        """Get all parking applicants."""
+        # non_verified_parking_establishments = ParkingEstablishment
+    @staticmethod
+    def approve_parking_applicant(parking_establishment_id: int) -> None:
+        """Approve a parking applicant."""
+        # parking_establishment = ParkingEstablishmentRepository.get_parking_establishment_by_id

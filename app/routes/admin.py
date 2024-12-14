@@ -120,7 +120,6 @@ class GetAllVehicleTypes(MethodView):
             401: "Unauthorized",
             403: "Forbidden",
             500: "Internal Server Error",
-            422: "Unprocessable",
         },
     )
     @jwt_required(False)
@@ -129,3 +128,24 @@ class GetAllVehicleTypes(MethodView):
     def get(self, admin_id):  # pylint: disable=unused-argument
         vehicle_types = VehicleTypeService().get_all_vehicle_types()
         return set_response(200, {"code": "success", "data": vehicle_types})
+
+
+@admin_blp.route("/parking-manager-applications")
+class ParkingManagerApplications(MethodView):
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get all parking manager applications.",
+        responses={
+            200: "Parking manager applications retrieved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    def get(self, admin_id):  # pylint: disable=unused-argument
+        applicants = AdminService().get_parking_applicants()
+
+        return set_response(200, {"code": "success", "data": applicants})
