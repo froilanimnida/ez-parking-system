@@ -117,7 +117,6 @@ class ParkingEstablishment(Schema):
         )
     )
     custom_access = fields.Str(required=False)
-    status = fields.Str(required=False, missing="pending")
     name = fields.Str(required=True, validate=validate.Length(min=3, max=50))
     lighting = fields.Str(required=True)
     accessibility = fields.Str(required=True)
