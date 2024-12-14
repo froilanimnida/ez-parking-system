@@ -51,7 +51,6 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
     is24_7 = Column(Boolean, default=False)
     access_info = Column(Text)
     custom_access = Column(Text)
-    status = Column(String(20), default="pending")
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
@@ -63,8 +62,8 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
     longitude = Column(DECIMAL(precision=9, scale=6), nullable=False)
     latitude = Column(DECIMAL(precision=9, scale=6), nullable=False)
     facilities = Column(Text, nullable=False)
+    verified = Column(Boolean, default=False)
 
-    # Constraints (Space Layout, Space Type, and Status check constraints)
     __table_args__ = (
         CheckConstraint(
             "space_layout IN ('parallel', 'perpendicular', 'angled', 'other')",
@@ -73,10 +72,6 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
         CheckConstraint(
             "space_type IN ('indoor', 'outdoor', 'covered', 'uncovered')",
             name="parking_establishment_space_type_check",
-        ),
-        CheckConstraint(
-            "status IN ('pending', 'approved', 'rejected')",
-            name="parking_establishment_status_check",
         ),
     )
 

@@ -126,6 +126,12 @@ class ParkingEstablishment(Schema):
     longitude = fields.Float(required=True, validate=validate.Range(min=-180, max=180))
     latitude = fields.Float(required=True, validate=validate.Range(min=-90, max=90))
 
+    @post_load
+    def add_verified_status(self, in_data, **kwargs):
+        """Method to add verified status to the parking establishment."""
+        in_data["verified"] = False
+        return in_data
+
 
 class DayScheduleSchema(Schema):
     """Schema for day schedule."""
