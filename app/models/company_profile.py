@@ -92,3 +92,16 @@ class CompanyProfileRepository:
             with session_scope() as session:
                 return session.query(CompanyProfile).filter_by(user_id=user_id).first()
         return {}
+    @staticmethod
+    @overload
+    def get_company_profiles(profile_ids: list[int]):
+        """Get all company profiles."""
+    @staticmethod
+    def get_company_profiles(profile_ids: list[int] = None) -> list:
+        """Get all company profiles."""
+        with session_scope() as session:
+            if profile_ids:
+                return session.query(CompanyProfile).filter(
+                    CompanyProfile.profile_id.in_(profile_ids)
+                ).all()
+            return []

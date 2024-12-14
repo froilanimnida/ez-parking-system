@@ -1,8 +1,10 @@
 """This module contains the models and operations for the audit logs."""
 
 # pylint: disable=R0801
+from uuid import uuid4
 
-from sqlalchemy import Column, Integer, VARCHAR, DateTime, Enum, ForeignKey, BINARY
+from sqlalchemy import Column, Integer, VARCHAR, DateTime, Enum, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -14,7 +16,7 @@ class AuditLog(Base):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "audit_log"
     audit_id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(BINARY(16), nullable=False)
+    uuid = Column(UUID(as_uuid=True), default=uuid4, nullable=False)
     action_type = Column(Enum("CREATE", "UPDATE", "DELETE"), nullable=False)
     performed_by = Column(Integer, ForeignKey("user.user_id"), nullable=False)
     target_user = Column(Integer, ForeignKey("user.user_id"), nullable=True)

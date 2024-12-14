@@ -109,7 +109,7 @@ class EstablishmentDocumentRepository:
             return new_document
 
     @staticmethod
-    def get_establishment_documents(establishment_id):
+    def get_establishment_documents(establishment_id: int) -> list[dict]:
         """Get all establishment documents by establishment id."""
         with session_scope() as session:
             documents = session.query(EstablishmentDocument

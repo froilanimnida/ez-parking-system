@@ -28,9 +28,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
-from app.exceptions.establishment_lookup_exceptions import (
-    EstablishmentDoesNotExist,
-)
 from app.models.base import Base
 from app.utils.db import session_scope
 from app.utils.engine import get_session
@@ -144,37 +141,8 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             return establishment.establishment_id
 
 
-class GetEstablishmentOperations:
+class GetEstablishmentOperations:  # pylint: disable=R0903
     """Class for operations related to parking establishment (Getting)."""
-
-    @staticmethod
-    def get_establishment_id_by_uuid(establishment_uuid: bytes):
-        """
-        Retrieves the ID of a parking establishment from the database by its UUID.
-
-        Args:
-            establishment_uuid (bytes): The UUID of the parking establishment to retrieve.
-
-        Returns:
-            int: The ID of the parking establishment if found, None otherwise.
-
-        Raises:
-            OperationalError: If there is a database operation error.
-        """
-        session = get_session()
-        try:
-            establishment = (
-                session.query(ParkingEstablishment)
-                .filter(ParkingEstablishment.uuid == establishment_uuid)
-                .first()
-            )
-            if establishment is None:
-                raise EstablishmentDoesNotExist("Establishment does not exist")
-            return establishment.establishment_id
-        except OperationalError as err:
-            raise err
-        finally:
-            session.close()
 
     # pylint: disable=R0914
     @staticmethod
@@ -266,6 +234,22 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
             session.add(new_parking_establishment)
             session.commit()
             return new_parking_establishment.establishment_id
+    @staticmethod
+    @overload
+    def get_establishments(verification_status: bool) -> list:
+        """Get parking establishments by verification status."""
+    @staticmethod
+    def get_establishments(verification_status: bool = None) -> list:
+        """Get parking establishments by verification status."""
+        with session_scope() as session:
+            if verification_status is not None:
+                establishments = (
+                    session.query(ParkingEstablishment)
+                    .filter(ParkingEstablishment.verified == verification_status)
+                    .all()
+                )
+                return [establishment.to_dict() for establishment in establishments]
+            return []
 
     @staticmethod
     @overload
@@ -322,5 +306,16 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
                 update(ParkingEstablishment)
                 .where(ParkingEstablishment.establishment_id == establishment_id)
                 .values(establishment_data)
+            )
+            session.commit()
+    @staticmethod
+    def verify_parking_establishment(establishment_uuid: bytes):
+        """Verify a parking establishment."""
+        with session_scope() as session:
+            establishment_id = ParkingEstablishment.get_establishment_id(establishment_uuid)
+            session.execute(
+                update(ParkingEstablishment)
+                .where(ParkingEstablishment.establishment_id == establishment_id)
+                .values(verified=True)
             )
             session.commit()

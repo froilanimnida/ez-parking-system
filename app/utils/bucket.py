@@ -1,11 +1,11 @@
 """ Module to handle transactional-like uploads to R2 """
 
-# pylint: disable=W0718
+# pylint: disable=W0718, C0301
 
-from io import BytesIO
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional
+from io import BytesIO
+from typing import List, Tuple, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -36,7 +36,8 @@ class R2TransactionalUpload:
         self.bucket_name = current_app.config["R2_BUCKET_NAME"]
         self.logger = logging.getLogger(__name__)
 
-    def upload(self, files: List[UploadFile]) -> Tuple[bool, Dict[str, str], Dict[str, List[str]]]:
+    def upload(self, files: List[UploadFile]) -> tuple[bool, dict[str, str], dict[str, list[str]]] | tuple[
+        bool, dict[str, str]]:
         """
         Perform transactional-like upload of multiple files.
         Returns (success_status, error_message_if_any)

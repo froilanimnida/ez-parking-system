@@ -243,20 +243,46 @@ class ParkingSlotRepository:
 
 
     @staticmethod
-    def get_slots(establishment_id: int = None) -> list[ParkingSlot]:
+    @overload
+    def get_slots(establishment_id: int = None):
         """
-        Get all parking slots for a specific establishment.
+        Get all parking slots by establishment ID.
 
         Parameters:
             establishment_id (int): The ID of the establishment.
 
         Returns:
-            list[ParkingSlot]: List of parking slot objects.
+            list: List of parking slot objects.
+        """
+    @staticmethod
+    @overload
+    def get_slots():
+        """
+        Get all parking slots.
+
+        Returns:
+            list: List of parking slot objects.
+        """
+    @staticmethod
+    def get_slots(establishment_id: int = None) -> list[dict[str, Any]]:
+        """
+        Get all parking slots by establishment ID or all slots.
+
+        Parameters:
+            establishment_id (int): The ID of the establishment.
+
+        Returns:
+            list: List of parking slot objects.
         """
         with session_scope() as session:
-            slots = session.query(ParkingSlot).join(
-                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
-            ).filter(ParkingSlot.establishment_id == establishment_id).all()
+            if establishment_id:
+                slots = session.query(ParkingSlot).filter_by(
+                    establishment_id=establishment_id).join(
+                    VehicleType,
+                    ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+                ).all()
+            else:
+                slots = session.query(ParkingSlot).all()
             return [slot.to_dict() for slot in slots]
 
     @staticmethod
