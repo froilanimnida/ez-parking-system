@@ -1,0 +1,642 @@
+2024-11-14 18:47:53,434 - ERROR - Error: 415 Unsupported Media Type: Did not attempt to load JSON data because the request Content-Type was not 'application/json'.
+2024-11-14 18:55:52,844 - ERROR - Error: Object of type Row is not JSON serializable
+2024-11-14 19:24:33,881 - ERROR - Error: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2024-11-14 22:39:00,928 - ERROR - Error: Mapper 'Mapper[Slot(slot)]' has no property 'parking_transaction'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-11-14 22:41:38,793 - ERROR - Error: Mapper 'Mapper[Slot(slot)]' has no property 'parking_transaction'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-11-14 22:47:37,187 - ERROR - Error: Could not initialize target column for ForeignKey 'vehicle_type.vehicle_type_id' on table 'parking_transaction': table 'vehicle_type' has no column named 'vehicle_type_id'
+2024-11-14 22:48:21,550 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'parking_transaction'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-11-14 22:59:42,319 - ERROR - Error: (MySQLdb.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(WHERE slot.slot_status = 'open') AS open_slots, count(slot.slot_id) FILTER (WHE' at line 2")
+[SQL: SELECT parking_establishment.establishment_id AS parking_establishment_establishment_id, parking_establishment.manager_id AS parking_establishment_manager_id, parking_establishment.uuid AS parking_establishment_uuid, parking_establishment.name AS parking_establishment_name, parking_establishment.address AS parking_establishment_address, parking_establishment.contact_number AS parking_establishment_contact_number, parking_establishment.opening_time AS parking_establishment_opening_time, parking_establishment.closing_time AS parking_establishment_closing_time, parking_establishment.is_24_hours AS parking_establishment_is_24_hours, parking_establishment.created_at AS parking_establishment_created_at, parking_establishment.updated_at AS parking_establishment_updated_at, parking_establishment.hourly_rate AS parking_establishment_hourly_rate, parking_establishment.longitude AS parking_establishment_longitude, parking_establishment.latitude AS parking_establishment_latitude, anon_1.establishment_id AS anon_1_establishment_id, anon_1.open_slots AS anon_1_open_slots, anon_1.occupied_slots AS anon_1_occupied_slots, anon_1.reserved_slots AS anon_1_reserved_slots 
+FROM parking_establishment LEFT OUTER JOIN (SELECT slot.establishment_id AS establishment_id, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS open_slots, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS occupied_slots, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS reserved_slots 
+FROM slot GROUP BY slot.establishment_id) AS anon_1 ON parking_establishment.establishment_id = anon_1.establishment_id]
+[parameters: ('open', 'occupied', 'reserved')]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-11-14 23:01:00,007 - ERROR - Error: (MySQLdb.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(WHERE slot.slot_status = 'open') AS open_slots, count(slot.slot_id) FILTER (WHE' at line 2")
+[SQL: SELECT parking_establishment.establishment_id AS parking_establishment_establishment_id, parking_establishment.manager_id AS parking_establishment_manager_id, parking_establishment.uuid AS parking_establishment_uuid, parking_establishment.name AS parking_establishment_name, parking_establishment.address AS parking_establishment_address, parking_establishment.contact_number AS parking_establishment_contact_number, parking_establishment.opening_time AS parking_establishment_opening_time, parking_establishment.closing_time AS parking_establishment_closing_time, parking_establishment.is_24_hours AS parking_establishment_is_24_hours, parking_establishment.created_at AS parking_establishment_created_at, parking_establishment.updated_at AS parking_establishment_updated_at, parking_establishment.hourly_rate AS parking_establishment_hourly_rate, parking_establishment.longitude AS parking_establishment_longitude, parking_establishment.latitude AS parking_establishment_latitude, anon_1.establishment_id AS anon_1_establishment_id, anon_1.open_slots AS anon_1_open_slots, anon_1.occupied_slots AS anon_1_occupied_slots, anon_1.reserved_slots AS anon_1_reserved_slots 
+FROM parking_establishment LEFT OUTER JOIN (SELECT slot.establishment_id AS establishment_id, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS open_slots, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS occupied_slots, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS reserved_slots 
+FROM slot GROUP BY slot.establishment_id) AS anon_1 ON parking_establishment.establishment_id = anon_1.establishment_id]
+[parameters: ('open', 'occupied', 'reserved')]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-11-14 23:02:02,181 - ERROR - Error: (MySQLdb.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(WHERE slot.slot_status = 'open') AS open_slots, count(slot.slot_id) FILTER (WHE' at line 1")
+[SQL: SELECT parking_establishment.establishment_id AS parking_establishment_establishment_id, parking_establishment.manager_id AS parking_establishment_manager_id, parking_establishment.uuid AS parking_establishment_uuid, parking_establishment.name AS parking_establishment_name, parking_establishment.address AS parking_establishment_address, parking_establishment.contact_number AS parking_establishment_contact_number, parking_establishment.opening_time AS parking_establishment_opening_time, parking_establishment.closing_time AS parking_establishment_closing_time, parking_establishment.is_24_hours AS parking_establishment_is_24_hours, parking_establishment.created_at AS parking_establishment_created_at, parking_establishment.updated_at AS parking_establishment_updated_at, parking_establishment.hourly_rate AS parking_establishment_hourly_rate, parking_establishment.longitude AS parking_establishment_longitude, parking_establishment.latitude AS parking_establishment_latitude, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS open_slots, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS occupied_slots, count(slot.slot_id) FILTER (WHERE slot.slot_status = %s) AS reserved_slots 
+FROM parking_establishment LEFT OUTER JOIN slot ON parking_establishment.establishment_id = slot.establishment_id GROUP BY parking_establishment.establishment_id]
+[parameters: ('open', 'occupied', 'reserved')]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-11-15 12:48:08,354 - ERROR - Error: {'otp': ['Not a valid string.']}
+2024-11-15 12:49:10,977 - ERROR - Error: '>' not supported between instances of 'datetime.datetime' and 'NoneType'
+2024-11-15 12:50:56,909 - ERROR - Error: Please request for a new OTP.
+2024-11-15 12:52:07,317 - ERROR - Error: Please request for a new OTP.
+2024-11-15 12:54:16,787 - ERROR - Error: Please request for a new OTP.
+2024-11-15 12:56:15,931 - ERROR - Error: 405 Method Not Allowed: The method is not allowed for the requested URL.
+2024-11-15 21:43:20,941 - ERROR - Error: {'first_name': ['Missing data for required field.'], 'last_name': ['Missing data for required field.'], 'phone_number': ['Invalid phone number format.'], 'role': ['Missing data for required field.']}
+2024-11-15 21:44:33,148 - ERROR - Error: {'first_name': ['Missing data for required field.'], 'last_name': ['Missing data for required field.'], 'phone_number': ['Invalid phone number format.'], 'role': ['Missing data for required field.']}
+2024-11-15 21:45:30,361 - ERROR - Error: {'first_name': ['Missing data for required field.'], 'last_name': ['Missing data for required field.'], 'phone_number': ['Invalid phone number format.'], 'role': ['Missing data for required field.']}
+2024-11-15 21:46:34,413 - ERROR - Error: {'first_name': ['Missing data for required field.'], 'last_name': ['Missing data for required field.'], 'phone_number': ['Invalid phone number format.'], 'role': ['Missing data for required field.']}
+2024-11-15 21:47:21,942 - ERROR - Error: {'phone_number': ['Invalid phone number format.'], 'role': ['Missing data for required field.']}
+2024-11-15 21:48:26,349 - ERROR - Error: {'role': ['Must be one of: User, Parking Manager, Admin.']}
+2024-11-15 21:49:20,142 - ERROR - Error: {'role': ['Must be one of: User, Parking Manager, Admin.']}
+2024-11-15 21:49:56,672 - ERROR - Error: Email already taken.
+2024-11-15 21:51:15,716 - ERROR - Error: Email already taken.
+2024-11-15 21:51:22,681 - ERROR - Error: Email already taken.
+2024-11-15 22:01:24,571 - ERROR - Error: 405 Method Not Allowed: The method is not allowed for the requested URL.
+2024-11-15 22:06:34,344 - ERROR - Error: Missing CSRF token
+2024-11-15 22:12:17,111 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:13:07,391 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:16:21,248 - ERROR - Error: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)
+2024-11-15 22:16:50,755 - ERROR - Error: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)
+2024-11-15 22:18:14,103 - ERROR - Error: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)
+2024-11-15 22:18:39,740 - ERROR - Error: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)
+2024-11-15 22:20:21,192 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:20:59,296 - ERROR - Error: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)
+2024-11-15 22:22:04,089 - ERROR - Error: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)
+2024-11-15 22:22:50,275 - ERROR - Error: 405 Method Not Allowed: The method is not allowed for the requested URL.
+2024-11-15 22:23:10,613 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:23:41,527 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:32:26,381 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:33:20,263 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:34:03,027 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 22:40:18,790 - ERROR - Error: Missing CSRF token
+2024-11-15 22:42:34,431 - ERROR - Error: Missing CSRF token
+2024-11-15 22:43:04,902 - ERROR - Error: Missing CSRF token
+2024-11-15 22:43:23,273 - ERROR - Error: Missing CSRF token
+2024-11-15 22:43:49,385 - ERROR - Error: Missing CSRF token
+2024-11-15 22:43:56,803 - ERROR - Error: Missing CSRF token
+2024-11-15 22:44:06,466 - ERROR - Error: Missing CSRF token
+2024-11-15 22:51:14,842 - ERROR - Error: Missing CSRF token
+2024-11-15 22:56:31,499 - ERROR - Error: Missing CSRF token
+2024-11-15 22:58:29,528 - ERROR - Error: Missing CSRF token
+2024-11-15 22:58:50,918 - ERROR - Error: Please request for a new OTP.
+2024-11-15 23:00:40,897 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:00:43,169 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:01:02,322 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-15 23:01:04,226 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-15 23:02:28,856 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:03:16,401 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:04:05,429 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:04:06,375 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:04:34,778 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:05:03,529 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:07:13,706 - ERROR - Error: Missing CSRF token
+2024-11-15 23:07:53,239 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:08:13,370 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:10:17,978 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:10:42,495 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:11:41,020 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:13:39,360 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:13:58,136 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:13:58,863 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:14:00,806 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:14:13,433 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:14:16,871 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:15:23,247 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:15:33,643 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:16:23,032 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:19:20,814 - ERROR - Error: Missing CSRF token
+2024-11-15 23:21:38,820 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:24:35,739 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:24:52,546 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:26:15,627 - ERROR - Error: Incorrect OTP.
+2024-11-15 23:30:15,989 - ERROR - Error: Missing CSRF token
+2024-11-15 23:31:01,845 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-15 23:32:42,128 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 08:55:02,570 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 08:58:05,768 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 08:58:55,263 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:01:27,819 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:05:10,542 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:06:20,999 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:10:50,040 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:11:00,410 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:11:24,725 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:14:15,953 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:14:44,306 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:15:19,490 - ERROR - Error: 405 Method Not Allowed: The method is not allowed for the requested URL.
+2024-11-16 09:15:24,164 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:15:29,104 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:15:29,535 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:15:31,580 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:16:42,276 - ERROR - Error: Missing CSRF token
+2024-11-16 09:16:52,791 - ERROR - Error: Missing CSRF token
+2024-11-16 09:17:03,263 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-16 09:17:47,575 - ERROR - Error: Missing CSRF token
+2024-11-16 09:17:57,497 - ERROR - Error: Missing CSRF token
+2024-11-16 09:53:42,657 - ERROR - Error: When initializing mapper Mapper[VehicleType(vehicle_type)], expression 'ParkingTransaction' failed to locate a name ('ParkingTransaction'). If this is a class name, consider adding this relationship() to the <class 'app.models.vehicle_type.VehicleType'> class after both dependent classes have been defined.
+2024-11-20 15:12:20,485 - ERROR - Error: When initializing mapper Mapper[User(user)], expression 'BannedPlate' failed to locate a name ('BannedPlate'). If this is a class name, consider adding this relationship() to the <class 'app.models.user.User'> class after both dependent classes have been defined.
+2024-11-20 15:26:23,688 - ERROR - Error: Could not determine join condition between parent/child tables on relationship User.banned_plate - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-11-20 15:29:08,770 - ERROR - Error: Could not determine join condition between parent/child tables on relationship User.banned_plate - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-11-20 15:30:50,511 - ERROR - Error: Could not determine join condition between parent/child tables on relationship BannedPlate.user - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-11-20 15:34:15,567 - ERROR - Error: Missing CSRF token
+2024-11-20 15:34:40,896 - ERROR - Error: Missing CSRF token
+2024-11-20 15:34:55,031 - ERROR - Error: Email already taken.
+2024-11-20 15:35:50,742 - ERROR - Error: (MySQLdb.IntegrityError) (1062, "Duplicate entry '+639060162213' for key 'user.phone_number_UNIQUE'")
+[SQL: INSERT INTO user (uuid, nickname, first_name, last_name, email, phone_number, `role`, plate_number, otp_secret, otp_expiry, creation_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b"\x17\xe8s\x0bk\xe6O'\xa0\xde\xd1\x10\xe4\x07C%", None, 'Froilan', 'Aquino', 'froilan.aquino.071@gmail.com', '+639060162213', 'admin', None, None, None, datetime.datetime(2024, 11, 20, 15, 35, 50, 730187))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-20 15:39:01,415 - ERROR - Error: Phone number already taken.
+2024-11-20 15:48:37,762 - ERROR - Error: object of type 'int' has no len()
+2024-11-20 15:49:18,021 - ERROR - Error: object of type 'int' has no len()
+2024-11-20 15:49:29,149 - ERROR - Error: object of type 'int' has no len()
+2024-11-20 15:50:22,991 - ERROR - Error: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+2024-11-20 15:50:43,296 - ERROR - Error: Missing CSRF token
+2024-11-20 15:52:08,388 - ERROR - Error: 'dict' object has no attribute 'dump'
+2024-11-20 15:52:50,788 - ERROR - Error: 'dict' object has no attribute 'dump'
+2024-11-20 15:53:36,989 - ERROR - Error: 'dict' object has no attribute 'dump'
+2024-11-20 15:54:38,851 - ERROR - Error: 'dict' object has no attribute 'dump'
+2024-11-20 15:55:08,241 - ERROR - Error: 'dict' object has no attribute 'dump'
+2024-11-20 15:55:33,298 - ERROR - Error: 'dict' object has no attribute 'dump'
+2024-11-20 15:58:14,582 - ERROR - Error: AddSlot.post() got an unexpected keyword argument 'admin_id'
+2024-11-20 15:59:12,690 - ERROR - Error: AddSlot.post() got an unexpected keyword argument 'admin_id'
+2024-11-20 15:59:49,784 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:00:24,900 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:01:07,691 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:02:14,363 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:03:40,498 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:04:41,237 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:05:04,161 - ERROR - Error: 'int' object has no attribute 'code'
+2024-11-20 16:06:17,984 - ERROR - Error: Vehicle type does not exist.
+2024-11-20 16:08:35,918 - ERROR - Error: Vehicle type does not exist.
+2024-11-20 16:17:55,164 - ERROR - Error: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+2024-11-20 16:18:03,203 - ERROR - Error: 'slot_id'
+2024-11-20 17:44:05,999 - ERROR - Error: Missing CSRF token
+2024-11-24 17:54:28,338 - ERROR - Error: When initializing mapper Mapper[ParkingTransaction(parking_transaction)], expression 'QRCode' failed to locate a name ('QRCode'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_transaction.ParkingTransaction'> class after both dependent classes have been defined.
+2024-11-24 18:23:44,399 - ERROR - Error: Missing CSRF token
+2024-11-24 18:25:32,012 - ERROR - Error: Missing CSRF token
+2024-11-24 18:26:43,325 - ERROR - Error: Please request for a new OTP.
+2024-11-24 18:26:54,376 - ERROR - Error: Please request for a new OTP.
+2024-11-24 18:27:08,422 - ERROR - Error: Please request for a new OTP.
+2024-11-24 18:27:40,586 - ERROR - Error: Please request for a new OTP.
+2024-11-24 18:28:01,199 - ERROR - Error: Please request for a new OTP.
+2024-11-24 18:31:56,319 - ERROR - Error: Missing CSRF token
+2024-11-24 18:40:04,775 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'slot_id' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\x12\n\xadTUfI\x13\x9cK\xd3\x89\xbff\xf3\xe6', None, None, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', datetime.datetime(2024, 11, 24, 10, 40, 4, 647772, tzinfo=datetime.timezone.utc), datetime.datetime(2024, 11, 24, 10, 40, 4, 647774, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 18:42:10,004 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'vehicle_type_id' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xd0Y8\xd4b\xafE\xb7\x84Gj\x02\xfbA\x93"', 7, None, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', datetime.datetime(2024, 11, 24, 10, 42, 9, 869505, tzinfo=datetime.timezone.utc), datetime.datetime(2024, 11, 24, 10, 42, 9, 869507, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 18:46:06,098 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'vehicle_type_id' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xb6z\xe2F\x80%Bm\x80\xe4\xc1\xef\xee\xf0\xc77', 7, None, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', datetime.datetime(2024, 11, 24, 10, 46, 6, 95939, tzinfo=datetime.timezone.utc), datetime.datetime(2024, 11, 24, 10, 46, 6, 95942, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 18:47:00,595 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'final_amount' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'5\xcdn\xbb\x83\xb2J\x07\x9aC\x17a\xddQ\xe9\x1b', 7, 7, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', datetime.datetime(2024, 11, 24, 10, 47, 0, 460620, tzinfo=datetime.timezone.utc), datetime.datetime(2024, 11, 24, 10, 47, 0, 460622, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 18:48:39,464 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'final_amount' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xcc\xe0S\xff\xf6YK\x12\xba*\xa1\xadB\x1a\xf3\xe9', 7, 7, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', datetime.datetime(2024, 11, 24, 10, 48, 39, 328488, tzinfo=datetime.timezone.utc), datetime.datetime(2024, 11, 24, 10, 48, 39, 328489, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 18:49:19,474 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'final_amount' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xdaG\xff2\x12\x05J\xab\x87/y\xeac\xe5\xb2;', 7, 7, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', None, datetime.datetime(2024, 11, 24, 18, 49, 19, 333392))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 18:50:16,087 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'estimated_amount' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xf2\xbcH\x1cS4G\x9c\x8d\x85j\xa3\x81T\n\x1b', 7, 7, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', None, datetime.datetime(2024, 11, 24, 18, 50, 16, 85048))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 19:13:15,715 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'estimated_amount' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, planned_entry_time, planned_exit_time, estimated_amount, actual_entry_time, actual_exit_time, final_amount, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xaeo\xdc \x87\xe1AU\xa2mS\xea\x11\xdca\x18', 7, 7, 'NAH-143', datetime.datetime(2024, 12, 25, 12, 58, 41), datetime.datetime(2025, 12, 25, 12, 58, 41), None, None, None, None, 'pending', 'reserved', None, datetime.datetime(2024, 11, 24, 19, 13, 15, 588094))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 19:39:11,738 - ERROR - Error: 'estimated_amount' is an invalid keyword argument for ParkingTransaction
+2024-11-24 19:40:21,961 - ERROR - Error: 'planned_entry_time'
+2024-11-24 19:40:33,303 - ERROR - Error: 'planned_entry_time'
+2024-11-24 19:40:44,133 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'amount_due' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, entry_time, exit_time, amount_due, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\xf6\xea\xbe\t\xcc\x7fHf\x8a95{C\xf6\xbc\x8a', 7, 7, 'NAH-143', None, None, None, 'pending', 'reserved', None, datetime.datetime(2024, 11, 24, 19, 40, 43, 982445))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 19:41:29,683 - ERROR - Error: (MySQLdb.IntegrityError) (1048, "Column 'created_at' cannot be null")
+[SQL: INSERT INTO parking_transaction (uuid, slot_id, vehicle_type_id, plate_number, entry_time, exit_time, amount_due, payment_status, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: (b'\x1e\xc5\x8f\x88\xee\x13NI\xb3d\xd5;\x95\x02J\xa9', 7, 7, 'NAH-143', None, None, None, 'pending', 'reserved', None, datetime.datetime(2024, 11, 24, 19, 41, 29, 551579))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-11-24 20:22:09,958 - ERROR - Error: ViewTransaction.get() got multiple values for argument 'user_id'
+2024-11-24 20:22:35,392 - ERROR - Error: ViewTransaction.get() got multiple values for argument 'user_id'
+2024-11-24 20:27:03,536 - ERROR - Error: fromhex() argument must be str, not dict
+2024-11-24 20:28:49,228 - ERROR - Error: fromhex() argument must be str, not dict
+2024-11-24 20:31:18,639 - ERROR - Error: fromhex() argument must be str, not dict
+2024-11-24 20:31:37,126 - ERROR - Error: fromhex() argument must be str, not dict
+2024-11-24 20:32:19,681 - ERROR - Error: When initializing mapper Mapper[ParkingTransaction(parking_transaction)], expression 'QRCode' failed to locate a name ('QRCode'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_transaction.ParkingTransaction'> class after both dependent classes have been defined.
+2024-11-24 21:51:59,177 - ERROR - Error: No module named 'PIL'
+2024-11-24 21:56:44,961 - ERROR - Error: Object of type PilImage is not JSON serializable
+2024-11-24 22:03:49,597 - ERROR - Error: Object of type PilImage is not JSON serializable
+2024-11-25 10:07:42,933 - ERROR - Error: Missing CSRF token
+2024-11-25 10:15:49,780 - ERROR - Error: Missing CSRF token
+2024-11-25 10:20:17,822 - ERROR - Error: Missing CSRF token
+2024-11-25 10:23:33,840 - ERROR - Error: EstablishmentEntry.patch() missing 1 required positional argument: 'manager_id'
+2024-11-25 10:24:04,882 - ERROR - Error: EstablishmentEntry.patch() missing 1 required positional argument: 'manager_id'
+2024-11-25 10:26:57,777 - ERROR - Error: EstablishmentEntry.patch() got an unexpected keyword argument 'user_id'
+2024-11-25 11:25:30,092 - ERROR - Error: SQL expression element or literal value expected, got <app.models.parking_transaction.ParkingTransaction object at 0x000001EA18714980>.
+2024-11-26 19:36:05,674 - ERROR - Error: 'VehicleType' object has no attribute 'type_name'
+2024-11-26 19:36:40,507 - ERROR - Error: 'VehicleType' object has no attribute 'base_rate'
+2024-11-26 21:48:27,956 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-26 21:50:11,823 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-26 22:04:04,021 - ERROR - Error: Slot not found.
+2024-11-26 22:05:04,486 - ERROR - Error: Slot not found.
+2024-11-26 22:06:28,792 - ERROR - Error: Slot not found.
+2024-11-26 22:10:34,487 - ERROR - Error: Slot not found.
+2024-11-26 22:11:09,883 - ERROR - Error: Slot not found.
+2024-11-26 22:11:51,326 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-26 22:20:57,291 - ERROR - Error: to_dict
+2024-11-26 22:22:09,534 - ERROR - Error: to_dict
+2024-11-26 22:26:00,842 - ERROR - Error: to_dict
+2024-11-26 22:28:13,235 - ERROR - Error: 'Slot' object has no attribute 'status'
+2024-11-27 14:06:09,398 - ERROR - Error: Please request for a new OTP.
+2024-11-27 15:53:13,676 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 16:07:14,219 - ERROR - Error: Missing CSRF token
+2024-11-27 16:18:53,115 - ERROR - Error: Missing CSRF token
+2024-11-27 16:19:10,718 - ERROR - Error: Missing CSRF token
+2024-11-27 16:21:07,462 - ERROR - Error: Missing CSRF token
+2024-11-27 16:48:46,173 - ERROR - Error: Please request for a new OTP.
+2024-11-27 17:41:57,234 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 17:53:18,646 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 17:54:09,677 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 17:55:31,432 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 17:55:49,601 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 17:57:27,895 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 18:01:18,087 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 18:02:13,453 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-27 18:03:18,757 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-27 18:03:25,109 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-27 18:06:01,712 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-27 18:06:12,724 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing 'Bearer' type in 'Authorization' header. Expected 'Authorization: Bearer <JWT>')
+2024-11-27 18:26:34,071 - ERROR - Error: 'ParkingEstablishment' object is not iterable
+2024-11-27 18:26:57,275 - ERROR - Error: name 'establishment' is not defined
+2024-11-27 18:27:00,421 - ERROR - Error: name 'establishment' is not defined
+2024-11-27 18:35:51,488 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 18:36:10,758 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-27 19:40:30,839 - ERROR - Error: Object of type VehicleType is not JSON serializable
+2024-11-28 17:53:24,782 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-28 17:53:28,639 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-28 17:53:29,252 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-11-28 17:59:05,956 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:02:05,158 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:02:18,405 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:02:30,448 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:02:46,486 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:04:39,946 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:05:35,133 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:05:40,244 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:07:08,644 - ERROR - Error: 'NoneType' object has no attribute 'strip'
+2024-11-28 18:07:31,853 - ERROR - Error: 'NoneType' object has no attribute 'strip'
+2024-11-28 18:08:19,570 - ERROR - Error: one of the hex, bytes, bytes_le, fields, or int arguments must be given
+2024-11-28 18:08:31,542 - ERROR - Error: Object of type Query is not JSON serializable
+2024-11-28 18:09:50,297 - ERROR - Error: Object of type Query is not JSON serializable
+2024-11-29 13:48:47,560 - ERROR - Error: Mapper 'Mapper[User(user)]' has no property 'audits'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-11-29 14:05:34,093 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:42,533 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:42,702 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:42,777 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:43,340 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:46,639 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:46,759 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:46,858 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:47,474 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:05:49,731 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:07:06,024 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:07:06,504 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:07:14,028 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:07:14,250 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 14:07:14,318 - ERROR - Error: a bytes-like object is required, not 'str'
+2024-11-29 17:20:16,156 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-29 17:20:35,031 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-29 17:20:53,675 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-29 17:20:54,958 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-29 17:20:56,173 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-29 17:21:33,338 - ERROR - Error: Object of type Slot is not JSON serializable
+2024-11-29 17:22:58,818 - ERROR - Error: Object of type VehicleType is not JSON serializable
+2024-11-29 17:35:43,292 - ERROR - Error: Slot not found.
+2024-11-29 18:26:07,369 - ERROR - Error: fromhex() argument must be str, not bytes
+2024-11-29 18:30:24,248 - ERROR - Error: Invalid status: completed
+2024-11-29 22:04:04,588 - ERROR - Error: The provided data does not fit into version "4". Proposal: version 18
+2024-11-29 22:04:20,179 - ERROR - Error: <class 'segno.QRCode'> object has no attribute to_artistic
+2024-11-29 22:06:18,624 - ERROR - Error: write_artistic() got an unexpected keyword argument 'logo'
+2024-11-29 22:06:25,288 - ERROR - Error: write_artistic() got an unexpected keyword argument 'logo'
+2024-12-01 11:09:54,658 - ERROR - Error: Missing JWT in cookies or headers (Missing cookie "Authorization"; Missing Authorization Header)
+2024-12-01 11:10:50,192 - ERROR - Error: VerifyEmail.patch() takes 1 positional argument but 2 were given
+2024-12-01 16:07:23,484 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:26,174 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:31,733 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:38,170 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:38,650 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:39,283 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:39,810 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:40,205 - ERROR - Error: Account is not verified.
+2024-12-01 16:07:40,638 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:02,208 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:20,831 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:21,649 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:21,898 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:22,100 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:22,280 - ERROR - Error: Account is not verified.
+2024-12-01 16:13:22,459 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:30,429 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:31,065 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:31,759 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:31,914 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:32,067 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:32,211 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:32,374 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:33,468 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:33,718 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:33,870 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:34,038 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:34,202 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:34,396 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:34,553 - ERROR - Error: Account is not verified.
+2024-12-01 16:14:34,832 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:02,313 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:02,642 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:02,805 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:02,969 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:03,258 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:03,417 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:03,587 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:03,759 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:04,083 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:04,246 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:36,224 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:36,726 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:37,060 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:37,225 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:37,389 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:37,527 - ERROR - Error: Account is not verified.
+2024-12-01 16:15:37,708 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:15,660 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:17,127 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:17,314 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:17,470 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:17,632 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:32,571 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:33,059 - ERROR - Error: Account is not verified.
+2024-12-01 16:16:33,269 - ERROR - Error: Account is not verified.
+2024-12-01 16:18:36,016 - ERROR - Error: Account is not verified.
+2024-12-01 16:19:07,421 - ERROR - Error: Account is not verified.
+2024-12-01 16:20:00,257 - ERROR - Error: Account is not verified.
+2024-12-01 16:22:55,707 - ERROR - Error: Account is not verified.
+2024-12-01 16:23:52,817 - ERROR - Error: Account is not verified.
+2024-12-02 14:31:51,635 - ERROR - Error: GetScheduleHours.get() got an unexpected keyword argument 'user_id'
+2024-12-02 14:32:52,278 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 14:36:28,940 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 14:36:46,754 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 14:36:47,110 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 14:37:31,939 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 14:37:32,101 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 14:37:32,915 - ERROR - Error: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods
+2024-12-02 15:36:52,190 - ERROR - Error: type object 'EstablishmentService' has no attribute 'update_establishment_schedule'
+2024-12-02 15:41:27,034 - ERROR - Error: name 'manager_id' is not defined
+2024-12-02 15:58:20,868 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 15:58:28,268 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:00:13,875 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:12:36,482 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:12:37,326 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:12:45,040 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:12:48,531 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:12:57,327 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:12:59,009 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:13:16,046 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:13:24,797 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:13:39,797 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:14:28,861 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:15:04,835 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:15:20,883 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:19:06,037 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:19:06,193 - ERROR - Error: expected string or bytes-like object, got 'dict'
+2024-12-02 16:19:06,219 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:21:53,272 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:21:53,297 - ERROR - Error: expected string or bytes-like object, got 'dict'
+2024-12-02 16:21:53,301 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:22:25,592 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:22:25,609 - ERROR - Error: Failed to verify QR content: Invalid signature
+2024-12-02 16:22:25,612 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:22:47,844 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:23:02,250 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:23:02,272 - ERROR - Error: Failed to verify QR content: Invalid signature
+2024-12-02 16:23:02,275 - INFO - JWT and CSRF tokens refreshed
+2024-12-02 16:28:47,412 - ERROR - Error: Failed to verify QR content: can't compare offset-naive and offset-aware datetimes
+2024-12-02 16:30:30,477 - ERROR - Error: Failed to verify QR content: can't compare offset-naive and offset-aware datetimes
+2024-12-02 16:31:40,012 - ERROR - Error: Failed to verify QR content: can't compare offset-naive and offset-aware datetimes
+2024-12-02 16:32:38,814 - ERROR - Error: Failed to verify QR content: Invalid nonce
+2024-12-02 16:50:25,816 - ERROR - Error: Failed to verify QR content: QR code has expired
+2024-12-02 17:52:49,236 - ERROR - Error: CancelReservation.patch() got multiple values for argument 'user_id'
+2024-12-02 17:53:19,081 - ERROR - Error: CancelReservation.patch() got an unexpected keyword argument 'user_id'
+2024-12-07 20:57:14,791 - ERROR - Error: string indices must be integers, not 'str'
+2024-12-07 21:12:42,548 - ERROR - Error: string indices must be integers, not 'str'
+2024-12-07 21:15:21,674 - ERROR - Error: string indices must be integers, not 'str'
+2024-12-07 21:15:28,328 - ERROR - Error: string indices must be integers, not 'str'
+2024-12-07 21:40:39,788 - ERROR - Error: string indices must be integers, not 'str'
+2024-12-07 21:42:20,859 - ERROR - Error: string indices must be integers, not 'str'
+2024-12-07 21:42:45,736 - ERROR - Error: type object 'UserRepository' has no attribute 'is_field_taken'
+2024-12-07 21:46:23,207 - ERROR - Error: type object 'UserRepository' has no attribute 'is_field_taken'
+2024-12-07 21:52:57,172 - ERROR - Error: When initializing mapper Mapper[ParkingEstablishment(parking_establishment)], expression 'BusinessProfile' failed to locate a name ('BusinessProfile'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_establishment.ParkingEstablishment'> class after both dependent classes have been defined.
+2024-12-07 21:56:30,891 - ERROR - Error: When initializing mapper Mapper[ParkingEstablishment(parking_establishment)], expression 'BusinessProfile' failed to locate a name ('BusinessProfile'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_establishment.ParkingEstablishment'> class after both dependent classes have been defined.
+2024-12-07 21:58:03,622 - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[ParkingEstablishment(parking_establishment)]'. Original exception was: When initializing mapper Mapper[ParkingEstablishment(parking_establishment)], expression 'BusinessProfile' failed to locate a name ('BusinessProfile'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_establishment.ParkingEstablishment'> class after both dependent classes have been defined.
+2024-12-07 21:59:55,969 - ERROR - Error: When initializing mapper Mapper[ParkingEstablishment(parking_establishment)], expression 'CompanyProfile' failed to locate a name ('CompanyProfile'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_establishment.ParkingEstablishment'> class after both dependent classes have been defined.
+2024-12-07 22:03:04,372 - ERROR - Error: Could not determine join condition between parent/child tables on relationship ParkingEstablishment.company_profile - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-07 22:04:27,435 - ERROR - Error: Mapper 'Mapper[User(user)]' has no property 'audit'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-07 22:04:49,239 - ERROR - Error: Mapper 'Mapper[User(user)]' has no property 'banned_plate'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-07 22:05:02,834 - ERROR - Error: Could not determine join condition between parent/child tables on relationship ParkingEstablishment.company_profile - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-07 22:06:36,768 - ERROR - Error: Could not determine join condition between parent/child tables on relationship ParkingTransaction.slot - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-07 22:11:46,840 - ERROR - Error: Could not determine join condition between parent/child tables on relationship ParkingTransaction.slot - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-07 22:13:32,332 - ERROR - Error: Could not determine join condition between parent/child tables on relationship ParkingTransaction.slot - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-07 22:14:08,108 - ERROR - Error: When initializing mapper Mapper[ParkingTransaction(parking_transaction)], expression 'ParkingSlot' failed to locate a name ('ParkingSlot'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_transaction.ParkingTransaction'> class after both dependent classes have been defined.
+2024-12-07 22:14:41,580 - ERROR - Error: When initializing mapper Mapper[ParkingTransaction(parking_transaction)], expression 'ParkingSlot' failed to locate a name ('ParkingSlot'). If this is a class name, consider adding this relationship() to the <class 'app.models.parking_transaction.ParkingTransaction'> class after both dependent classes have been defined.
+2024-12-07 22:16:05,185 - ERROR - Error: Could not initialize target column for ForeignKey 'vehicle_type.vehicle_id' on table 'slot': table 'vehicle_type' has no column named 'vehicle_id'
+2024-12-07 22:17:04,397 - ERROR - Error: Error creating backref 'company_profile' on relationship 'CompanyProfile.user': property of that name exists on mapper 'Mapper[User(user)]'
+2024-12-07 22:19:37,480 - ERROR - Error: Error creating backref 'parking_slot' on relationship 'ParkingSlot.parking_transaction': property of that name exists on mapper 'Mapper[ParkingTransaction(parking_transaction)]'
+2024-12-07 22:20:22,275 - ERROR - Error: Error creating backref 'parking_slot' on relationship 'ParkingSlot.parking_transaction': property of that name exists on mapper 'Mapper[ParkingTransaction(parking_transaction)]'
+2024-12-07 22:22:32,249 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'transactions'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-08 15:36:32,127 - ERROR - Error: UserRegistration.create_new_user() missing 1 required positional argument: 'sign_up_data'
+2024-12-08 15:37:48,710 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'transactions'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-08 15:41:32,129 - ERROR - Error: Mapper 'Mapper[ParkingSlot(parking_slot)]' has no property 'parking_transaction'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-08 15:47:02,462 - ERROR - Error: When initializing mapper Mapper[User(user)], expression 'ParkingManagerFile' failed to locate a name ('ParkingManagerFile'). If this is a class name, consider adding this relationship() to the <class 'app.models.user.User'> class after both dependent classes have been defined.
+2024-12-08 15:54:07,836 - ERROR - Error: When initializing mapper Mapper[User(user)], expression 'EstablishmentDocument' failed to locate a name ('EstablishmentDocument'). If this is a class name, consider adding this relationship() to the <class 'app.models.user.User'> class after both dependent classes have been defined.
+2024-12-08 15:57:04,448 - ERROR - Error: Mapper 'Mapper[ParkingEstablishment(parking_establishment)]' has no property 'parking_slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 17:46:31,953 - ERROR - Error: Could not determine join condition between parent/child tables on relationship AuditLog.user - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-12-09 17:50:34,000 - ERROR - Error: Could not determine join condition between parent/child tables on relationship AuditLog.user - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-12-09 17:52:50,795 - ERROR - Error: Could not determine join condition between parent/child tables on relationship BanUser.user - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-09 17:52:50,796 - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[BanUser(ban_user)]'. Original exception was: Could not determine join condition between parent/child tables on relationship BanUser.user - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-09 17:52:50,907 - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[BanUser(ban_user)]'. Original exception was: Could not determine join condition between parent/child tables on relationship BanUser.user - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2024-12-09 17:53:39,584 - ERROR - Error: Error creating backref 'establishment_document' on relationship 'EstablishmentDocument.user': property of that name exists on mapper 'Mapper[User(user)]'
+2024-12-09 17:55:30,114 - ERROR - Error: Error creating backref 'establishment_document' on relationship 'EstablishmentDocument.user': property of that name exists on mapper 'Mapper[User(user)]'
+2024-12-09 17:58:38,315 - ERROR - Error: Error creating backref 'establishment_document' on relationship 'EstablishmentDocument.parking_establishment': property of that name exists on mapper 'Mapper[ParkingEstablishment(parking_establishment)]'
+2024-12-09 18:01:18,848 - ERROR - Error: Error creating backref 'establishment_document' on relationship 'EstablishmentDocument.parking_establishment': property of that name exists on mapper 'Mapper[ParkingEstablishment(parking_establishment)]'
+2024-12-09 18:06:45,073 - ERROR - Error: Error creating backref 'operating_hour' on relationship 'OperatingHour.parking_establishment': property of that name exists on mapper 'Mapper[ParkingEstablishment(parking_establishment)]'
+2024-12-09 18:06:50,410 - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[OperatingHour(operating_hour)]'. Original exception was: Error creating backref 'operating_hour' on relationship 'OperatingHour.parking_establishment': property of that name exists on mapper 'Mapper[ParkingEstablishment(parking_establishment)]'
+2024-12-09 18:10:42,824 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.company_profile': property of that name exists on mapper 'Mapper[CompanyProfile(company_profile)]'
+2024-12-09 18:17:06,243 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.parking_slots': property of that name exists on mapper 'Mapper[ParkingSlot(parking_slot)]'
+2024-12-09 18:20:10,503 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.parking_slot': property of that name exists on mapper 'Mapper[ParkingSlot(parking_slot)]'
+2024-12-09 18:20:50,924 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.parking_slot': property of that name exists on mapper 'Mapper[ParkingSlot(parking_slot)]'
+2024-12-09 18:21:04,460 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.parking_slotS': property of that name exists on mapper 'Mapper[ParkingSlot(parking_slot)]'
+2024-12-09 18:22:09,106 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.parking_slotS': property of that name exists on mapper 'Mapper[ParkingSlot(parking_slot)]'
+2024-12-09 18:22:23,902 - ERROR - Error: Error creating backref 'parking_establishment' on relationship 'ParkingEstablishment.parking_slots': property of that name exists on mapper 'Mapper[ParkingSlot(parking_slot)]'
+2024-12-09 18:24:00,578 - ERROR - Error: Could not determine join condition between parent/child tables on relationship User.ban_user - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-12-09 18:29:14,883 - ERROR - Error: Could not determine join condition between parent/child tables on relationship User.audit_log - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-12-09 18:31:32,950 - ERROR - Error: Could not determine join condition between parent/child tables on relationship User.audit_log - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table.
+2024-12-09 18:33:46,218 - ERROR - Error: Error creating backref 'payment_methods' on relationship 'PaymentMethod.parking_establishment': property of that name exists on mapper 'Mapper[ParkingEstablishment(parking_establishment)]'
+2024-12-09 18:36:50,795 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:41:05,093 - ERROR - Error: Mapper 'Mapper[User(user)]' has no property 'parking_transaction'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:41:47,296 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:46:13,811 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:48:34,086 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'parking_transaction'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:49:09,917 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:53:20,294 - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[Slot(slot)]'. Original exception was: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 18:59:12,802 - ERROR - Error: Mapper 'Mapper[ParkingSlot(parking_slot)]' has no property 'transactions'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:02:04,065 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'transactions'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:02:58,809 - ERROR - Error: Mapper 'Mapper[User(user)]' has no property 'transactions'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:03:23,716 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:03:50,349 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'parking_slots'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:05:02,325 - ERROR - Error: Mapper 'Mapper[ParkingTransaction(parking_transaction)]' has no property 'parking_slots'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:05:39,634 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'transactions'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:06:30,218 - ERROR - Error: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-09 19:08:16,712 - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[Slot(slot)]'. Original exception was: Mapper 'Mapper[VehicleType(vehicle_type)]' has no property 'slot'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2024-12-10 13:40:12,436 - ERROR - Error: 'admin' is not among the defined enum values. Enum name: userrole. Possible values: USER, PARKING_MAN.., ADMIN
+2024-12-10 13:40:22,134 - ERROR - Error: 'admin' is not among the defined enum values. Enum name: userrole. Possible values: USER, PARKING_MAN.., ADMIN
+2024-12-10 13:40:40,299 - ERROR - Error: 'admin' is not among the defined enum values. Enum name: userrole. Possible values: USER, PARKING_MAN.., ADMIN
+2024-12-10 13:42:15,986 - ERROR - Error: 'admin' is not among the defined enum values. Enum name: userrole. Possible values: USER, PARKING_MAN.., ADMIN
+2024-12-10 13:43:25,003 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:47:39,863 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:47:59,181 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:48:23,619 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:49:27,397 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:49:49,976 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:50:19,546 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:51:18,688 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:51:46,607 - ERROR - Error: object of type 'UUID' has no len()
+2024-12-10 13:53:31,688 - ERROR - Error: 'UUID' object has no attribute 'replace'
+2024-12-10 13:55:09,169 - ERROR - Error: to_dict
+2024-12-10 13:58:33,985 - ERROR - Error: to_dict
+2024-12-10 14:00:44,561 - ERROR - Error: to_dict
+2024-12-10 14:01:04,803 - ERROR - Error: to_dict
+2024-12-10 14:01:16,763 - ERROR - Error: to_dict
+2024-12-10 14:02:58,838 - ERROR - Error: to_dict
+2024-12-10 14:04:40,082 - ERROR - Error: to_dict
+2024-12-10 14:05:38,622 - ERROR - Error: Object of type UserRole is not JSON serializable
+2024-12-10 14:07:40,298 - ERROR - Error: Incorrect OTP.
+2024-12-10 14:07:49,818 - ERROR - Error: Object of type UserRole is not JSON serializable
+2024-12-10 14:10:34,135 - ERROR - Error: '>' not supported between instances of 'datetime.datetime' and 'str'
+2024-12-10 14:33:30,315 - ERROR - Error: Incorrect OTP.
+2024-12-10 14:52:01,398 - ERROR - Error: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+2024-12-10 14:54:11,421 - ERROR - Error: Object of type SizeCategory is not JSON serializable
+2024-12-10 15:28:05,217 - ERROR - Error: Join target, typically a FROM expression, or ORM relationship attribute expected, got <app.models.vehicle_type.VehicleType object at 0x000001E6B4CF5A90>.
+2024-12-11 14:07:20,487 - ERROR - Error: Invalid location argument: body
+2024-12-11 14:07:57,136 - ERROR - Error: Invalid location argument: body
+2024-12-11 15:51:38,928 - ERROR - Error: Missing CSRF token
+2024-12-11 15:52:40,500 - ERROR - Error: Missing CSRF token
+2024-12-11 15:53:02,945 - ERROR - Error: {'owner_info': ['Missing data for required field.'], 'contact_info': ['Missing data for required field.'], 'location_info': ['Missing data for required field.'], 'parking_details': ['Missing data for required field.'], 'facilities_info': ['Missing data for required field.'], 'operating_hours': ['Missing data for required field.'], 'payment_info': ['Missing data for required field.'], 'documents': ['Missing data for required field.']}
+2024-12-11 15:53:23,104 - ERROR - Error: {'owner_info': ['Missing data for required field.'], 'contact_info': ['Missing data for required field.'], 'location_info': ['Missing data for required field.'], 'parking_details': ['Missing data for required field.'], 'facilities_info': ['Missing data for required field.'], 'operating_hours': ['Missing data for required field.'], 'payment_info': ['Missing data for required field.'], 'documents': ['Missing data for required field.']}
+2024-12-11 15:58:36,905 - ERROR - Error: {'owner_info': ['Missing data for required field.'], 'contact_info': ['Missing data for required field.'], 'location_info': ['Missing data for required field.'], 'parking_details': ['Missing data for required field.'], 'facilities_info': ['Missing data for required field.'], 'operating_hours': ['Missing data for required field.'], 'payment_info': ['Missing data for required field.'], 'documents': ['Missing data for required field.']}
+2024-12-11 15:59:56,563 - ERROR - Error: name 'ValidationError' is not defined
+2024-12-11 17:15:22,817 - ERROR - Error: [Errno 28] No space left on device
+2024-12-11 17:33:58,556 - ERROR - Error: name 'data' is not defined
+2024-12-11 17:34:00,249 - ERROR - Error: name 'data' is not defined
+2024-12-11 18:52:53,917 - ERROR - Error: Object of type time is not JSON serializable
+2024-12-11 18:55:39,555 - ERROR - Error: Object of type time is not JSON serializable
+2024-12-11 18:56:48,003 - ERROR - Error: Object of type time is not JSON serializable
+2024-12-11 18:59:01,469 - ERROR - Error: name 'time' is not defined
+2024-12-11 18:59:34,095 - ERROR - Error: isinstance() arg 2 must be a type, a tuple of types, or a union
+2024-12-11 19:00:50,616 - ERROR - Error: isinstance() arg 2 must be a type, a tuple of types, or a union
+2024-12-11 19:20:42,866 - ERROR - Error: 'ImmutableMultiDict' object has no attribute 'files'
+2024-12-11 19:32:52,715 - ERROR - Error: [Errno 2] No such file or directory: '/tmp/da08eaa0-ef2a-4727-a860-283c705a50e7.jpg'
+2024-12-11 19:42:56,319 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmpkljzxyg4 to uploads/da08eaa0-ef2a-4727-a860-283c705a50e7.jpg
+2024-12-11 19:42:58,091 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmppxfzdtmd to uploads/AQUINO, FROILAN.pdf
+2024-12-11 19:42:58,530 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmptyohbkvt to uploads/AQUINO, FROILAN.pdf
+2024-12-11 19:42:58,885 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmp38yaiv_d to uploads/AQUINO, FROILAN.pdf
+2024-12-11 19:42:59,290 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmpk5y81phv to uploads/AQUINO, FROILAN.pdf
+2024-12-11 19:42:59,680 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmp3lhqo5go to uploads/AQUINO, FROILAN.pdf
+2024-12-11 19:56:41,380 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmpzc5592rf to 4b80b91a_da08eaa0-ef2a-4727-a860-283c705a50e7.jpg
+2024-12-11 19:56:42,949 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmpz2ue74cx to 49389bdf_AQUINO, FROILAN.pdf
+2024-12-11 19:56:43,705 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmp8mv2222n to fed80e2a_AQUINO, FROILAN.pdf
+2024-12-11 19:56:44,509 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmpqi4wmd18 to 45caf93f_AQUINO, FROILAN.pdf
+2024-12-11 19:56:44,982 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmp8pzzkbx7 to 51b5e3b9_AQUINO, FROILAN.pdf
+2024-12-11 19:56:45,398 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmpz7grgbdt to 80bbc724_AQUINO, FROILAN.pdf
+2024-12-12 11:41:57,603 - ERROR - Error: 'owner_info' is an invalid keyword argument for User
+2024-12-12 11:45:38,592 - ERROR - Error: 'owner_info' is an invalid keyword argument for User
+2024-12-12 11:51:37,893 - ERROR - Error: 'owner_info' is an invalid keyword argument for User
+2024-12-12 11:54:48,150 - ERROR - Error: 'owner_info' is an invalid keyword argument for User
+2024-12-12 13:18:54,885 - ERROR - Error: {'owner_info': ['Missing data for required field.'], 'contact_info': ['Missing data for required field.'], 'location_info': ['Missing data for required field.'], 'parking_details': ['Missing data for required field.'], 'facilities_info': ['Missing data for required field.'], 'operating_hours': ['Missing data for required field.'], 'payment_info': ['Missing data for required field.'], 'documents': ['Missing data for required field.'], 'user': ['Unknown field.'], 'pricing_plan': ['Unknown field.'], 'payment_method': ['Unknown field.'], 'operating_hour': ['Unknown field.'], 'company_profile': ['Unknown field.'], 'address': ['Unknown field.'], 'parking_establishment': ['Unknown field.']}
+2024-12-12 14:04:06,945 - ERROR - Error: name 'form_data' is not defined
+2024-12-12 14:26:49,960 - ERROR - Error: {'parking_establishment': {'custom_layout': ['Field may not be null.'], 'dimensions': ['String does not match expected pattern.'], 'custom_access_info': ['Missing data for required field.'], 'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'monthly': ['Unknown field.'], 'daily': ['Unknown field.'], 'hourly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:31:19,996 - ERROR - Error: {'parking_establishment': {'custom_layout': ['Field may not be null.'], 'dimensions': ['String does not match expected pattern.'], 'custom_access_info': ['Missing data for required field.'], 'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'daily': ['Unknown field.'], 'hourly': ['Unknown field.'], 'monthly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:39:49,174 - ERROR - Error: {'parking_establishment': {'custom_access_info': ['Missing data for required field.'], 'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'monthly': ['Unknown field.'], 'daily': ['Unknown field.'], 'hourly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:42:23,465 - ERROR - Error: {'parking_establishment': {'custom_access_info': ['Missing data for required field.'], 'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'hourly': ['Unknown field.'], 'daily': ['Unknown field.'], 'monthly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:43:02,928 - ERROR - Error: {'parking_establishment': {'custom_layout': ['Field may not be null.'], 'custom_access_info': ['Missing data for required field.'], 'facilities': ['Missing data for required field.'], 'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'hourly': ['Unknown field.'], 'daily': ['Unknown field.'], 'monthly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:44:03,328 - ERROR - Error: {'parking_establishment': {'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'daily': ['Unknown field.'], 'hourly': ['Unknown field.'], 'monthly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:46:17,502 - ERROR - Error: {'parking_establishment': {'custom_access': ['Unknown field.']}, 'payment_method': {'other_method': ['Unknown field.']}, 'pricing_plan': {'hourly_rate': ['Missing data for required field.'], 'daily_rate': ['Missing data for required field.'], 'monthly_rate': ['Missing data for required field.'], 'daily': ['Unknown field.'], 'hourly': ['Unknown field.'], 'monthly': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:49:31,465 - ERROR - Error: {'parking_establishment': {'custom_access': ['Unknown field.']}, 'documents': ['Missing data for required field.']}
+2024-12-12 14:50:05,054 - ERROR - Error: {'documents': ['Missing data for required field.']}
+2024-12-12 14:50:16,983 - ERROR - Error: {'documents': ['Missing data for required field.']}
+2024-12-12 14:53:03,339 - ERROR - Error: {'documents': ['Missing data for required field.']}
+2024-12-12 14:58:27,452 - ERROR - Error: can only concatenate str (not "dict") to str
+2024-12-12 17:13:59,072 - ERROR - Error: {'payment_method': {'other_methods': ['Field may not be null.']}}
+2024-12-12 17:16:33,642 - ERROR - Error: 'tax_identification_number' is an invalid keyword argument for CompanyProfile
+2024-12-12 17:20:19,256 - ERROR - Error: (psycopg.errors.UndefinedColumn) column "is24_7" of relation "parking_establishment" does not exist
+LINE 1: ...ce_type, space_layout, custom_layout, dimensions, is24_7, ac...
+                                                             ^
+[SQL: INSERT INTO parking_establishment (uuid, profile_id, space_type, space_layout, custom_layout, dimensions, is24_7, access_info, custom_access, status, created_at, updated_at, name, lighting, accessibility, nearby_landmarks, longitude, latitude, facilities) VALUES (%(uuid)s::UUID, %(profile_id)s::INTEGER, %(space_type)s::VARCHAR, %(space_layout)s::VARCHAR, %(custom_layout)s::VARCHAR, %(dimensions)s::VARCHAR, %(is24_7)s, %(access_info)s::VARCHAR, %(custom_access)s::VARCHAR, %(status)s::VARCHAR, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %(name)s::VARCHAR, %(lighting)s::VARCHAR, %(accessibility)s::VARCHAR, %(nearby_landmarks)s::VARCHAR, %(longitude)s, %(latitude)s, %(facilities)s::VARCHAR) RETURNING parking_establishment.establishment_id, parking_establishment.created_at, parking_establishment.updated_at]
+[parameters: {'uuid': UUID('495393c2-a410-492a-b25e-f85e3d8923ae'), 'profile_id': 1, 'space_type': 'indoor', 'space_layout': 'parallel', 'custom_layout': '', 'dimensions': '2.5 x 5', 'is24_7': True, 'access_info': 'gate_code', 'custom_access': '', 'status': 'pending', 'name': 'Taylor Parking Space (Getaway Car)', 'lighting': 'cctv', 'accessibility': 'ramps', 'nearby_landmarks': 'inside the church', 'longitude': 121.04778, 'latitude': 14.775893000000002, 'facilities': 'ev charging'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-12-12 17:24:21,417 - ERROR - Error: (psycopg.errors.UndefinedColumn) column "facilities" of relation "parking_establishment" does not exist
+LINE 1: ...ssibility, nearby_landmarks, longitude, latitude, facilities...
+                                                             ^
+[SQL: INSERT INTO parking_establishment (uuid, profile_id, space_type, space_layout, custom_layout, dimensions, is24_7, access_info, custom_access, status, created_at, updated_at, name, lighting, accessibility, nearby_landmarks, longitude, latitude, facilities) VALUES (%(uuid)s::UUID, %(profile_id)s::INTEGER, %(space_type)s::VARCHAR, %(space_layout)s::VARCHAR, %(custom_layout)s::VARCHAR, %(dimensions)s::VARCHAR, %(is24_7)s, %(access_info)s::VARCHAR, %(custom_access)s::VARCHAR, %(status)s::VARCHAR, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %(name)s::VARCHAR, %(lighting)s::VARCHAR, %(accessibility)s::VARCHAR, %(nearby_landmarks)s::VARCHAR, %(longitude)s, %(latitude)s, %(facilities)s::VARCHAR) RETURNING parking_establishment.establishment_id, parking_establishment.created_at, parking_establishment.updated_at]
+[parameters: {'uuid': UUID('80d55a29-f1b1-4cf1-bab5-3772615cbaf5'), 'profile_id': 2, 'space_type': 'indoor', 'space_layout': 'parallel', 'custom_layout': '', 'dimensions': '2.5 x 5', 'is24_7': True, 'access_info': 'gate_code', 'custom_access': '', 'status': 'pending', 'name': 'Taylor Parking Space (Getaway Car)', 'lighting': 'cctv', 'accessibility': 'ramps', 'nearby_landmarks': 'inside the church', 'longitude': 121.0477611382062, 'latitude': 14.77591242483243, 'facilities': 'ev charging'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-12-12 17:31:07,908 - ERROR - Error: email already taken.
+2024-12-12 17:33:50,654 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "parking_establishment" violates check constraint "parking_establishment_space_type_check"
+DETAIL:  Failing row contains (1, b628e298-36e6-43ce-9031-e812cb21098a, 3, indoor, parallel, , 2.5 x 5, t, gate_code, , pending, 2024-12-12 17:33:50.643495, 2024-12-12 17:33:50.643495, Taylor Parking Space (Getaway Car), cctv, ramps, inside the church, 121.047761, 14.775912, ev charging).
+[SQL: INSERT INTO parking_establishment (uuid, profile_id, space_type, space_layout, custom_layout, dimensions, is24_7, access_info, custom_access, status, created_at, updated_at, name, lighting, accessibility, nearby_landmarks, longitude, latitude, facilities) VALUES (%(uuid)s::UUID, %(profile_id)s::INTEGER, %(space_type)s::VARCHAR, %(space_layout)s::VARCHAR, %(custom_layout)s::VARCHAR, %(dimensions)s::VARCHAR, %(is24_7)s, %(access_info)s::VARCHAR, %(custom_access)s::VARCHAR, %(status)s::VARCHAR, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %(name)s::VARCHAR, %(lighting)s::VARCHAR, %(accessibility)s::VARCHAR, %(nearby_landmarks)s::VARCHAR, %(longitude)s, %(latitude)s, %(facilities)s::VARCHAR) RETURNING parking_establishment.establishment_id, parking_establishment.created_at, parking_establishment.updated_at]
+[parameters: {'uuid': UUID('b628e298-36e6-43ce-9031-e812cb21098a'), 'profile_id': 3, 'space_type': 'indoor', 'space_layout': 'parallel', 'custom_layout': '', 'dimensions': '2.5 x 5', 'is24_7': True, 'access_info': 'gate_code', 'custom_access': '', 'status': 'pending', 'name': 'Taylor Parking Space (Getaway Car)', 'lighting': 'cctv', 'accessibility': 'ramps', 'nearby_landmarks': 'inside the church', 'longitude': 121.0477611382062, 'latitude': 14.77591242483243, 'facilities': 'ev charging'}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 17:46:28,080 - ERROR - Error: email already taken.
+2024-12-12 17:47:52,529 - ERROR - Error: 'str' object has no attribute 'get'
+2024-12-12 17:55:58,872 - ERROR - Error: (psycopg.errors.UndefinedObject) type "ratetype" does not exist
+LINE 1: ..., created_at, updated_at) SELECT p0::INTEGER, p1::ratetype, ...
+                                                             ^
+[SQL: INSERT INTO pricing_plan (establishment_id, rate_type, is_enabled, rate, created_at, updated_at) SELECT p0::INTEGER, p1::ratetype, p2::BOOLEAN, p3::NUMERIC(10, 2), p4::TIMESTAMP WITHOUT TIME ZONE, p5::TIMESTAMP WITHOUT TIME ZONE FROM (VALUES (%(estab ... 458 characters truncated ... g_plan.plan_id, pricing_plan.created_at, pricing_plan.updated_at, pricing_plan.plan_id AS plan_id__1]
+[parameters: {'is_enabled__0': False, 'establishment_id__0': 3, 'rate__0': 70.0, 'rate_type__0': 'hourly', 'is_enabled__1': False, 'establishment_id__1': 3, 'rate__1': 50.0, 'rate_type__1': 'daily', 'is_enabled__2': False, 'establishment_id__2': 3, 'rate__2': 0.0, 'rate_type__2': 'monthly'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-12-12 18:05:34,507 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (1, 4, GOV_ID, establishments/4/
+            f0741744_AQUINO, FROILAN
+         ..., AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:05:34.468159, null, null, PENDING, null, f5c93f75-5eca-4b16-acb7-c7aaadabc40f).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 4, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/4/\n            f0741744_AQUINO, FROILAN\n            .pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 18:14:41,759 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (2, 5, GOV_ID, establishments/5/07da9042_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:14:41.746171, null, null, PENDING, null, 8e444d4b-253d-43f9-b928-689335f7b4f2).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 5, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/5/07da9042_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 18:16:49,402 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (3, 6, GOV_ID, establishments/6/6d434bf9_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:16:49.389767, null, null, PENDING, null, 5d9833ec-048d-4a11-948f-d3d7713d0fc8).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 6, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/6/6d434bf9_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 18:21:52,352 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (4, 7, GOV_ID, establishments/7/4dc75fd2_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:21:52.335985, null, null, PENDING, null, f5902126-b34c-4288-a4c8-b01c2b2ccce5).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 7, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/7/4dc75fd2_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 18:26:23,995 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (5, 8, GOV_ID, establishments/8/0f131ea2_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:26:23.97986, null, null, PENDING, null, a0b31f69-dfd3-4ca6-aa95-5e1cd971b021).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 8, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/8/0f131ea2_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 18:27:23,550 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (6, 9, GOV_ID, establishments/9/ae90a3e4_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:27:23.535248, null, null, PENDING, null, 108e2253-7377-421b-a50c-5cba4097a3e9).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 9, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/9/ae90a3e4_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 18:58:53,800 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (7, 10, GOV_ID, establishments/10/5123a553_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 18:58:48.783647, null, null, PENDING, null, 41fc5146-4b80-4067-8381-49d2e109d5d2).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 10, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/10/5123a553_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 19:03:18,932 - ERROR - Error: (psycopg.errors.CheckViolation) new row for relation "establishment_document" violates check constraint "establishment_document_document_type_check"
+DETAIL:  Failing row contains (8, 11, GOV_ID, establishments/11/7f6cbb91_AQUINO, FROILAN.pdf, AQUINO, FROILAN.pdf, application/pdf, 0, 2024-12-12 19:03:18.910601, null, null, PENDING, null, 2da9bdac-ab7c-44b6-a383-e7716b4a6201).
+[SQL: INSERT INTO public.establishment_document (uuid, establishment_id, document_type, bucket_path, filename, mime_type, file_size, verified_at, verified_by, status, verification_notes) VALUES (uuid_generate_v4(), %(establishment_id)s::INTEGER, %(document_type)s, %(bucket_path)s::VARCHAR, %(filename)s::VARCHAR, %(mime_type)s::VARCHAR, %(file_size)s::BIGINT, %(verified_at)s::TIMESTAMP WITHOUT TIME ZONE, %(verified_by)s::INTEGER, %(status)s, %(verification_notes)s::VARCHAR) RETURNING public.establishment_document.document_id, public.establishment_document.uuid, public.establishment_document.uploaded_at]
+[parameters: {'establishment_id': 11, 'document_type': 'GOV_ID', 'bucket_path': 'establishments/11/7f6cbb91_AQUINO, FROILAN.pdf', 'filename': 'AQUINO, FROILAN.pdf', 'mime_type': 'application/pdf', 'file_size': 0, 'verified_at': None, 'verified_by': None, 'status': 'PENDING', 'verification_notes': None}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-12-12 19:06:34,412 - INFO - Uploading C:\Users\froil\AppData\Local\Temp\tmppnac_wd0 to establishments/12/f86b5617_AQUINO, FROILAN.pdf
+2024-12-13 00:13:11,760 - ERROR - Error: Incorrect OTP.

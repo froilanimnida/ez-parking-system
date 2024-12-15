@@ -55,8 +55,8 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
             "company_name": self.company_name,
             "company_reg_number": self.company_reg_number,
             "tin": self.tin,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 class CompanyProfileRepository:
@@ -87,10 +87,14 @@ class CompanyProfileRepository:
         """Get company profile by user id or profile id."""
         if profile_id:
             with session_scope() as session:
-                return session.query(CompanyProfile).filter_by(profile_id=profile_id).first()
+                company_profile = session.query(
+                    CompanyProfile
+                ).filter_by(profile_id=profile_id).first()
+                return company_profile.to_dict() if company_profile else {}
         elif user_id:
             with session_scope() as session:
-                return session.query(CompanyProfile).filter_by(user_id=user_id).first()
+                company_profile = session.query(CompanyProfile).filter_by(user_id=user_id).first()
+                return company_profile.to_dict() if company_profile else {}
         return {}
     @staticmethod
     @overload

@@ -1,6 +1,5 @@
 """Establishment Document Model."""
-
-# pylint: disable=not-callable
+from typing import overload
 
 from sqlalchemy import (
     BigInteger,
@@ -19,6 +18,9 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
+
+
+# pylint: disable=not-callable
 
 
 class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
@@ -88,8 +90,8 @@ class EstablishmentDocument(Base):  # pylint: disable=too-few-public-methods
             "filename": self.filename,
             "mime_type": self.mime_type,
             "file_size": self.file_size,
-            "uploaded_at": self.uploaded_at,
-            "verified_at": self.verified_at,
+            "uploaded_at": self.uploaded_at.isoformat() if self.uploaded_at else None,
+            "verified_at": self.verified_at.isoformat() if self.verified_at else None,
             "verified_by": self.verified_by,
             "status": self.status,
             "verification_notes": self.verification_notes,
@@ -107,14 +109,23 @@ class EstablishmentDocumentRepository:
             session.flush()
             session.refresh(new_document)
             return new_document
-        
     @staticmethod
-    def get_document(document_id: int) -> dict:
-        """Get a document by document id."""
+    @overload
+    def get_document(document_id: int):
+        """Get establishment document by document id."""
+    @staticmethod
+    @overload
+    def get_document(uuid: str):
+        """Get establishment document by uuid."""
+    @staticmethod
+    def get_document(document_id: int = None, uuid: str = None) -> dict:
+        """Get establishment document by document id or uuid."""
         with session_scope() as session:
-            document = session.query(EstablishmentDocument).get(document_id)
+            if document_id:
+                document = session.query(EstablishmentDocument).get(document_id)
+            else:
+                document = session.query(EstablishmentDocument).filter_by(uuid=uuid).first()
             return document.to_dict() if document else {}
-
     @staticmethod
     def get_establishment_documents(establishment_id: int) -> list[dict]:
         """Get all establishment documents by establishment id."""

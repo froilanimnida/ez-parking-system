@@ -28,6 +28,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
+from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
 from app.models.base import Base
 from app.utils.db import session_scope
 from app.utils.engine import get_session
@@ -130,7 +131,7 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
         return distance_formula.asc() if ascending else distance_formula.desc()
 
     @staticmethod
-    def get_establishment_id(establishment_uuid: bytes):
+    def get_establishment_id(establishment_uuid: str):
         """Get establishment ID by UUID"""
         with session_scope() as session:
             establishment = (
@@ -239,6 +240,10 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
     def get_establishments(verification_status: bool) -> list:
         """Get parking establishments by verification status."""
     @staticmethod
+    @overload
+    def get_establishments() -> list:
+        """Get all parking establishments."""
+    @staticmethod
     def get_establishments(verification_status: bool = None) -> list:
         """Get parking establishments by verification status."""
         with session_scope() as session:
@@ -249,52 +254,48 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
                     .all()
                 )
                 return [establishment.to_dict() for establishment in establishments]
-            return []
-
+            establishments = session.query(ParkingEstablishment).all()
+            return [establishment.to_dict() for establishment in establishments]
     @staticmethod
     @overload
     def get_establishment(establishment_uuid: str) -> dict:
         """Get parking establishment by UUID."""
-
     @staticmethod
     @overload
     def get_establishment(profile_id: int) -> dict:
         """Get parking establishment by profile id."""
-
     @staticmethod
     @overload
     def get_establishment(establishment_id: int) -> dict:
         """Get parking establishment by establishment id."""
-
     @staticmethod
     def get_establishment(
         establishment_uuid: str = None, profile_id: int = None, establishment_id: int = None
     ) -> Union[dict]:
         """Get parking establishment by UUID, profile id, or establishment id."""
         with session_scope() as session:
+            establishment: ParkingEstablishment
             if establishment_id is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
                     .filter(ParkingEstablishment.establishment_id == establishment_id)
                     .first()
                 )
-                return establishment.to_dict() if establishment else {}
-            if profile_id is not None:
+            elif profile_id is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
                     .filter(ParkingEstablishment.profile_id == profile_id)
                     .first()
                 )
-                return establishment.to_dict()
-            if establishment_uuid is not None:
+            elif establishment_uuid is not None:
                 establishment = (
                     session.query(ParkingEstablishment)
                     .filter(ParkingEstablishment.uuid == establishment_uuid)
                     .first()
                 )
-                return establishment.to_dict() if establishment else {}
-            return {}
-
+            if establishment is None:
+                raise EstablishmentDoesNotExist("Establishment does not exist.")
+            return establishment.to_dict()
     @staticmethod
     def update_parking_establishment(establishment_data: dict):
         """Update parking establishment details."""

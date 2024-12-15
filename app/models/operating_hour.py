@@ -57,8 +57,8 @@ class OperatingHour(Base):  # pylint: disable=too-few-public-methods
             'establishment_id': self.establishment_id,
             'day_of_week': self.day_of_week,
             'is_enabled': self.is_enabled,
-            'opening_time': self.opening_time,
-            'closing_time': self.closing_time
+            'opening_time': self.opening_time.isoformat() if self.opening_time else None,
+            'closing_time': self.closing_time.isoformat() if self.closing_time else None
         }
 
 

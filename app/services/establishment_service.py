@@ -56,8 +56,6 @@ class GetEstablishmentService:
         parking_establishment_details = ParkingEstablishmentRepository.get_establishment(
             establishment_uuid=establishment_uuid
         )
-        print("parking_establishment_details")
-        print(parking_establishment_details)
         parking_establishment_id = parking_establishment_details['establishment_id']
         parking_establishment_operating_hours = OperatingHoursRepository.get_operating_hours(
             establishment_id=parking_establishment_id

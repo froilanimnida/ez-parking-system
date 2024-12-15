@@ -155,6 +155,7 @@ class UserRegistration:  # pylint: disable=R0903
             "verification_expiry": datetime.now() + timedelta(days=7),
         })
         user_id = UserRepository.create_user(user_data)
+        print(user_id)
         if sign_up_data.get("user", {}).get("role") == "parking_manager":
             company_profile = sign_up_data.get("company_profile", {})
             company_profile.update({"user_id": user_id,})

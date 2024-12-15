@@ -62,8 +62,8 @@ class PricingPlan(Base):  # pylint: disable=too-few-public-methods
             'rate_type': self.rate_type,
             'is_enabled': self.is_enabled,
             'rate': self.rate,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 

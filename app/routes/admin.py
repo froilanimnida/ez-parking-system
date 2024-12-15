@@ -8,11 +8,15 @@ from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
+from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
 from app.schema.ban_query_validation import BanQueryValidation
 from app.schema.common_schema_validation import NewEstablishmentCommonValidation
 from app.services.admin_service import AdminService
 from app.services.establishment_service import EstablishmentService
 from app.services.vehicle_type_service import VehicleTypeService
+from app.utils.error_handlers.establishment_error_handlers import (
+    handle_establishment_does_not_exist
+)
 from app.utils.response_util import set_response
 
 admin_blp = Blueprint(
@@ -111,7 +115,7 @@ class GetBannedUsers(MethodView):
         # banned_users = admin_service.get_banned_users(admin_id)
         return set_response(200, {"code": "success", "data": "HELLO"})
 
-@admin_blp.route("/get-all-vehicle-types")
+@admin_blp.route("/vehicle-types")
 class GetAllVehicleTypes(MethodView):
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
@@ -132,14 +136,14 @@ class GetAllVehicleTypes(MethodView):
         return set_response(200, {"code": "success", "data": vehicle_types})
 
 
-@admin_blp.route("/parking-manager-applications")
+@admin_blp.route("/establishments")
 class ParkingManagerApplications(MethodView):
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],
-        description="Get all parking manager applications.",
+        description="Get all establishment along their data.",
         responses={
-            200: "Parking manager applications retrieved.",
+            200: "Establishment data retrieved.",
             401: "Unauthorized",
             403: "Forbidden",
             500: "Internal Server Error",
@@ -148,9 +152,9 @@ class ParkingManagerApplications(MethodView):
     @jwt_required(False)
     @admin_role_required()
     def get(self, admin_id):  # pylint: disable=unused-argument
-        applicants = AdminService().get_parking_applicants()
-
-        return set_response(200, {"code": "success", "data": applicants})
+        parking_establishments = AdminService().get_establishments()
+        print(parking_establishments)
+        return set_response(200, {"code": "success", "data": parking_establishments})
 
 
 @admin_blp.route("/approve-parking-manager-application")
@@ -174,8 +178,7 @@ class ApproveManagerApplication(MethodView):
         return set_response(
             201, {"code": "success", "message": "Parking manager application approved."}
         )
-    
-@admin_blp.route("/get-parking-establishment")
+@admin_blp.route("/establishment")
 class GetParkingEstablishment(MethodView):
     @admin_blp.arguments(NewEstablishmentCommonValidation, location="query")
     @admin_blp.response(200, {"message": str})
@@ -194,6 +197,13 @@ class GetParkingEstablishment(MethodView):
     @admin_role_required()
     def get(self, data, admin_id): # pylint: disable=unused-argument
         establishment_info = EstablishmentService.get_establishment(
-            establishment_uuid=data.get('establishment_uuid')
+            data.get('establishment_uuid')
         )
+        company_profile_creator = establishment_info.get('company_profile').get('user_id')
+        user_info = AdminService.get_user(company_profile_creator)
+        establishment_info.update({"user": user_info})
+        print(company_profile_creator)
         return set_response(200, {"code": "success", "data": establishment_info})
+
+
+admin_blp.register_error_handler(EstablishmentDoesNotExist, handle_establishment_does_not_exist)

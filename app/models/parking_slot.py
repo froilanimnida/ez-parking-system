@@ -2,7 +2,7 @@
 This module contains the SQLAlchemy model for the parking_slot table.
 """
 
-# pylint: disable=E1102
+# pylint: disable=E1102, C0103:
 
 from enum import Enum as PyEnum
 from typing import Any, overload, Union
@@ -33,19 +33,17 @@ from app.utils.db import session_scope
 # Enum for slot status
 class SlotStatus(PyEnum):
     """Encapsulate enumerate types of slot status."""
-
-    OPEN = "open"
-    OCCUPIED = "occupied"
-    RESERVED = "reserved"
-    CLOSED = "closed"
+    open = "open"
+    occupied = "occupied"
+    reserved = "reserved"
+    closed = "closed"
 
 
 # Enum for slot features
 class SlotFeature(PyEnum):
     """Encapsulate enumerate types of slot features."""
-
-    STANDARD = "standard"
-    PREMIUM = "premium"
+    standard = "standard"
+    premium = "premium"
 
 
 class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
@@ -59,13 +57,13 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     )
     slot_code = Column(String(45), nullable=False)
     vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
-    slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.OPEN)
+    slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.open)
     is_active = Column(Boolean, nullable=False, default=True)
     slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     floor_level = Column(SmallInteger, nullable=False, default=1)
     base_rate = Column(Numeric(10, 2), default=None)
     is_premium = Column(Boolean, nullable=False, default=False)
-    slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.STANDARD)
+    slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
@@ -98,15 +96,15 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "establishment_id": self.establishment_id,
             "slot_code": self.slot_code,
             "vehicle_type_id": self.vehicle_type_id,
-            "slot_status": self.slot_status,
+            "slot_status": self.slot_status.value if self.slot_status else None,
             "is_active": self.is_active,
             "slot_multiplier": str(self.slot_multiplier),
             "floor_level": self.floor_level,
             "base_rate": str(self.base_rate),
             "is_premium": self.is_premium,
-            "slot_features": self.slot_features,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            "slot_features": self.slot_features.value if self.slot_features else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 

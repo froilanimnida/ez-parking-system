@@ -1,4 +1,7 @@
 """This module contains the file upload API."""
+
+# pylint: disable=unused-argument, missing-function-docstring, missing-class-docstring
+
 from io import BytesIO
 
 from flask import send_file
@@ -32,18 +35,16 @@ class DownloadDocument(MethodView):
     )
     @jwt_required(False)
     def get(self, document_id, admin_id):  # pylint: disable=unused-argument
-        document = EstablishmentDocumentRepository.get_document_by_id(document_id)
+        document = EstablishmentDocumentRepository.get_document(document_id=document_id)
         if not document:
             return set_response(404, {"code": "not_found", "message": "Document not found."})
-        
         # Assuming `document['content']` contains the bytes of the document
         document_bytes = document['content']
         document_io = BytesIO(document_bytes)
         document_io.seek(0)
-        
         return send_file(
             document_io,
-            mimetype=document['mimetype'],  # e.g., 'application/pdf' or 'image/jpeg'
+            mimetype=document['mimetype'],
             as_attachment=True,
-            download_name=document['filename']  # e.g., 'document.pdf'
+            download_name=document['filename']
         )

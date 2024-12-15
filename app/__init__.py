@@ -16,6 +16,7 @@ from app.utils.error_handlers.system_wide_error_handler import (
 )
 from app.utils.jwt_helpers import add_jwt_after_request_handler
 from app.utils.logger import setup_logging
+from app.utils.setup_cors import set_up_cors
 
 
 # noinspection PyGlobalUndefined
@@ -25,6 +26,8 @@ def create_app():
 
     app = Flask(__name__, template_folder=template_dir)
     app.config.from_object(DevelopmentConfig)
+
+    set_up_cors(app)
 
     global celery
     celery = make_celery(app)

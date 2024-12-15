@@ -62,10 +62,8 @@ class R2TransactionalUpload:
                 True,
                 {"message": "All files uploaded successfully"}, {"uploaded_keys": uploaded_keys}
             )
-
         except Exception as e:
             self.logger.error("Error during upload: %s", str(e))
-
             self.logger.info("Starting rollback process")
 
             for key in uploaded_keys:
@@ -79,14 +77,13 @@ class R2TransactionalUpload:
                     self.logger.error("Error during rollback of %s: %s", key, str(delete_error))
 
             return False, {"error": str(e)}
-
-    def download(self, key: str) -> BytesIO | tuple[None, None, None]:
+    def download(self, key: str) -> tuple[BytesIO, str, str] | tuple[None, None, None]:
         """
         Download a file from R2 bucket and return it as a BytesIO object
-
+    
         Args:
             key: The key of the file in the bucket
-
+    
         Returns:
             Tuple of (file_object, content_type, filename)
             Returns (None, None, None) if file not found or error occurs
@@ -97,7 +94,6 @@ class R2TransactionalUpload:
                 Bucket=self.bucket_name,
                 Key=key
             )
-
             # Get the actual object
             file_obj = BytesIO()
             self.s3_client.download_fileobj(
@@ -105,13 +101,10 @@ class R2TransactionalUpload:
                 key,
                 file_obj
             )
-
             file_obj.seek(0)
-
             content_type = response.get('ContentType', 'application/octet-stream')
-            filename = key.split('/')[-1]  # Get filename from key
-
-            return file_obj
+            filename = key.split('/')[-1]
+            return file_obj, content_type, filename
 
         except ClientError as e:
             self.logger.error("Error downloading file %s: %s", key, str(e))
@@ -119,7 +112,6 @@ class R2TransactionalUpload:
         except Exception as e:
             self.logger.error("Unexpected error downloading file %s: %s", key, str(e))
             return None, None, None
-
     def verify_uploads(self, keys: List[str]) -> bool:
         """
         Verify that all specified keys exist in the bucket

@@ -6,6 +6,7 @@ from app.models.audit_log import AuditLogRepository
 from app.models.ban_user import BanUserRepository
 from app.models.company_profile import CompanyProfileRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
+from app.models.user import UserRepository
 
 
 # pylint: disable=C0116
@@ -13,6 +14,10 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 
 class AdminService:
     """Service class for admin operations."""
+    @staticmethod
+    def get_user(user_id: int) -> dict:
+        """Get user information."""
+        return UserManagementService.get_user(user_id)
 
     @staticmethod
     def ban_user(ban_data: dict, admin_id) -> int:
@@ -22,13 +27,13 @@ class AdminService:
     def unban_user(user_id: int, admin_id: int, ip_address: str) -> int:
         return UserBanningService.unban_user(user_id, admin_id, ip_address)
     @staticmethod
-    def get_parking_applicants() -> list:
+    def get_establishments() -> list:
         """Get all parking applicants."""
-        return ParkingApplicantService.get_parking_applicants()
+        return ParkingManagerOperations.get_establishments()
     @staticmethod
     def approve_parking_applicant(establishment_uuid: bytes) -> None:
         """Approve a parking applicant."""
-        return ParkingApplicantService.approve_parking_applicant(establishment_uuid)
+        return ParkingManagerOperations.approve_parking_applicant(establishment_uuid)
 
 
 
@@ -62,27 +67,25 @@ class UserBanningService:
         })
 
 
-class ParkingApplicantService:
+class ParkingManagerOperations:
     """Service class for parking applicant operations."""
     @staticmethod
-    def get_parking_applicants() -> list:
-        """Get all parking applicants."""
-        applicants = []
-        non_verified_parking_establishments = ParkingEstablishmentRepository.get_establishments(
-            verification_status=False
-        )
+    def get_establishments() -> list:
+        """Get all parking establishments."""
+        establishments = []
+        non_verified_parking_establishments = ParkingEstablishmentRepository.get_establishments()
         if len(non_verified_parking_establishments) == 0:
             return []
         company_profile_ids = [
             parking_establishment['profile_id']
             for parking_establishment in non_verified_parking_establishments
         ]
-        non_verified_company_profiles = CompanyProfileRepository.get_company_profiles(
+        company_profiles = CompanyProfileRepository.get_company_profiles(
             profile_ids=company_profile_ids
         )
         for establishment in non_verified_parking_establishments:
             profile = next((
-                profile for profile in non_verified_company_profiles
+                profile for profile in company_profiles
                 if profile['profile_id'] == establishment['profile_id']
             ), None)
             if profile:
@@ -90,11 +93,18 @@ class ParkingApplicantService:
                     "establishment": establishment,
                     "company_profile": profile
                 }
-                applicants.append(applicant)
-        return applicants
+                establishments.append(applicant)
+        return establishments
     @staticmethod
     def approve_parking_applicant(establishment_uuid: bytes) -> None:
         """Approve a parking applicant."""
         ParkingEstablishmentRepository.verify_parking_establishment(
             establishment_uuid=establishment_uuid
         )
+
+class UserManagementService:  # pylint: disable=too-few-public-methods
+    """Service class for user management operations."""
+    @staticmethod
+    def get_user(user_id: int) -> dict:
+        """Get user information."""
+        return UserRepository.get_user(user_id=user_id)
