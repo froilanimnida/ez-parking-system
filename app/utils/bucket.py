@@ -5,7 +5,7 @@
 import logging
 from dataclasses import dataclass
 from io import BytesIO
-from typing import List, Tuple, Optional
+from typing import List
 
 import boto3
 from botocore.exceptions import ClientError
@@ -80,7 +80,7 @@ class R2TransactionalUpload:
 
             return False, {"error": str(e)}
 
-    def download(self, key: str) -> Tuple[Optional[BytesIO], Optional[str], Optional[str]]:
+    def download(self, key: str) -> BytesIO | tuple[None, None, None]:
         """
         Download a file from R2 bucket and return it as a BytesIO object
 
@@ -106,13 +106,12 @@ class R2TransactionalUpload:
                 file_obj
             )
 
-            # Reset file pointer to beginning
             file_obj.seek(0)
 
             content_type = response.get('ContentType', 'application/octet-stream')
             filename = key.split('/')[-1]  # Get filename from key
 
-            return file_obj, content_type, filename
+            return file_obj
 
         except ClientError as e:
             self.logger.error("Error downloading file %s: %s", key, str(e))

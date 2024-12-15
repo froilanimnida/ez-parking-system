@@ -1,12 +1,12 @@
 """This module contains the file upload API."""
+from io import BytesIO
 
-from flask import request
+from flask import send_file
 from flask.views import MethodView
+from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
-from werkzeug.utils import secure_filename
 
-from app.schema.parking_manager_validation import FileUploadSchema
-from app.schema.response_schema import ApiResponse
+from app.models.establishment_document import EstablishmentDocumentRepository
 from app.utils.response_util import set_response
 
 file_upload_blp = Blueprint(
@@ -18,36 +18,32 @@ file_upload_blp = Blueprint(
 
 
 @file_upload_blp.route("/upload")
-class FileUpload(MethodView):
-    """Handles file uploads."""
-
-    @file_upload_blp.arguments(FileUploadSchema, location="form")
-    @file_upload_blp.response(201, ApiResponse)
-    def post(self):
-        """Upload a file."""
-        if "file" not in request.files:
-            return set_response(
-                400, {"code": "no_file", "message": "No file part in the request"}
-            )
-
-        file = request.files["file"]
-        if file.filename == "":
-            return set_response(
-                400, {"code": "no_filename", "message": "No selected file"}
-            )
-
-        if file:
-            filename = secure_filename(file.filename)
-            print(f"File uploaded: {filename}")
-
-            return set_response(
-                201,
-                {
-                    "code": "upload_success",
-                    "message": "File uploaded successfully",
-                },
-            )
-
-        return set_response(
-            500, {"code": "upload_failed", "message": "Failed to upload file"}
+class DownloadDocument(MethodView):
+    @file_upload_blp.doc(
+        security=[{"Bearer": []}],
+        description="Download a document by its ID.",
+        responses={
+            200: "Document downloaded.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Document not found.",
+            500: "Internal Server Error",
+        },
+    )
+    @jwt_required(False)
+    def get(self, document_id, admin_id):  # pylint: disable=unused-argument
+        document = EstablishmentDocumentRepository.get_document_by_id(document_id)
+        if not document:
+            return set_response(404, {"code": "not_found", "message": "Document not found."})
+        
+        # Assuming `document['content']` contains the bytes of the document
+        document_bytes = document['content']
+        document_io = BytesIO(document_bytes)
+        document_io.seek(0)
+        
+        return send_file(
+            document_io,
+            mimetype=document['mimetype'],  # e.g., 'application/pdf' or 'image/jpeg'
+            as_attachment=True,
+            download_name=document['filename']  # e.g., 'document.pdf'
         )

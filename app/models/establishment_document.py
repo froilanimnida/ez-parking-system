@@ -107,6 +107,13 @@ class EstablishmentDocumentRepository:
             session.flush()
             session.refresh(new_document)
             return new_document
+        
+    @staticmethod
+    def get_document(document_id: int) -> dict:
+        """Get a document by document id."""
+        with session_scope() as session:
+            document = session.query(EstablishmentDocument).get(document_id)
+            return document.to_dict() if document else {}
 
     @staticmethod
     def get_establishment_documents(establishment_id: int) -> list[dict]:

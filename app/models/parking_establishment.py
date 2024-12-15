@@ -93,7 +93,7 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             "is24_7": self.is24_7,
             "access_info": self.access_info,
             "custom_access": self.custom_access,
-            "status": self.status,
+            "verified": self.verified,
             "created_at": str(self.created_at),
             "updated_at": str(self.updated_at),
             "name": self.name,
@@ -158,7 +158,7 @@ class GetEstablishmentOperations:  # pylint: disable=R0903
             establishment_name = query_dict.get("establishment_name")
             latitude = query_dict.get("latitude")
             longitude = query_dict.get("longitude")
-            is_24_hours = query_dict.get("is_24_hours")
+            is24_7 = query_dict.get("is24_7")
             vehicle_type_id = query_dict.get("vehicle_type_id")
             query = (
                 session.query(
@@ -177,8 +177,8 @@ class GetEstablishmentOperations:  # pylint: disable=R0903
                 .group_by(ParkingEstablishment.establishment_id)
             )
 
-            if is_24_hours is not None:
-                query = query.filter(ParkingEstablishment.is_24_hours == is_24_hours)
+            if is24_7 is not None:
+                query = query.filter(ParkingEstablishment.is24_7 == is24_7)
 
             if vehicle_type_id is not None:
                 query = query.filter(ParkingSlot.vehicle_type_id == vehicle_type_id)
@@ -253,7 +253,7 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
 
     @staticmethod
     @overload
-    def get_establishment(establishment_uuid: bytes) -> dict:
+    def get_establishment(establishment_uuid: str) -> dict:
         """Get parking establishment by UUID."""
 
     @staticmethod
@@ -268,7 +268,7 @@ class ParkingEstablishmentRepository:  # pylint: disable=R0903
 
     @staticmethod
     def get_establishment(
-        establishment_uuid: bytes = None, profile_id: int = None, establishment_id: int = None
+        establishment_uuid: str = None, profile_id: int = None, establishment_id: int = None
     ) -> Union[dict]:
         """Get parking establishment by UUID, profile id, or establishment id."""
         with session_scope() as session:

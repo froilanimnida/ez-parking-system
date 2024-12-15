@@ -22,20 +22,20 @@ class EstablishmentService:
         """Get establishments with optional filtering and sorting"""
         return GetEstablishmentService.get_establishments(query_dict=query_dict)
 
-    @classmethod
+    @staticmethod
     @overload
-    def get_establishment(cls, establishment_uuid: bytes) -> dict:
+    def get_establishment(establishment_uuid: str) -> dict:
         """Get parking establishment information by UUID."""
 
-    @classmethod
+    @staticmethod
     @overload
-    def get_establishment(cls, manager_id: int) -> dict:
+    def get_establishment(manager_id: int) -> dict:
         """Get parking establishment information by manager ID."""
 
-    @classmethod
-    def get_establishment(cls, identifier: Union[bytes, int]) -> dict:
+    @staticmethod
+    def get_establishment(identifier: Union[str, int]) -> dict:
         """Get parking establishment information."""
-        if isinstance(identifier, bytes):
+        if isinstance(identifier, str):
             return GetEstablishmentService.get_establishment(identifier)
         if isinstance(identifier, int):
             return AdministrativeService.get_establishment(identifier)
@@ -51,22 +51,40 @@ class GetEstablishmentService:
         return GetEstablishmentOperations.get_establishments(query_dict)
 
     @classmethod
-    def get_establishment(cls, establishment_uuid: bytes):
+    def get_establishment(cls, establishment_uuid: str):
         """Get parking establishment information."""
-        establishment = ParkingEstablishmentRepository.get_establishment(
+        parking_establishment_details = ParkingEstablishmentRepository.get_establishment(
             establishment_uuid=establishment_uuid
         )
-        establishment_id = establishment.get("establishment_id")
-        establishment_slots = ParkingSlotRepository.get_slots(establishment_id=establishment_id)
-        pricing_plan = PricingPlanRepository.get_pricing_plans(establishment_id)
-        payment_methods = PaymentMethodRepository.get_payment_methods(establishment_id)
-        operating_hour = OperatingHoursRepository.get_operating_hours(establishment_id)
+        print("parking_establishment_details")
+        print(parking_establishment_details)
+        parking_establishment_id = parking_establishment_details['establishment_id']
+        parking_establishment_operating_hours = OperatingHoursRepository.get_operating_hours(
+            establishment_id=parking_establishment_id
+        )
+        parking_establishment_slot = ParkingSlotRepository.get_slots(
+            establishment_id=parking_establishment_id
+        )
+        parking_establishment_payment_methods = PaymentMethodRepository.get_payment_methods(
+            establishment_id=parking_establishment_id
+        )
+        parking_establishment_pricing_plans = PricingPlanRepository.get_pricing_plans(
+            establishment_id=parking_establishment_id
+        )
+        company_details = CompanyProfileRepository.get_company_profile(
+            profile_id=parking_establishment_details['profile_id']
+        )
+        establishment_documents = EstablishmentDocumentRepository.get_establishment_documents(
+            establishment_id=parking_establishment_id
+        )
         return {
-            "establishment": establishment,
-            "establishment_slots": establishment_slots,
-            "pricing_plan": pricing_plan,
-            "payment_methods": payment_methods,
-            "operating_hour": operating_hour,
+            "parking_establishment": parking_establishment_details,
+            "operating_hours": parking_establishment_operating_hours,
+            "slots": parking_establishment_slot,
+            "payment_methods": parking_establishment_payment_methods,
+            "pricing_plans": parking_establishment_pricing_plans,
+            "company_profile": company_details,
+            "establishment_documents": establishment_documents
         }
 
 

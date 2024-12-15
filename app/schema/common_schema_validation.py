@@ -25,6 +25,12 @@ class EstablishmentCommonValidation(Schema):
         )
         return in_data
 
+class NewEstablishmentCommonValidation(Schema):
+    """
+    Common validation schema for establishment. It is used to validate the establishment_uuid.
+    """
+    establishment_uuid = fields.Str(required=True)
+
 class TransactionCommonValidation(Schema):
     """ Common validation schema for transaction. It is used to validate the transaction_uuid. """
     transaction_uuid = fields.Str(required=True)

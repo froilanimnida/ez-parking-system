@@ -2,18 +2,10 @@
 
 from datetime import datetime
 
-from app.models.address import AddressRepository
 from app.models.audit_log import AuditLogRepository
 from app.models.ban_user import BanUserRepository
 from app.models.company_profile import CompanyProfileRepository
-from app.models.establishment_document import EstablishmentDocumentRepository
-from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
-from app.models.parking_slot import ParkingSlotRepository
-from app.models.payment_method import PaymentMethodRepository
-from app.models.pricing_plan import PricingPlanRepository
-from app.models.user import UserRepository
-from app.utils.bucket import R2TransactionalUpload
 
 
 # pylint: disable=C0116
@@ -33,10 +25,6 @@ class AdminService:
     def get_parking_applicants() -> list:
         """Get all parking applicants."""
         return ParkingApplicantService.get_parking_applicants()
-    @staticmethod
-    def get_parking_details(parking_establishment_uuid: bytes) -> dict:
-        """Get parking establishment applicant details."""
-        return ParkingApplicantService.get_parking_details(parking_establishment_uuid)
     @staticmethod
     def approve_parking_applicant(establishment_uuid: bytes) -> None:
         """Approve a parking applicant."""
@@ -95,69 +83,18 @@ class ParkingApplicantService:
         for establishment in non_verified_parking_establishments:
             profile = next((
                 profile for profile in non_verified_company_profiles
-                if profile.profile_id == establishment[
-                'profile_id'
-            ]
+                if profile['profile_id'] == establishment['profile_id']
             ), None)
             if profile:
                 applicant = {
                     "establishment": establishment,
-                    "company_profile": profile.to_dict()
+                    "company_profile": profile
                 }
                 applicants.append(applicant)
         return applicants
     @staticmethod
-    def get_parking_details(parking_establishment_uuid: bytes) -> dict:
-        """Get parking establishment applicant details."""
-        parking_establishment_details = ParkingEstablishmentRepository.get_establishment(
-            establishment_uuid=parking_establishment_uuid
-        )
-        parking_establishment_id = parking_establishment_details['establishment_id']
-        parking_establishment_operating_hours = OperatingHoursRepository.get_operating_hours(
-            establishment_id=parking_establishment_id
-        )
-        parking_establishment_slot = ParkingSlotRepository.get_slots(
-            establishment_id=parking_establishment_id
-        )
-        parking_establishment_payment_methods = PaymentMethodRepository.get_payment_methods(
-            establishment_id=parking_establishment_id
-        )
-        parking_establishment_pricing_plans = PricingPlanRepository.get_pricing_plans(
-            establishment_id=parking_establishment_id
-        )
-        company_details = CompanyProfileRepository.get_company_profile(
-            profile_id=parking_establishment_details['profile_id']
-        )
-        parking_establishment_documents = (EstablishmentDocumentRepository
-        .get_establishment_documents(
-            establishment_id=parking_establishment_id
-        ))
-        parking_establishment_address = AddressRepository.get_address(
-            profile_id=company_details.profile_id
-        )
-        user_details = UserRepository.get_user(user_id=company_details.user_id)
-        r2_instance = R2TransactionalUpload()
-        parking_establishment_documents_object = [
-            {
-                **document,
-                "url": r2_instance.download(document['bucket_path'])
-            } for document in parking_establishment_documents
-        ]
-        return {
-            "establishment": parking_establishment_details,
-            "operating_hours": parking_establishment_operating_hours,
-            "slots": parking_establishment_slot,
-            "payment_methods": parking_establishment_payment_methods,
-            "pricing_plans": parking_establishment_pricing_plans,
-            "company_profile": company_details,
-            "documents": parking_establishment_documents,
-            "address": parking_establishment_address,
-            "user": user_details,
-            "documents_object": parking_establishment_documents_object
-        }
-    @staticmethod
     def approve_parking_applicant(establishment_uuid: bytes) -> None:
         """Approve a parking applicant."""
-        return ParkingEstablishmentRepository.verify_parking_establishment(
+        ParkingEstablishmentRepository.verify_parking_establishment(
             establishment_uuid=establishment_uuid
         )

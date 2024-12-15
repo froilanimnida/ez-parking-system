@@ -264,12 +264,12 @@ class AuthOperations:  # pylint: disable=R0903 disable=C0115
             user: User = session.execute(
                 statement=select(User).where(User.email == email)
             ).scalar()
+            if user is None:
+                raise EmailNotFoundException("Email not found.")
             is_banned_user = session.execute(
                 select(BanUser).where(BanUser.user_id == user.user_id)
             ).scalar()
-            if user is None:
-                raise EmailNotFoundException("Email not found.")
-            if user.is_verified is False:
+            if user.is_verified is False:   
                 raise AccountIsNotVerifiedException("Account is not verified.")
             if is_banned_user is not None:
                 raise BannedUserException("User is banned.")

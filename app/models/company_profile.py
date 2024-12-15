@@ -101,7 +101,8 @@ class CompanyProfileRepository:
         """Get all company profiles."""
         with session_scope() as session:
             if profile_ids:
-                return session.query(CompanyProfile).filter(
+                company_profiles = session.query(CompanyProfile).filter(
                     CompanyProfile.profile_id.in_(profile_ids)
                 ).all()
+                return [company_profile.to_dict() for company_profile in company_profiles]
             return []

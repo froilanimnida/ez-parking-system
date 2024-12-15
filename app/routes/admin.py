@@ -9,7 +9,9 @@ from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
 from app.schema.ban_query_validation import BanQueryValidation
+from app.schema.common_schema_validation import NewEstablishmentCommonValidation
 from app.services.admin_service import AdminService
+from app.services.establishment_service import EstablishmentService
 from app.services.vehicle_type_service import VehicleTypeService
 from app.utils.response_util import set_response
 
@@ -149,3 +151,49 @@ class ParkingManagerApplications(MethodView):
         applicants = AdminService().get_parking_applicants()
 
         return set_response(200, {"code": "success", "data": applicants})
+
+
+@admin_blp.route("/approve-parking-manager-application")
+class ApproveManagerApplication(MethodView):
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Approve a parking manager application.",
+        responses={
+            200: "Parking manager application approved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+            422: "Unprocessable",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    def post(self, ban_data, admin_id):  # pylint: disable=unused-argument
+        # AdminService().approve_parking_applicant(ban_data)
+        return set_response(
+            201, {"code": "success", "message": "Parking manager application approved."}
+        )
+    
+@admin_blp.route("/get-parking-establishment")
+class GetParkingEstablishment(MethodView):
+    @admin_blp.arguments(NewEstablishmentCommonValidation, location="query")
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get parking establishment details.",
+        responses={
+            200: "Parking establishment details retrieved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+            422: "Unprocessable",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    def get(self, data, admin_id): # pylint: disable=unused-argument
+        establishment_info = EstablishmentService.get_establishment(
+            establishment_uuid=data.get('establishment_uuid')
+        )
+        return set_response(200, {"code": "success", "data": establishment_info})
