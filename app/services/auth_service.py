@@ -157,7 +157,7 @@ class UserRegistration:  # pylint: disable=R0903
         user_id = UserRepository.create_user(user_data)
         if sign_up_data.get("user", {}).get("role") == "parking_manager":
             company_profile = sign_up_data.get("company_profile", {})
-            company_profile.update({"profile_id": user_id,})
+            company_profile.update({"user_id": user_id,})
             company_profile_id = self.add_new_company_profile(company_profile)
 
             address = sign_up_data.get("address", {})
