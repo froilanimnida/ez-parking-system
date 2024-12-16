@@ -13,13 +13,10 @@ from app.models.parking_slot import ParkingSlotRepository
 class ParkingSlotService:
     """Wraps the logic for getting the list of slots."""
     @staticmethod
-    def get_all_slots(establishment_uuid: bytes):
+    def get_all_slots(establishment_uuid: str):
         return GetSlotService.get_all_slots(establishment_uuid)
     @staticmethod
-    def get_slots_by_vehicle_type(vehicle_type_id: int, establishment_id: int):
-        return GetSlotService.get_slots_by_vehicle_type(vehicle_type_id, establishment_id)
-    @staticmethod
-    def get_slot(slot_uuid: bytes):
+    def get_slot(slot_uuid: str):
         return GetSlotService.get_slot(slot_uuid)
     @staticmethod
     def create_slot(new_slot_data: dict, user_id: int, ip_address):
@@ -36,21 +33,13 @@ class ParkingSlotService:
 class GetSlotService:
     """Wraps the logic for getting the list of slots, calling the model layer classes."""
     @staticmethod
-    def get_all_slots(establishment_uuid: bytes):  # pylint: disable=C0116
+    def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
         return ParkingSlotRepository.get_slots(
             establishment_id=ParkingEstablishmentRepository.get_establishment(
             establishment_uuid
         ).get("establishment_id"))
     @staticmethod
-    def get_slots_by_vehicle_type(vehicle_type_id: int, establishment_uuid: bytes):
-        return ParkingSlotRepository.get_slots_by_criteria({
-            "vehicle_type_id": vehicle_type_id,
-            "establishment_id": ParkingEstablishmentRepository.get_establishment(
-                establishment_uuid
-            ).get("establishment_id")
-        })
-    @staticmethod
-    def get_slot(slot_uuid: bytes):
+    def get_slot(slot_uuid: str):
         """Get slot by slot code."""
         slot = ParkingSlotRepository.get_slot(slot_uuid)
         if slot is None:

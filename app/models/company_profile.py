@@ -4,15 +4,7 @@
 
 from typing import overload, Union
 
-from sqlalchemy import (
-    TIMESTAMP,
-    CheckConstraint,
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    func,
-)
+from sqlalchemy import TIMESTAMP, CheckConstraint, Column, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base

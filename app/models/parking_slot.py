@@ -8,15 +8,7 @@ from enum import Enum as PyEnum
 from typing import Any, overload, Union
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Numeric,
-    Boolean,
-    SmallInteger,
-    TIMESTAMP,
-    ForeignKey,
-    CheckConstraint,
+    Column, Integer, String, Numeric, Boolean, SmallInteger, TIMESTAMP, ForeignKey, CheckConstraint,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import ENUM
@@ -284,38 +276,4 @@ class ParkingSlotRepository:
                 ).all()
             else:
                 slots = session.query(ParkingSlot).all()
-            return [slot.to_dict() for slot in slots]
-
-    @staticmethod
-    def get_slots_by_criteria(criteria: dict[str, Any]) -> list[dict[str, Any]]:
-        """
-        Fetch parking slots based on specific criteria.
-
-        Parameters:
-            criteria (dict): Dictionary containing the filter criteria.
-
-        Returns:
-            list[dict]: List of parking slot dictionaries.
-        """
-        with session_scope() as session:
-            query = session.query(ParkingSlot).join(
-                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
-            )
-            for key, value in criteria.items():
-                query = query.filter(getattr(ParkingSlot, key) == value)
-            slots = query.all()
-            return [slot.to_dict() for slot in slots]
-
-    @staticmethod
-    def get_all_slots() -> list[ParkingSlot]:
-        """
-        Get all parking slots (for admin purposes).
-
-        Returns:
-            list[ParkingSlot]: List of all parking slot objects.
-        """
-        with session_scope() as session:
-            slots = session.query(ParkingSlot).join(
-                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
-            ).all
             return [slot.to_dict() for slot in slots]

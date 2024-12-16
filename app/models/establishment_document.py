@@ -133,3 +133,11 @@ class EstablishmentDocumentRepository:
             documents = session.query(EstablishmentDocument
                 ).filter_by(establishment_id=establishment_id).all()
             return [document.to_dict() for document in documents]
+    @staticmethod
+    def update_document(document_id: int, data: dict):
+        """Update an establishment document."""
+        with session_scope() as session:
+            document = session.query(EstablishmentDocument).get(document_id)
+            for key, value in data.items():
+                setattr(document, key, value)
+            session.commit()

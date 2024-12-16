@@ -2,13 +2,12 @@
 
 from marshmallow import Schema, fields, validate, post_load
 
-from app.utils.uuid_utility import UUIDUtility
-
 
 class BanQueryValidation(Schema):
     """Validation schema for banning the plate numbers by the admin."""
 
     ban_reason = fields.Str(required=True, validate=validate.Length(min=1, max=255))
+    user_id = fields.Str(required=True)
     ban_start = fields.DateTime(required=True)
     ban_end = fields.DateTime(required=True)
     is_permanent = fields.Bool(required=True)
@@ -32,10 +31,3 @@ class BanQueryValidation(Schema):
 class UnbanQueryValidation(Schema):
     """Validation schema for unbanning the plate numbers by the admin."""
     ban_uuid = fields.Str(required=True)
-    @post_load
-    def normalize_uuid(self, in_data, **kwargs): # pylint: disable=unused-argument
-        """Normalize the ban_uuid by removing hyphens."""
-        uuid_utility = UUIDUtility()
-        in_data["ban_uuid"] = uuid_utility.remove_hyphens_from_uuid(in_data["ban_uuid"])
-        in_data["ban_uuid"] = uuid_utility.uuid_to_binary(in_data["ban_uuid"])
-        return in_data

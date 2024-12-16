@@ -5,7 +5,7 @@
     the model instance to a dictionary format.
 """
 
-# pylint: disable=E1102, C0415
+# pylint: disable=E1102, C0415, disable=too-few-public-methods
 
 from typing import Union, overload
 from uuid import uuid4
@@ -34,7 +34,8 @@ from app.utils.db import session_scope
 from app.utils.engine import get_session
 
 
-class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, missing-class-docstring
+class ParkingEstablishment(Base):
+    """Define the parking_establishment table model."""
     __tablename__ = "parking_establishment"
 
     establishment_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -142,7 +143,7 @@ class ParkingEstablishment(Base):  # pylint: disable=too-few-public-methods, mis
             return establishment.establishment_id
 
 
-class GetEstablishmentOperations:  # pylint: disable=R0903
+class GetEstablishmentOperations:
     """Class for operations related to parking establishment (Getting)."""
 
     # pylint: disable=R0914
@@ -225,7 +226,7 @@ class GetEstablishmentOperations:  # pylint: disable=R0903
             session.close()
 
 
-class ParkingEstablishmentRepository:  # pylint: disable=R0903
+class ParkingEstablishmentRepository:
     """Class for operations related to parking establishment"""
     @staticmethod
     def create_establishment(establishment_data: dict):

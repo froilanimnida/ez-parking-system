@@ -19,7 +19,6 @@ from app.schema.parking_manager_validation import (
 )
 from app.schema.query_validation import (
     EstablishmentQueryValidation,
-    EstablishmentSlotTypeValidation,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.slot_service import ParkingSlotService
@@ -55,25 +54,6 @@ class GetSlotsByEstablishmentID(MethodView):
     @jwt_required(True)
     def get(self, data):
         slots = ParkingSlotService.get_all_slots(data.get("establishment_uuid"))
-        return set_response(200, {"slots": slots})
-
-
-@slot_blp.route("/get-slots-by-vehicle-type")
-class GetSlotsByVehicleType(MethodView):
-    @slot_blp.arguments(EstablishmentSlotTypeValidation)
-    @slot_blp.response(200, ApiResponse)
-    @slot_blp.doc(
-        description="Get all slots by vehicle type",
-        responses={
-            200: {"description": "Slots retrieved successfully"},
-            400: {"description": "Bad Request"},
-        },
-    )
-    @jwt_required(True)
-    def get(self, data):
-        vehicle_size = data.get("vehicle_size")
-        establishment_id = data.get("establishment_id")
-        slots = ParkingSlotService.get_slots_by_vehicle_type(vehicle_size, establishment_id)
         return set_response(200, {"slots": slots})
 
 
