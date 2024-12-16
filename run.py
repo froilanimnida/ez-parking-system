@@ -5,7 +5,6 @@
 from os import getenv
 
 from dotenv import load_dotenv, find_dotenv
-from watchfiles import run_process
 from werkzeug import run_simple
 
 load_dotenv(find_dotenv())
@@ -28,7 +27,7 @@ def run_dev_server():
     run_simple(
         hostname="0.0.0.0",
         ssl_context=create_ssl_context(),
-        port=5001,
+        port=5000,
         application=app,
         threaded=True,
         use_reloader=False,
@@ -40,8 +39,9 @@ ENVIRONMENT = getenv("ENVIRONMENT", "")
 if __name__ == "__main__":
     if ENVIRONMENT == "production":
         app = create_app()
-        app.run(host="0.0.0.0", port=5001)
+        app.run(host="0.0.0.0", port=5000)
     else:
+        from watchfiles import run_process
         run_process(
             ".",  # Monitor current directory
             target=run_dev_server,

@@ -25,5 +25,5 @@ class CreateSlotSchema(SlotCodeValidationQuerySchema):
     base_rate = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))
     is_premium = fields.Boolean(required=True)
     slot_features = fields.Str(required=False, missing="standard", validate=validate.OneOf(
-        ['standard', 'premium']
+        ['standard', 'covered', "vip", "disabled", "ev_charging"]
     ))

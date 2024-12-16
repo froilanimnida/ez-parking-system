@@ -44,6 +44,27 @@ def admin_role_required():
 
     return wrapper
 
+@admin_blp.route("/users")
+class GetAllUsers(MethodView):
+    @admin_blp.response(200, {"message": str})
+    @admin_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get all users.",
+        responses={
+            200: "Users retrieved.",
+            401: "Unauthorized",
+            403: "Forbidden",
+            500: "Internal Server Error",
+            422: "Unprocessable",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    def get(self, admin_id): # pylint: disable=unused-argument
+        admin_service = AdminService()
+        users = admin_service.get_all_users()
+        return set_response(200, {"code": "success", "data": users})
+
 
 @admin_blp.route("/ban-user")
 class BanUser(MethodView):

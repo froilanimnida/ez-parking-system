@@ -10,7 +10,7 @@ from flask_smorest import Blueprint
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenEstablishment,
-    NoSlotsFoundInTheGivenVehicleType,
+    NoSlotsFoundInTheGivenVehicleType, SlotAlreadyExists,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.routes.parking_manager import parking_manager_required
@@ -26,7 +26,7 @@ from app.services.slot_service import ParkingSlotService
 from app.utils.error_handlers.slot_lookup_error_handlers import (
     handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment,
-    handle_no_slots_found_in_the_given_vehicle_type,
+    handle_no_slots_found_in_the_given_vehicle_type, handle_slot_already_exists,
 )
 from app.utils.error_handlers.vehicle_type_error_handlers import (
     handle_vehicle_type_does_not_exist,
@@ -160,3 +160,4 @@ slot_blp.register_error_handler(
 slot_blp.register_error_handler(
     VehicleTypeDoesNotExist, handle_vehicle_type_does_not_exist
 )
+slot_blp.register_error_handler(SlotAlreadyExists, handle_slot_already_exists)

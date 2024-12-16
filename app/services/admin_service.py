@@ -2,11 +2,14 @@
 
 from datetime import datetime
 
+from flask import render_template
+
 from app.models.audit_log import AuditLogRepository
 from app.models.ban_user import BanUserRepository
 from app.models.company_profile import CompanyProfileRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.user import UserRepository
+from app.tasks import send_mail
 
 
 # pylint: disable=C0116
@@ -34,6 +37,10 @@ class AdminService:
     def approve_parking_applicant(establishment_uuid: bytes) -> None:
         """Approve a parking applicant."""
         return ParkingManagerOperations.approve_parking_applicant(establishment_uuid)
+    @staticmethod
+    def get_all_users() -> list[dict]:
+        """Get all users."""
+        return UserManagementService.get_users()
 
 
 
@@ -43,7 +50,12 @@ class UserBanningService:
     @staticmethod
     def ban_user(ban_data: dict, admin_id) -> int:
         """Ban a user."""
-        BanUserRepository.ban_user(ban_data)
+        user_id = BanUserRepository.ban_user(ban_data)
+        user_email = UserRepository.get_user(user_id)['email']
+        ban_template = render_template(
+            '/ban.html', reason=ban_data['reason'], email=user_email
+        )
+        send_mail(user_email, ban_template, 'You have been banned')
         return AuditLogRepository.create_audit_log({
             "action_type": "CREATE",
             "performed_by": admin_id,
@@ -108,3 +120,7 @@ class UserManagementService:  # pylint: disable=too-few-public-methods
     def get_user(user_id: int) -> dict:
         """Get user information."""
         return UserRepository.get_user(user_id=user_id)
+    @staticmethod
+    def get_users() -> list[dict]:
+        """Get all users."""
+        return UserRepository.get_all_users()

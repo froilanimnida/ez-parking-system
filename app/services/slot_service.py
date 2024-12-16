@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from app.exceptions.slot_lookup_exceptions import NoSlotsFoundInTheGivenSlotCode
+from app.exceptions.slot_lookup_exceptions import NoSlotsFoundInTheGivenSlotCode, SlotAlreadyExists
 from app.models.audit_log import AuditLogRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository, ParkingEstablishment
 from app.models.parking_slot import ParkingSlotRepository
@@ -64,6 +64,9 @@ class AddSlotService:
     """Wraps the logic for creating a new slot."""
     @staticmethod
     def create_slot(new_slot_data: dict, user_id: int, ip_address):  # pylint: disable=C0116
+        slot_exists = ParkingSlotRepository.get_slot(new_slot_data.get("slot_code"))
+        if slot_exists:
+            raise SlotAlreadyExists("Slot already exists.")
         now = datetime.now()
         establishment_id = ParkingEstablishment.get_establishment_id(
             new_slot_data.pop("establishment_uuid")

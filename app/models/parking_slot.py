@@ -43,7 +43,10 @@ class SlotStatus(PyEnum):
 class SlotFeature(PyEnum):
     """Encapsulate enumerate types of slot features."""
     standard = "standard"
-    premium = "premium"
+    covered = "covered"
+    vip = "vip"
+    disabled = "disabled"
+    ev_charging = "ev_charging"
 
 
 class ParkingSlot(Base):  # pylint: disable=too-few-public-methods

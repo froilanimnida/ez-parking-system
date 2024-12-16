@@ -249,6 +249,30 @@ class UserRepository:
             user_info.pop("verification_expiry")
             return user_info
 
+    @staticmethod
+    def get_all_users() -> list[dict]:
+        """
+        Get all users in the database.
+
+        Returns:
+        list: A list of dictionaries containing the user information.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            users = session.execute(select(User)).scalars().all()
+            users_list = []
+            for user in users:
+                user_info = user.to_dict()
+                user_info.pop("otp_secret")
+                user_info.pop("otp_expiry")
+                user_info.pop("verification_token")
+                user_info.pop("verification_expiry")
+                users_list.append(user_info)
+            return users_list
+
 class AuthOperations:  # pylint: disable=R0903 disable=C0115
     @classmethod
     def login_user(cls, email: str):

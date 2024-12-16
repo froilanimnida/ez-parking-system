@@ -70,7 +70,7 @@ class BanUserRepository:
             session.add(ban_user)
             session.flush()
             session.refresh(ban_user)
-            return ban_user.ban_id
+            return ban_user.user_id
 
     @staticmethod
     def unban_user(user_id: int):

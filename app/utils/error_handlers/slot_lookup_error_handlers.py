@@ -5,7 +5,7 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType,
     SlotNotFound,
-    SlotStatusTaken,
+    SlotStatusTaken, SlotAlreadyExists
 )
 from app.utils.error_handlers.base_error_handler import handle_error
 
@@ -66,5 +66,16 @@ def handle_slot_taken(error):
             400,
             "slot_status_taken",
             "Slot status is taken.",
+        )
+    return error
+
+def handle_slot_already_exists(error):
+    """This function handles slot already exists exceptions."""
+    if isinstance(error, SlotAlreadyExists):
+        return handle_error(
+            error,
+            400,
+            "slot_already_exists",
+            "Slot code already exists.",
         )
     return error
