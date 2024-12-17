@@ -77,7 +77,7 @@ class CreateReservation(MethodView):
         return set_response(201, {"message": "Reservation created successfully."})
 
 
-@transactions_blp.route("/reservation/cancel")
+@transactions_blp.route("/cancel")
 class CancelReservation(MethodView):
 
     @jwt_required(False)
@@ -121,9 +121,8 @@ class ViewTransaction(MethodView):
         return set_response(200, {"code": "success", "transaction": transaction})
 
 
-@transactions_blp.route("/transaction-form-details")
+@transactions_blp.route("/checkout")
 class TransactionOverview(MethodView):
-
     @jwt_required(False)
     @user_role_and_user_id_required()
     @transactions_blp.response(200, ApiResponse)

@@ -23,7 +23,7 @@ class ReservationCreationSchema(EstablishmentCommonValidation):
 
 class TransactionFormDetailsSchema(EstablishmentCommonValidation):
     """Schema for the transaction form details."""
-    slot_code = fields.Str(required=True)
+    slot_uuid = fields.Str(required=True)
 
 
 class ValidateEntrySchema(Schema):
