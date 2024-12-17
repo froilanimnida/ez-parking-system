@@ -1,5 +1,7 @@
 """ Establishment related operations from the routes will be handled here. """
 
+# pylint: disable=too-few-public-methods
+
 from typing import overload, Union
 
 from app.models.address import AddressRepository
@@ -7,7 +9,7 @@ from app.models.company_profile import CompanyProfileRepository
 from app.models.establishment_document import EstablishmentDocumentRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import (
-    ParkingEstablishmentRepository, GetEstablishmentOperations
+    ParkingEstablishmentRepository
 )
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.payment_method import PaymentMethodRepository
@@ -16,6 +18,10 @@ from app.models.pricing_plan import PricingPlanRepository
 
 class EstablishmentService:
     """Class for operations related to parking establishment."""
+    @staticmethod
+    def user_get_establishment(establishment_uuid: str) -> dict:
+        """Get parking establishment information by UUID."""
+        return UserQueryService.get_establishment(establishment_uuid)
 
     @classmethod
     def get_establishments(cls, query_dict: dict) -> list:
@@ -48,7 +54,11 @@ class GetEstablishmentService:
     @classmethod
     def get_establishments(cls, query_dict: dict) -> list:
         """Get establishments with optional filtering and sorting"""
-        return GetEstablishmentOperations.get_establishments(query_dict)
+        return ParkingEstablishmentRepository.get_establishments(
+            establishment_name=query_dict.get("establishment_name"),
+            user_longitude=query_dict.get("user_longitude"),
+            user_latitude=query_dict.get("user_latitude")
+        )
 
     @classmethod
     def get_establishment(cls, establishment_uuid: str):
@@ -86,7 +96,7 @@ class GetEstablishmentService:
         }
 
 
-class AdministrativeService:  # pylint: disable=too-few-public-methods
+class AdministrativeService:
     """Class for operations related to administrative tasks."""
     @classmethod
     def get_establishment(cls, manager_id: int):
@@ -117,4 +127,30 @@ class AdministrativeService:  # pylint: disable=too-few-public-methods
             "operating_hour": operating_hour,
             "payment_method": payment_method,
             "pricing_plan": pricing_plan,
+        }
+
+
+class UserQueryService:
+    """Class for operations related to user queries."""
+    @staticmethod
+    def get_establishment(establishment_uuid: str):
+        """Get parking establishment information."""
+        establishment_details = ParkingEstablishmentRepository.get_establishment(
+            establishment_uuid=establishment_uuid
+        )
+        establishment_id = establishment_details.get("establishment_id")
+        operating_hours = OperatingHoursRepository.get_operating_hours(
+            establishment_id=establishment_id
+        )
+        slots = ParkingSlotRepository.get_slots(establishment_id=establishment_id)
+        payment_methods = PaymentMethodRepository.get_payment_methods(
+            establishment_id=establishment_id
+        )
+        pricing_plans = PricingPlanRepository.get_pricing_plans(establishment_id=establishment_id)
+        return {
+            "establishment": establishment_details,
+            "operating_hours": operating_hours,
+            "slots": slots,
+            "payment_methods": payment_methods,
+            "pricing_plans": pricing_plans
         }

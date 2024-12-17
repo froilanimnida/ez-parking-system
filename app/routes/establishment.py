@@ -1,4 +1,5 @@
 """ Routes related to parking establishment. """
+
 from flask import send_file
 from flask.views import MethodView
 from flask_smorest import Blueprint
@@ -33,7 +34,7 @@ establishment_blp = Blueprint(
 
 @establishment_blp.route("/query")
 class GetEstablishments(MethodView):
-    @establishment_blp.arguments(EstablishmentQuerySchema)
+    @establishment_blp.arguments(EstablishmentQuerySchema, location="query")
     @establishment_blp.response(200, EstablishmentResponseSchema)
     @establishment_blp.doc(
         description="Get establishments with optional filters and sorting",
@@ -44,7 +45,6 @@ class GetEstablishments(MethodView):
     )
     def get(self, query_params):
         establishments = EstablishmentService.get_establishments(query_params)
-
         return set_response(
             200,
             {
@@ -54,7 +54,7 @@ class GetEstablishments(MethodView):
         )
 
 
-@establishment_blp.route("/info")
+@establishment_blp.route("/view")
 class GetEstablishmentInfo(MethodView):
     @establishment_blp.arguments(EstablishmentQueryValidation, location="query")
     @establishment_blp.response(200, EstablishmentResponseSchema)
@@ -66,7 +66,7 @@ class GetEstablishmentInfo(MethodView):
         },
     )
     def get(self, query_params):
-        establishment = EstablishmentService.get_establishment(
+        establishment = EstablishmentService.user_get_establishment(
             query_params.get("establishment_uuid")
         )
         return set_response(

@@ -269,11 +269,24 @@ class ParkingSlotRepository:
         """
         with session_scope() as session:
             if establishment_id:
-                slots = session.query(ParkingSlot).filter_by(
-                    establishment_id=establishment_id).join(
-                    VehicleType,
-                    ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+                query = session.query(
+                    ParkingSlot,
+                    VehicleType.name.label("vehicle_type_name"),
+                    VehicleType.code.label("vehicle_type_code"),
+                    VehicleType.size_category.label("vehicle_type_size"),
+                ).filter_by(establishment_id=establishment_id).join(
+                    VehicleType,ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
                 ).all()
             else:
-                slots = session.query(ParkingSlot).all()
-            return [slot.to_dict() for slot in slots]
+                query = session.query(ParkingSlot).all()
+            slots = []
+            for slot, vehicle_type_name, vehicle_type_code, vehicle_type_size in query:
+                slot_dict = slot.to_dict()
+                slot_dict.update({
+                    "vehicle_type_name": vehicle_type_name,
+                    "vehicle_type_code": vehicle_type_code,
+                    "vehicle_type_size": vehicle_type_size.value
+                })
+                slot_dict.pop("vehicle_type_id")
+                slots.append(slot_dict)
+            return slots

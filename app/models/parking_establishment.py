@@ -21,17 +21,16 @@ from sqlalchemy import (
     update,
     ForeignKey,
     TIMESTAMP,
-    case,
     CheckConstraint,
     String,
 )
-from sqlalchemy.exc import OperationalError, DatabaseError
 from sqlalchemy.orm import relationship
 
 from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
 from app.models.base import Base
+from app.models.parking_slot import ParkingSlot
+from app.models.pricing_plan import PricingPlan
 from app.utils.db import session_scope
-from app.utils.engine import get_session
 
 
 class ParkingEstablishment(Base):
@@ -101,7 +100,7 @@ class ParkingEstablishment(Base):
             "name": self.name,
             "lighting": self.lighting,
             "accessibility": self.accessibility,
-            "nearby_landmarks": self.nearby_landmarks,
+            "nearby_landmarks": self.nearby_landmarks.title() if self.nearby_landmarks else '',
             "longitude": float(self.longitude),
             "latitude": float(self.latitude),
             "facilities": self.facilities,
@@ -143,89 +142,6 @@ class ParkingEstablishment(Base):
             return establishment.establishment_id
 
 
-class GetEstablishmentOperations:
-    """Class for operations related to parking establishment (Getting)."""
-
-    # pylint: disable=R0914
-    @staticmethod
-    def get_establishments(query_dict: dict):
-        """
-        Combined query for establishments with optional filters
-        """
-        # pylint: disable=cyclic-import
-        from app.models.parking_slot import ParkingSlot
-
-        session = get_session()
-        try:
-            establishment_name = query_dict.get("establishment_name")
-            latitude = query_dict.get("latitude")
-            longitude = query_dict.get("longitude")
-            is24_7 = query_dict.get("is24_7")
-            vehicle_type_id = query_dict.get("vehicle_type_id")
-            query = (
-                session.query(
-                    ParkingEstablishment,
-                    func.count(case((ParkingSlot.slot_status == "open", 1))).label(
-                        "open_slots"
-                    ),
-                    func.count(case((ParkingSlot.slot_status == "occupied", 1))).label(
-                        "occupied_slots"
-                    ),
-                    func.count(case((ParkingSlot.slot_status == "reserved", 1))).label(
-                        "reserved_slots"
-                    ),
-                )
-                .outerjoin(ParkingSlot)
-                .group_by(ParkingEstablishment.establishment_id)
-            )
-
-            if is24_7 is not None:
-                query = query.filter(ParkingEstablishment.is24_7 == is24_7)
-
-            if vehicle_type_id is not None:
-                query = query.filter(ParkingSlot.vehicle_type_id == vehicle_type_id)
-            if establishment_name is not None:
-                query = query.filter(
-                    ParkingEstablishment.name.ilike(f"%{establishment_name}%")
-                )
-
-            if latitude is not None and longitude is not None:
-                query = query.order_by(
-                    ParkingEstablishment.order_by_distance(
-                        latitude=latitude, longitude=longitude, ascending=True
-                    )
-                )
-
-            establishments = query.all()
-
-            result = []
-            for (
-                establishment,
-                open_count,
-                occupied_count,
-                reserved_count,
-            ) in establishments:
-                establishment_dict = establishment.to_dict()
-                establishment_dict.update(
-                    {
-                        "slot_statistics": {
-                            "open_slots": open_count,
-                            "occupied_slots": occupied_count,
-                            "reserved_slots": reserved_count,
-                            "total_slots": open_count + occupied_count + reserved_count,
-                        }
-                    }
-                )
-                result.append(establishment_dict)
-
-            return result
-
-        except (OperationalError, DatabaseError) as error:
-            raise error
-        finally:
-            session.close()
-
-
 class ParkingEstablishmentRepository:
     """Class for operations related to parking establishment"""
     @staticmethod
@@ -242,11 +158,21 @@ class ParkingEstablishmentRepository:
         """Get parking establishments by verification status."""
     @staticmethod
     @overload
+    def get_establishments(
+        establishment_name: str = None, user_longitude: float = None, user_latitude: float = None
+    ) -> list:
+        """Get all parking establishments."""
+    @staticmethod
+    @overload
     def get_establishments() -> list:
         """Get all parking establishments."""
     @staticmethod
-    def get_establishments(verification_status: bool = None) -> list:
+    def get_establishments(
+        verification_status: bool = None, establishment_name: str = None,
+        user_longitude: float = None, user_latitude: float = None
+    ) -> list:
         """Get parking establishments by verification status."""
+        print("I am here")
         with session_scope() as session:
             if verification_status is not None:
                 establishments = (
@@ -255,6 +181,43 @@ class ParkingEstablishmentRepository:
                     .all()
                 )
                 return [establishment.to_dict() for establishment in establishments]
+            if establishment_name is not None or (user_longitude is not None and
+                                                  user_latitude is not None):
+                query = session.query(
+                    ParkingEstablishment,
+                    func.count(ParkingSlot.slot_id).label("total_slots"),
+                    func.count(ParkingSlot.slot_id).filter(
+                        ParkingSlot.slot_status == "open").label("open_slots"),
+                    func.count(ParkingSlot.slot_id).filter(
+                        ParkingSlot.slot_status == "occupied").label("occupied_slots"),
+                    func.count(ParkingSlot.slot_id).filter(
+                        ParkingSlot.slot_status == "reserved").label("reserved_slots")
+                ).outerjoin(ParkingSlot).group_by(ParkingEstablishment.establishment_id)
+                if establishment_name is not None:
+                    query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
+                if user_longitude is not None and user_latitude is not None:
+                    query = query.order_by(
+                        ParkingEstablishment.order_by_distance(
+                            latitude=user_latitude, longitude=user_longitude, ascending=True
+                        )
+                    )
+                establishments = query.all()
+                result = []
+                for establishment, total_slots, open_slots, occupied_slots, reserved_slots in \
+                    establishments:
+                    pricing_plans = session.query(PricingPlan).filter(
+                        PricingPlan.establishment_id == establishment.establishment_id
+                    ).all()
+                    establishment_dict = establishment.to_dict()
+                    establishment_dict.update({
+                        "total_slots": total_slots,
+                        "open_slots": open_slots,
+                        "occupied_slots": occupied_slots,
+                        "reserved_slots": reserved_slots,
+                        "pricing_plans": [plan.to_dict() for plan in pricing_plans]
+                    })
+                    result.append(establishment_dict)
+                return result
             establishments = session.query(ParkingEstablishment).all()
             return [establishment.to_dict() for establishment in establishments]
     @staticmethod
