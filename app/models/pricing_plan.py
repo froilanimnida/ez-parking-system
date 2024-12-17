@@ -3,7 +3,7 @@ This module defines the PricingPlan model which represents the
 pricing plan of a parking establishment.
 """
 
-# pylint: disable=E1102
+# pylint: disable=E1102, too-few-public-methods
 
 
 from enum import Enum as PyEnum
@@ -25,7 +25,7 @@ class RateType(PyEnum):
     MONTHLY = 'monthly'
 
 
-class PricingPlan(Base):  # pylint: disable=too-few-public-methods
+class PricingPlan(Base):
     """ Pricing Plan Model """
     __tablename__ = 'pricing_plan'
 
@@ -62,8 +62,8 @@ class PricingPlan(Base):  # pylint: disable=too-few-public-methods
             'rate_type': self.rate_type,
             'is_enabled': self.is_enabled,
             'rate': self.rate,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 

@@ -24,9 +24,6 @@ class SlotCodeValidationQuerySchema(SlotCommonValidation):
 
 class EstablishmentQuerySchema(Schema):
     """Validation schema for establishment query parameters."""
-
-    longitude = fields.Float(required=False)
-    latitude = fields.Float(required=False)
+    user_longitude = fields.Float(required=False)
+    user_latitude = fields.Float(required=False)
     establishment_name = fields.Str(required=False)
-    vehicle_type_id = fields.Int(required=False, validate=validate.Range(min=1))
-    is_24_hours = fields.Bool(required=False)

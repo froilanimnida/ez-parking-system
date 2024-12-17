@@ -11,6 +11,7 @@ from app.utils.db import session_scope
 from app.utils.uuid_utility import UUIDUtility
 
 
+# noinspection PyTypeChecker
 class BanUser(Base):  # pylint: disable=too-few-public-methods
     """Represents the banned users in the database."""
     __tablename__ = "ban_user"
@@ -69,7 +70,7 @@ class BanUserRepository:
             session.add(ban_user)
             session.flush()
             session.refresh(ban_user)
-            return ban_user.ban_id
+            return ban_user.user_id
 
     @staticmethod
     def unban_user(user_id: int):

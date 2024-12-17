@@ -11,19 +11,12 @@ class EstablishmentCommonValidation(Schema):
     Common validation schema for establishment. It is used to validate the establishment_uuid.
     """
     establishment_uuid = fields.Str(required=True)
-    @post_load
-    def normalize_uuid_to_binary(
-        self, in_data, **kwargs
-    ):  # pylint: disable=unused-argument
-        """Normalize the establishment_uuid to binary."""
-        uuid_utility = UUIDUtility()
-        in_data["establishment_uuid"] = uuid_utility.remove_hyphens_from_uuid(
-            in_data["establishment_uuid"]
-        )
-        in_data["establishment_uuid"] = uuid_utility.uuid_to_binary(
-            in_data["establishment_uuid"]
-        )
-        return in_data
+
+class NewEstablishmentCommonValidation(Schema):
+    """
+    Common validation schema for establishment. It is used to validate the establishment_uuid.
+    """
+    establishment_uuid = fields.Str(required=True)
 
 class TransactionCommonValidation(Schema):
     """ Common validation schema for transaction. It is used to validate the transaction_uuid. """

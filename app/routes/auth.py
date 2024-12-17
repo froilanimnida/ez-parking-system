@@ -138,13 +138,11 @@ class Logout(MethodView):
     )
     @jwt_required(False)
     def post(self):
-        get_jwt()
         response = set_response(200, {"code": "success", "message": "Logged out successfully."})
         unset_access_cookies(response)
         unset_refresh_cookies(response)
         unset_jwt_cookies(response)
         return response
-
 
 @auth_blp.route("/verify-token")
 class VerifyToken(MethodView):

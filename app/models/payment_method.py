@@ -44,8 +44,8 @@ class PaymentMethod(Base):  # pylint: disable=too-few-public-methods
             'accepts_mobile': self.accepts_mobile,
             'accepts_other': self.accepts_other,
             'other_methods': self.other_methods,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
 
 

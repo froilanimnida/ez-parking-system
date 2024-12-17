@@ -4,15 +4,7 @@
 
 from typing import overload, Union
 
-from sqlalchemy import (
-    TIMESTAMP,
-    CheckConstraint,
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    func,
-)
+from sqlalchemy import TIMESTAMP, CheckConstraint, Column, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -55,8 +47,8 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
             "company_name": self.company_name,
             "company_reg_number": self.company_reg_number,
             "tin": self.tin,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 class CompanyProfileRepository:
@@ -87,8 +79,26 @@ class CompanyProfileRepository:
         """Get company profile by user id or profile id."""
         if profile_id:
             with session_scope() as session:
-                return session.query(CompanyProfile).filter_by(profile_id=profile_id).first()
+                company_profile = session.query(
+                    CompanyProfile
+                ).filter_by(profile_id=profile_id).first()
+                return company_profile.to_dict() if company_profile else {}
         elif user_id:
             with session_scope() as session:
-                return session.query(CompanyProfile).filter_by(user_id=user_id).first()
+                company_profile = session.query(CompanyProfile).filter_by(user_id=user_id).first()
+                return company_profile.to_dict() if company_profile else {}
         return {}
+    @staticmethod
+    @overload
+    def get_company_profiles(profile_ids: list[int]):
+        """Get all company profiles."""
+    @staticmethod
+    def get_company_profiles(profile_ids: list[int] = None) -> list:
+        """Get all company profiles."""
+        with session_scope() as session:
+            if profile_ids:
+                company_profiles = session.query(CompanyProfile).filter(
+                    CompanyProfile.profile_id.in_(profile_ids)
+                ).all()
+                return [company_profile.to_dict() for company_profile in company_profiles]
+            return []

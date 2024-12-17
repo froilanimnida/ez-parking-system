@@ -2,21 +2,13 @@
 This module contains the SQLAlchemy model for the parking_slot table.
 """
 
-# pylint: disable=E1102
+# pylint: disable=E1102, C0103:
 
 from enum import Enum as PyEnum
 from typing import Any, overload, Union
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Numeric,
-    Boolean,
-    SmallInteger,
-    TIMESTAMP,
-    ForeignKey,
-    CheckConstraint,
+    Column, Integer, String, Numeric, Boolean, SmallInteger, TIMESTAMP, ForeignKey, CheckConstraint,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import ENUM
@@ -33,19 +25,20 @@ from app.utils.db import session_scope
 # Enum for slot status
 class SlotStatus(PyEnum):
     """Encapsulate enumerate types of slot status."""
-
-    OPEN = "open"
-    OCCUPIED = "occupied"
-    RESERVED = "reserved"
-    CLOSED = "closed"
+    open = "open"
+    occupied = "occupied"
+    reserved = "reserved"
+    closed = "closed"
 
 
 # Enum for slot features
 class SlotFeature(PyEnum):
     """Encapsulate enumerate types of slot features."""
-
-    STANDARD = "standard"
-    PREMIUM = "premium"
+    standard = "standard"
+    covered = "covered"
+    vip = "vip"
+    disabled = "disabled"
+    ev_charging = "ev_charging"
 
 
 class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
@@ -59,13 +52,13 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     )
     slot_code = Column(String(45), nullable=False)
     vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
-    slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.OPEN)
+    slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.open)
     is_active = Column(Boolean, nullable=False, default=True)
     slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     floor_level = Column(SmallInteger, nullable=False, default=1)
     base_rate = Column(Numeric(10, 2), default=None)
     is_premium = Column(Boolean, nullable=False, default=False)
-    slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.STANDARD)
+    slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
@@ -98,15 +91,15 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "establishment_id": self.establishment_id,
             "slot_code": self.slot_code,
             "vehicle_type_id": self.vehicle_type_id,
-            "slot_status": self.slot_status,
+            "slot_status": self.slot_status.value if self.slot_status else None,
             "is_active": self.is_active,
             "slot_multiplier": str(self.slot_multiplier),
             "floor_level": self.floor_level,
             "base_rate": str(self.base_rate),
             "is_premium": self.is_premium,
-            "slot_features": self.slot_features,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            "slot_features": self.slot_features.value if self.slot_features else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 
@@ -243,52 +236,57 @@ class ParkingSlotRepository:
 
 
     @staticmethod
-    def get_slots(establishment_id: int = None) -> list[ParkingSlot]:
+    @overload
+    def get_slots(establishment_id: int = None):
         """
-        Get all parking slots for a specific establishment.
+        Get all parking slots by establishment ID.
 
         Parameters:
             establishment_id (int): The ID of the establishment.
 
         Returns:
-            list[ParkingSlot]: List of parking slot objects.
+            list: List of parking slot objects.
         """
-        with session_scope() as session:
-            slots = session.query(ParkingSlot).join(
-                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
-            ).filter(ParkingSlot.establishment_id == establishment_id).all()
-            return [slot.to_dict() for slot in slots]
-
     @staticmethod
-    def get_slots_by_criteria(criteria: dict[str, Any]) -> list[dict[str, Any]]:
+    @overload
+    def get_slots():
         """
-        Fetch parking slots based on specific criteria.
+        Get all parking slots.
+
+        Returns:
+            list: List of parking slot objects.
+        """
+    @staticmethod
+    def get_slots(establishment_id: int = None) -> list[dict[str, Any]]:
+        """
+        Get all parking slots by establishment ID or all slots.
 
         Parameters:
-            criteria (dict): Dictionary containing the filter criteria.
+            establishment_id (int): The ID of the establishment.
 
         Returns:
-            list[dict]: List of parking slot dictionaries.
+            list: List of parking slot objects.
         """
         with session_scope() as session:
-            query = session.query(ParkingSlot).join(
-                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
-            )
-            for key, value in criteria.items():
-                query = query.filter(getattr(ParkingSlot, key) == value)
-            slots = query.all()
-            return [slot.to_dict() for slot in slots]
-
-    @staticmethod
-    def get_all_slots() -> list[ParkingSlot]:
-        """
-        Get all parking slots (for admin purposes).
-
-        Returns:
-            list[ParkingSlot]: List of all parking slot objects.
-        """
-        with session_scope() as session:
-            slots = session.query(ParkingSlot).join(
-                VehicleType, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
-            ).all
-            return [slot.to_dict() for slot in slots]
+            if establishment_id:
+                query = session.query(
+                    ParkingSlot,
+                    VehicleType.name.label("vehicle_type_name"),
+                    VehicleType.code.label("vehicle_type_code"),
+                    VehicleType.size_category.label("vehicle_type_size"),
+                ).filter_by(establishment_id=establishment_id).join(
+                    VehicleType,ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+                ).all()
+            else:
+                query = session.query(ParkingSlot).all()
+            slots = []
+            for slot, vehicle_type_name, vehicle_type_code, vehicle_type_size in query:
+                slot_dict = slot.to_dict()
+                slot_dict.update({
+                    "vehicle_type_name": vehicle_type_name,
+                    "vehicle_type_code": vehicle_type_code,
+                    "vehicle_type_size": vehicle_type_size.value
+                })
+                slot_dict.pop("vehicle_type_id")
+                slots.append(slot_dict)
+            return slots

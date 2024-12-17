@@ -6,27 +6,17 @@ from enum import Enum as PyEnum
 from typing import Literal, overload
 
 from sqlalchemy import (
-    Column,
-    Enum,
-    Integer,
-    ForeignKey,
-    TIMESTAMP,
-    text,
-    Numeric,
-    UUID,
-    update,
-    func,
-    String,
+    Column, Enum, Integer, ForeignKey, TIMESTAMP, text, Numeric, UUID, update, func, String
 )
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
-from app.models.parking_slot import ParkingSlot
 from app.models.parking_establishment import ParkingEstablishment
-
+from app.models.parking_slot import ParkingSlot
 from app.models.vehicle_type import VehicleType
-from app.utils.uuid_utility import UUIDUtility
 from app.utils.db import session_scope
+from app.utils.uuid_utility import UUIDUtility
+
 
 # Define custom Enum types for 'payment_status' and 'transaction_status'
 class PaymentStatusEnum(str, PyEnum):
@@ -110,59 +100,6 @@ class ParkingTransaction(
 
 class ParkingTransactionOperation:
     """Class that provides operations for parking transactions in the database."""
-
-    @classmethod
-    def get_transaction_by_plate_number(cls, plate_number: str):
-        """
-        Retrieve a parking transaction from the database by the vehicle plate number.
-        Returns dictionary with transaction details including related slot and vehicle info.
-        """
-
-        with session_scope() as session:
-            uuid_utility = UUIDUtility()
-            transactions = (
-                session.query(ParkingTransaction)
-                .join(ParkingSlot, ParkingSlot.slot_id == ParkingTransaction.slot_id)
-                .join(
-                    VehicleType,
-                    VehicleType.vehicle_id == ParkingTransaction.vehicle_type_id,
-                )
-                .filter(ParkingTransaction.plate_number == plate_number)
-                .all()
-            )
-            if not transactions:
-                return {}
-            return {
-                "transactions": [
-                    {
-                        "uuid": uuid_utility.format_uuid(
-                            uuid_utility.binary_to_uuid(transaction.uuid)
-                        ),
-                        "status": transaction.status,
-                        "payment_status": str(transaction.payment_status).capitalize(),
-                        "slot_details": {
-                            "slot_code": transaction.slot.slot_code,
-                            "slot_status": transaction.slot.slot_status,
-                            "slot_features": str(
-                                transaction.slot.slot_features
-                            ).capitalize(),
-                            "floor_level": transaction.slot.floor_level,
-                            "slot_multiplier": float(transaction.slot.slot_multiplier),
-                            "is_premium": transaction.slot.is_premium == 1
-                            and "Yes"
-                            or "No",
-                        },
-                        "vehicle_details": {
-                            "type_name": transaction.vehicle_type.name,
-                            "size_category": transaction.vehicle_type.size_category,
-                            "base_rate_multiplier": float(
-                                transaction.vehicle_type.base_rate_multiplier
-                            ),
-                        },
-                    }
-                    for transaction in transactions
-                ]
-            }
 
     @classmethod
     def get_transaction(cls, transaction_uuid_bin: bytes):

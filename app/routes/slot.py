@@ -10,7 +10,7 @@ from flask_smorest import Blueprint
 from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenSlotCode,
     NoSlotsFoundInTheGivenEstablishment,
-    NoSlotsFoundInTheGivenVehicleType,
+    NoSlotsFoundInTheGivenVehicleType, SlotAlreadyExists,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.routes.parking_manager import parking_manager_required
@@ -19,14 +19,13 @@ from app.schema.parking_manager_validation import (
 )
 from app.schema.query_validation import (
     EstablishmentQueryValidation,
-    EstablishmentSlotTypeValidation,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.slot_service import ParkingSlotService
 from app.utils.error_handlers.slot_lookup_error_handlers import (
     handle_no_slots_found_in_the_given_slot_code,
     handle_no_slots_found_in_the_given_establishment,
-    handle_no_slots_found_in_the_given_vehicle_type,
+    handle_no_slots_found_in_the_given_vehicle_type, handle_slot_already_exists,
 )
 from app.utils.error_handlers.vehicle_type_error_handlers import (
     handle_vehicle_type_does_not_exist,
@@ -58,25 +57,6 @@ class GetSlotsByEstablishmentID(MethodView):
         return set_response(200, {"slots": slots})
 
 
-@slot_blp.route("/get-slots-by-vehicle-type")
-class GetSlotsByVehicleType(MethodView):
-    @slot_blp.arguments(EstablishmentSlotTypeValidation)
-    @slot_blp.response(200, ApiResponse)
-    @slot_blp.doc(
-        description="Get all slots by vehicle type",
-        responses={
-            200: {"description": "Slots retrieved successfully"},
-            400: {"description": "Bad Request"},
-        },
-    )
-    @jwt_required(True)
-    def get(self, data):
-        vehicle_size = data.get("vehicle_size")
-        establishment_id = data.get("establishment_id")
-        slots = ParkingSlotService.get_slots_by_vehicle_type(vehicle_size, establishment_id)
-        return set_response(200, {"slots": slots})
-
-
 @slot_blp.route("/create")
 class CreateSlot(MethodView):
     @slot_blp.arguments(CreateSlotSchema)
@@ -91,9 +71,10 @@ class CreateSlot(MethodView):
             422: "Unprocessable Entity",
         },
     )
-    @parking_manager_required()
     @jwt_required(False)
+    @parking_manager_required()
     def post(self, new_slot_data, user_id):
+        print(new_slot_data)
         ParkingSlotService.create_slot(new_slot_data, user_id, request.remote_addr)
         return set_response(
             201, {"code": "success", "message": "Slot created successfully."}
@@ -159,3 +140,4 @@ slot_blp.register_error_handler(
 slot_blp.register_error_handler(
     VehicleTypeDoesNotExist, handle_vehicle_type_does_not_exist
 )
+slot_blp.register_error_handler(SlotAlreadyExists, handle_slot_already_exists)

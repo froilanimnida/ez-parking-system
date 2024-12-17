@@ -1,11 +1,11 @@
 """ Module to handle transactional-like uploads to R2 """
 
-# pylint: disable=W0718
+# pylint: disable=W0718, C0301
 
-from io import BytesIO
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional
+from io import BytesIO
+from typing import List
 
 import boto3
 from botocore.exceptions import ClientError
@@ -36,7 +36,8 @@ class R2TransactionalUpload:
         self.bucket_name = current_app.config["R2_BUCKET_NAME"]
         self.logger = logging.getLogger(__name__)
 
-    def upload(self, files: List[UploadFile]) -> Tuple[bool, Dict[str, str], Dict[str, List[str]]]:
+    def upload(self, files: List[UploadFile]) -> tuple[bool, dict[str, str], dict[str, list[str]]] | tuple[
+        bool, dict[str, str]]:
         """
         Perform transactional-like upload of multiple files.
         Returns (success_status, error_message_if_any)
@@ -61,10 +62,8 @@ class R2TransactionalUpload:
                 True,
                 {"message": "All files uploaded successfully"}, {"uploaded_keys": uploaded_keys}
             )
-
         except Exception as e:
             self.logger.error("Error during upload: %s", str(e))
-
             self.logger.info("Starting rollback process")
 
             for key in uploaded_keys:
@@ -78,14 +77,13 @@ class R2TransactionalUpload:
                     self.logger.error("Error during rollback of %s: %s", key, str(delete_error))
 
             return False, {"error": str(e)}
-
-    def download(self, key: str) -> Tuple[Optional[BytesIO], Optional[str], Optional[str]]:
+    def download(self, key: str) -> tuple[BytesIO, str, str] | tuple[None, None, None]:
         """
         Download a file from R2 bucket and return it as a BytesIO object
-
+    
         Args:
             key: The key of the file in the bucket
-
+    
         Returns:
             Tuple of (file_object, content_type, filename)
             Returns (None, None, None) if file not found or error occurs
@@ -96,7 +94,6 @@ class R2TransactionalUpload:
                 Bucket=self.bucket_name,
                 Key=key
             )
-
             # Get the actual object
             file_obj = BytesIO()
             self.s3_client.download_fileobj(
@@ -104,13 +101,9 @@ class R2TransactionalUpload:
                 key,
                 file_obj
             )
-
-            # Reset file pointer to beginning
             file_obj.seek(0)
-
             content_type = response.get('ContentType', 'application/octet-stream')
-            filename = key.split('/')[-1]  # Get filename from key
-
+            filename = key.split('/')[-1]
             return file_obj, content_type, filename
 
         except ClientError as e:
@@ -119,7 +112,6 @@ class R2TransactionalUpload:
         except Exception as e:
             self.logger.error("Unexpected error downloading file %s: %s", key, str(e))
             return None, None, None
-
     def verify_uploads(self, keys: List[str]) -> bool:
         """
         Verify that all specified keys exist in the bucket

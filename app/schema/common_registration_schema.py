@@ -192,6 +192,7 @@ class RateSchema(Schema):
             raise ValidationError('Monthly rate cannot exceed ₱50,000')
 
 
+# noinspection PyTypeChecker
 class PricingPlan(Schema):
     """Schema for pricing plan."""
     hourly = fields.Nested(RateSchema, required=False, context={'rate_type': 'hourly'})

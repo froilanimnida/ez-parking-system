@@ -2,7 +2,7 @@
     Represents a user in the database.
 """
 
-# pylint: disable=R0801, C0103
+# pylint: disable=R0801, C0103, C0303:
 
 from enum import Enum as PyEnum
 from typing import overload
@@ -242,7 +242,36 @@ class UserRepository:
                 user = session.execute(
                     select(User).where(User.plate_number == plate_number)
                 ).scalar()
-            return user.to_dict()
+            user_info = user.to_dict()
+            user_info.pop("otp_secret")
+            user_info.pop("otp_expiry")
+            user_info.pop("verification_token")
+            user_info.pop("verification_expiry")
+            return user_info
+
+    @staticmethod
+    def get_all_users() -> list[dict]:
+        """
+        Get all users in the database.
+
+        Returns:
+        list: A list of dictionaries containing the user information.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            users = session.execute(select(User)).scalars().all()
+            users_list = []
+            for user in users:
+                user_info = user.to_dict()
+                user_info.pop("otp_secret")
+                user_info.pop("otp_expiry")
+                user_info.pop("verification_token")
+                user_info.pop("verification_expiry")
+                users_list.append(user_info)
+            return users_list
 
 class AuthOperations:  # pylint: disable=R0903 disable=C0115
     @classmethod
@@ -264,11 +293,11 @@ class AuthOperations:  # pylint: disable=R0903 disable=C0115
             user: User = session.execute(
                 statement=select(User).where(User.email == email)
             ).scalar()
+            if user is None:
+                raise EmailNotFoundException("Email not found.")
             is_banned_user = session.execute(
                 select(BanUser).where(BanUser.user_id == user.user_id)
             ).scalar()
-            if user is None:
-                raise EmailNotFoundException("Email not found.")
             if user.is_verified is False:
                 raise AccountIsNotVerifiedException("Account is not verified.")
             if is_banned_user is not None:
