@@ -1,27 +1,36 @@
 """ Incoming transaction related validation schema. """
 
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, fields, validate, post_load
 
 from app.schema.common_schema_validation import (
-    TransactionCommonValidation, EstablishmentCommonValidation
+    TransactionCommonValidationSchema, EstablishmentCommonValidationSchema,
+    SlotCommonValidationSchema
 )
 
 
-class CancelReservationSchema(TransactionCommonValidation):
+class CancelReservationSchema(TransactionCommonValidationSchema):
     """Schema for the reservation cancellation."""
 
 
-class ViewTransactionSchema(TransactionCommonValidation):
+class ViewTransactionSchemaSchema(TransactionCommonValidationSchema):
     """Schema for the transaction view."""
 
 
-class ReservationCreationSchema(EstablishmentCommonValidation):
+class ReservationCreationSchema(SlotCommonValidationSchema):
     """Schema for the reservation creation."""
-    slot_id = fields.Integer(required=True, validate=validate.Range(min=1))
-    vehicle_type_id = fields.Integer(required=True, validate=validate.Range(min=1))
+    duration = fields.Int(required=True)
+    duration_type = fields.Str(
+        required=True, validate=validate.OneOf(['monthly', 'daily', 'hourly'])
+    )
+    amount_due = fields.Float(required=True)
+    @post_load
+    def add_payment_status(self, in_data, **kwargs):  # pylint: disable=unused-argument
+        """Add payment status."""
+        in_data["payment_status"] = "pending"
+        return in_data
 
 
-class TransactionFormDetailsSchema(EstablishmentCommonValidation):
+class TransactionFormDetailsSchema(EstablishmentCommonValidationSchema):
     """Schema for the transaction form details."""
     slot_uuid = fields.Str(required=True)
 

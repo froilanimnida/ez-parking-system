@@ -5,7 +5,7 @@ This module contains the SQLAlchemy model for the parking_slot table.
 # pylint: disable=E1102, C0103:
 
 from enum import Enum as PyEnum
-from typing import Any, overload, Union
+from typing import Any, overload, Literal
 
 from sqlalchemy import (
     Column, Integer, String, Numeric, Boolean, SmallInteger, TIMESTAMP, ForeignKey, CheckConstraint,
@@ -101,6 +101,14 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+    @staticmethod
+    def get_id(uuid: str) -> int:
+        """Get the ID of the parking slot."""
+        with session_scope() as session:
+            slot = session.query(ParkingSlot).filter_by(uuid=uuid).first()
+            if slot:
+                return slot.slot_id
+            raise SlotNotFound("Slot not found")
 
 
     # def calculate_total_multiplier(self) -> float:
@@ -151,12 +159,12 @@ class ParkingSlotRepository:
 
     @staticmethod
     @overload
-    def get_slot(slot_uuid: bytes) -> dict:
+    def get_slot(slot_uuid: str) -> dict:
         """
         Get a parking slot by slot code and establishment ID.
 
         Parameters:
-            slot_uuid (bytes): The UUID of the slot.
+            slot_uuid (str): The UUID of the slot.
 
         Returns:
             dict: The parking slot object.
@@ -176,26 +184,45 @@ class ParkingSlotRepository:
         """
 
     @staticmethod
-    def get_slot(identifier: Union[int, str, bytes]) -> dict:
+    def get_slot(slot_code: str = None, slot_uuid: str = None, slot_id: int = None) -> dict:
         """
         Get a parking slot by slot code, establishment ID, or slot ID.
 
         Parameters:
-            identifier (Union[int, str, bytes]): The slot code, establishment ID, or slot ID.
+            slot_code (str): The code of the slot.
+            slot_uuid (str): The UUID of the slot.
+            slot_id (int): The ID of the slot.
 
         Returns:
             dict: The parking slot object.
         """
         with session_scope() as session:
-            if isinstance(identifier, str):
-                slot = session.query(ParkingSlot).filter_by(slot_code=identifier).first()
-            elif isinstance(identifier, bytes):
-                slot = session.query(ParkingSlot).get(identifier)
-            elif isinstance(identifier, int):
-                slot = session.query(ParkingSlot).get(identifier)
-            else:
-                return {}
-            return slot.to_dict() if slot else {}
+            slot = None
+            if slot_code:
+                slot = session.query(ParkingSlot).filter_by(slot_code=slot_code).join(
+                    VehicleType,
+                    ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+                ).first()
+            if slot_uuid:
+                slot = session.query(ParkingSlot).filter_by(uuid=slot_uuid).join(
+                    VehicleType,
+                    ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+                ).first()
+            if slot_id:
+                slot = session.query(ParkingSlot).filter_by(slot_id=slot_id).join(
+                    VehicleType,
+                    ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+                ).first()
+            if slot:
+                slot_dict = slot.to_dict()
+                slot_dict.update({
+                    "vehicle_type_name": slot.vehicle_type.name,
+                    "vehicle_type_code": slot.vehicle_type.code,
+                    "vehicle_type_size": slot.vehicle_type.size_category.value
+                })
+                return slot_dict
+            raise SlotNotFound("Slot not found")
+
 
     @staticmethod
     def delete_slot(slot_uuid: bytes) -> int:
@@ -290,3 +317,24 @@ class ParkingSlotRepository:
                 slot_dict.pop("vehicle_type_id")
                 slots.append(slot_dict)
             return slots
+
+    @staticmethod
+    def change_slot_status(
+        slot_uuid: str, new_status: Literal["open", "occupied", "reserved", "closed"]
+    ) -> int:
+        """
+        Change the status of a parking slot.
+
+        Parameters:
+            slot_uuid (str): The UUID of the slot.
+            new_status (SlotStatus): The new status of the slot.
+
+        Returns:
+            int: The ID of the updated slot.
+        """
+        with session_scope() as session:
+            slot = session.query(ParkingSlot).filter_by(uuid=slot_uuid).first()
+            if slot:
+                slot.slot_status = new_status
+                return slot.slot_id
+            raise SlotNotFound("Slot not found")

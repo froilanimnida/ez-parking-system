@@ -11,7 +11,7 @@ from app.exceptions.establishment_lookup_exceptions import (
 from app.schema.establishment_document_schema import EstablishmentDocumentBaseSchema
 from app.schema.query_validation import (
     EstablishmentQuerySchema,
-    EstablishmentQueryValidation,
+    EstablishmentQueryValidationSchema,
 )
 from app.schema.response_schema import EstablishmentResponseSchema
 from app.services.establishment_documents import EstablishmentDocument
@@ -56,7 +56,7 @@ class GetEstablishments(MethodView):
 
 @establishment_blp.route("/view")
 class GetEstablishmentInfo(MethodView):
-    @establishment_blp.arguments(EstablishmentQueryValidation, location="query")
+    @establishment_blp.arguments(EstablishmentQueryValidationSchema, location="query")
     @establishment_blp.response(200, EstablishmentResponseSchema)
     @establishment_blp.doc(
         description="Get establishment information by uuid and all slots of the establishment",
