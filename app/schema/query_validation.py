@@ -2,14 +2,15 @@
 
 from marshmallow import Schema, fields, validate
 
-from app.schema.common_schema_validation import EstablishmentCommonValidation, SlotCommonValidation
+from app.schema.common_schema_validation import (
+    EstablishmentCommonValidationSchema, SlotCommonValidationSchema
+)
 
-
-class EstablishmentQueryValidation(EstablishmentCommonValidation):
+class EstablishmentQueryValidationSchema(EstablishmentCommonValidationSchema):
     """Validation schema for establishment query parameters."""
 
 
-class EstablishmentSlotTypeValidation(EstablishmentCommonValidation):
+class EstablishmentSlotTypeValidationSchema(EstablishmentCommonValidationSchema):
     """Validation schema for slot type."""
 
     vehicle_size = fields.Str(
@@ -18,7 +19,7 @@ class EstablishmentSlotTypeValidation(EstablishmentCommonValidation):
     )
 
 
-class SlotCodeValidationQuerySchema(SlotCommonValidation):
+class SlotCodeValidationSchemaQuerySchema(SlotCommonValidationSchema):
     """Slot code validation query schema."""
 
 

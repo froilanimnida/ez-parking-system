@@ -18,7 +18,7 @@ from app.schema.transaction_validation import (
     CancelReservationSchema,
     ReservationCreationSchema,
     TransactionFormDetailsSchema,
-    ViewTransactionSchema,
+    ViewTransactionSchemaSchema,
 )
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
@@ -71,7 +71,9 @@ class CreateReservation(MethodView):
             401: "Unauthorized",
         },
     )
-    def post(self, reservation_data, user_id):  # pylint: disable=unused-argument
+    def post(self, reservation_data, user_id):
+        print(reservation_data, user_id)
+        reservation_data.update({"user_id": user_id})
         transaction_validation = TransactionService()
         transaction_validation.reserve_slot(reservation_data)
         return set_response(201, {"message": "Reservation created successfully."})
@@ -101,10 +103,9 @@ class CancelReservation(MethodView):
 
 @transactions_blp.route("/view")
 class ViewTransaction(MethodView):
-
     @jwt_required(False)
     @user_role_and_user_id_required()
-    @transactions_blp.arguments(ViewTransactionSchema, location="query")
+    @transactions_blp.arguments(ViewTransactionSchemaSchema, location="query")
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.doc(
         description="View the transaction details.",
@@ -138,8 +139,8 @@ class TransactionOverview(MethodView):
     )
     def get(self, data, user_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService()
-        transaction = transaction_service.get_transaction_form_details(
-            data.get("establishment_uuid"), data.get("slot_code")
+        transaction = transaction_service.checkout(
+            data.get("establishment_uuid"), data.get("slot_uuid"), user_id
         )
         return set_response(200, {"code": "success", "transaction": transaction})
 

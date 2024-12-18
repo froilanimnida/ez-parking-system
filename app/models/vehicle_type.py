@@ -40,9 +40,6 @@ class VehicleType(Base):
     parking_slots = relationship(
         "ParkingSlot", back_populates="vehicle_type", cascade="all, delete-orphan"
     )
-    parking_transactions = relationship(
-        "ParkingTransaction", back_populates="vehicle_type", cascade="all, delete-orphan"
-    )
 
     def to_dict(self):
         """Returns the data representation of the vehicle type object."""

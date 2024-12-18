@@ -10,7 +10,7 @@ from flask_smorest import Blueprint
 
 from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
 from app.schema.ban_query_validation import BanQueryValidation
-from app.schema.common_schema_validation import NewEstablishmentCommonValidation
+from app.schema.common_schema_validation import EstablishmentCommonValidationSchema
 from app.services.admin_service import AdminService
 from app.services.establishment_service import EstablishmentService
 from app.services.vehicle_type_service import VehicleTypeService
@@ -201,7 +201,7 @@ class ApproveManagerApplication(MethodView):
         )
 @admin_blp.route("/establishment")
 class GetParkingEstablishment(MethodView):
-    @admin_blp.arguments(NewEstablishmentCommonValidation, location="query")
+    @admin_blp.arguments(EstablishmentCommonValidationSchema, location="query")
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],

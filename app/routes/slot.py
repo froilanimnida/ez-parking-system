@@ -15,10 +15,10 @@ from app.exceptions.slot_lookup_exceptions import (
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.routes.parking_manager import parking_manager_required
 from app.schema.parking_manager_validation import (
-    CreateSlotSchema, DeleteSlotSchema, UpdateSlotSchema
+    CreateSlotSchema, DeleteSlotSchemaSchema, UpdateSlotSchemaSchema
 )
 from app.schema.query_validation import (
-    EstablishmentQueryValidation,
+    EstablishmentQueryValidationSchema,
 )
 from app.schema.response_schema import ApiResponse
 from app.services.slot_service import ParkingSlotService
@@ -42,7 +42,7 @@ slot_blp = Blueprint(
 
 @slot_blp.route("/get-all-slots")
 class GetSlotsByEstablishmentID(MethodView):
-    @slot_blp.arguments(EstablishmentQueryValidation)
+    @slot_blp.arguments(EstablishmentQueryValidationSchema)
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
         description="Get all slots by establishment uuid",
@@ -83,7 +83,7 @@ class CreateSlot(MethodView):
 
 @slot_blp.route("/delete")
 class DeleteSlot(MethodView):
-    @slot_blp.arguments(DeleteSlotSchema)
+    @slot_blp.arguments(DeleteSlotSchemaSchema)
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
         security=[{"Bearer": []}],
@@ -107,7 +107,7 @@ class DeleteSlot(MethodView):
 
 @slot_blp.route("/update")
 class UpdateSlot(MethodView):
-    @slot_blp.arguments(UpdateSlotSchema)
+    @slot_blp.arguments(UpdateSlotSchemaSchema)
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
         security=[{"Bearer": []}],

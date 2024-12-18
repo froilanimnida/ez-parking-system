@@ -9,7 +9,7 @@ from app.schema.common_registration_schema import (
     CompanyProfile, UserData, Address, ParkingEstablishment, OperatingHour, PaymentMethod,
     PricingPlan
 )
-from app.schema.common_schema_validation import SlotCommonValidation
+from app.schema.common_schema_validation import SlotCommonValidationSchema
 from app.schema.slot_validation import CreateSlotSchema
 
 
@@ -26,11 +26,11 @@ class ParkingManagerRequestSchema(Schema):
 
 
 
-class UpdateSlotSchema(SlotCommonValidation, CreateSlotSchema):
+class UpdateSlotSchemaSchema(SlotCommonValidationSchema, CreateSlotSchema):
     """Validation schema for update slot."""
 
 
-class DeleteSlotSchema(SlotCommonValidation):
+class DeleteSlotSchemaSchema(SlotCommonValidationSchema):
     """Validation schema for delete slot."""
 
 
