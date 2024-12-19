@@ -162,7 +162,6 @@ class ParkingEstablishmentRepository:
         user_longitude: float = None, user_latitude: float = None
     ) -> list:
         """Get parking establishments by verification status."""
-        print("I am here")
         with session_scope() as session:
             if verification_status is not None:
                 establishments = (
@@ -182,7 +181,9 @@ class ParkingEstablishmentRepository:
                         ParkingSlot.slot_status == "occupied").label("occupied_slots"),
                     func.count(ParkingSlot.slot_id).filter(
                         ParkingSlot.slot_status == "reserved").label("reserved_slots")
-                ).outerjoin(ParkingSlot).group_by(ParkingEstablishment.establishment_id)
+                ).outerjoin(ParkingSlot).group_by(ParkingEstablishment.establishment_id).where(
+                    ParkingEstablishment.verified.is_(True)
+                )
                 if establishment_name is not None:
                     query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
                 if user_longitude is not None and user_latitude is not None:

@@ -46,7 +46,7 @@ class GetSlotService:
         slot = ParkingSlotRepository.get_slot(slot_uuid)
         if slot is None:
             raise NoSlotsFoundInTheGivenSlotCode(
-                "No slots found.."
+                "No slots found."
             )
         return {"slot_info": slot}
 

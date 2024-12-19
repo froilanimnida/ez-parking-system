@@ -38,3 +38,7 @@ class TransactionFormDetailsSchema(EstablishmentCommonValidationSchema):
 class ValidateEntrySchema(Schema):
     """Validation schema for entry validation."""
     qr_content = fields.Str(required=True, validate=validate.Length(min=100, max=1024))
+
+class ValidateTransaction(ValidateEntrySchema):
+    """Validation schema for transaction validation."""
+    payment_status = fields.Str(required=True, validate=validate.OneOf(['pending', 'paid']))
