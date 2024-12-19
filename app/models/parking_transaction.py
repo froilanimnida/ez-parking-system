@@ -21,6 +21,7 @@ class PaymentStatusEnum(str, PyEnum):
     pending = "pending"
     completed = "completed"
     failed = "failed"
+    paid = "paid"
 
 
 class TransactionStatusEnum(str, PyEnum):
@@ -143,17 +144,26 @@ class ParkingTransactionRepository:
 
     @staticmethod
     @overload
-    def get_all_transactions():
+    def get_all_transactions(slot_id: int):
         """Get all parking transactions."""
 
     @classmethod
-    def get_all_transactions(cls, user_id: int=None):
+    def get_all_transactions(cls, user_id: int=None, slot_id: int=None):
         """Get all parking transactions."""
         with session_scope() as session:
             if user_id:
                 transactions = (
                     session.query(ParkingTransaction)
                     .filter(ParkingTransaction.user_id == user_id)
+                    .join(
+                        ParkingSlot,
+                        ParkingSlot.slot_id == ParkingTransaction.slot_id
+                    )
+                ).all()
+            elif slot_id:
+                transactions = (
+                    session.query(ParkingTransaction)
+                    .filter(ParkingTransaction.slot_id == slot_id)
                     .join(
                         ParkingSlot,
                         ParkingSlot.slot_id == ParkingTransaction.slot_id
@@ -183,6 +193,30 @@ class ParkingTransactionRepository:
             session.execute(
                 update(ParkingTransaction)
                 .values(status=status)
+                .where(ParkingTransaction.uuid == transaction_uuid)
+            )
+            session.commit()
+    @classmethod
+    def update_entry_exit_time(
+        cls, transaction_uuid: str, entry_time = None, exit_time = None
+    ):
+        """Update the entry and exit time of a parking transaction."""
+        with session_scope() as session:
+            session.execute(
+                update(ParkingTransaction)
+                .values(entry_time=entry_time, exit_time=exit_time)
+                .where(ParkingTransaction.uuid == transaction_uuid)
+            )
+            session.commit()
+    @classmethod
+    def update_payment_status(
+        cls, transaction_uuid: str, payment_status: Literal["completed", "failed"]
+    ):
+        """Update the payment status of a parking transaction."""
+        with session_scope() as session:
+            session.execute(
+                update(ParkingTransaction)
+                .values(payment_status=payment_status)
                 .where(ParkingTransaction.uuid == transaction_uuid)
             )
             session.commit()

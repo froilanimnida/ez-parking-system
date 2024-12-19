@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytz
 
-from app.exceptions.qr_code_exceptions import QRCodeError
+from app.exceptions.qr_code_exceptions import QRCodeError, InvalidQRContent
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
 from app.models.address import AddressRepository
 from app.models.company_profile import CompanyProfileRepository
@@ -27,9 +27,9 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         return SlotActionsService.reserve_slot(reservation_data)
 
     @staticmethod
-    def verify_reservation_code(qr_content: str):
+    def verify_reservation_code(qr_content: str, payment_status: str):
         """Verifies the reservation code for a user."""
-        return TransactionVerification.verify_entry_transaction(qr_content)
+        return TransactionVerification.verify_entry_transaction(qr_content, payment_status)
 
     @staticmethod
     def verify_exit_code(exit_code):
@@ -50,9 +50,9 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         return SlotActionsService.cancel_transaction(transaction_uuid)
 
     @staticmethod
-    def get_transaction_details_from_qr_code(qr_code_data):
+    def get_transaction_details_from_qr_code(qr_code_data, user_id):
         """Get the transaction details from a QR code."""
-        return TransactionVerification.get_transaction_details_from_qr_code(qr_code_data)
+        return TransactionVerification.get_transaction_details_from_qr_code(qr_code_data, user_id)
 
     @staticmethod
     def view_transaction(transaction_uuid: str):
@@ -65,12 +65,18 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         return TransactionFormDetails.checkout(
             establishment_uuid, slot_uuid, user_id
         )
-
     @staticmethod
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
         return Transaction.get_all_user_transactions(user_id)
-
+    @classmethod
+    def get_establishment_transaction(cls, user_id):
+        """Get all the transactions for the establishment."""
+        return Transaction.get_establishment_transaction(user_id)
+    @classmethod
+    def get_transaction(cls, transaction_uuid):
+        """Get the transaction details."""
+        return Transaction.get_transaction(transaction_uuid)
 
 class SlotActionsService:  # pylint: disable=too-few-public-methods
     """Wraps the service actions for slot operations"""
@@ -84,7 +90,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         slot_reservation_data.update({"created_at": now})
         slot_reservation_data.update({"updated_at": now})
         ParkingTransactionRepository.create_transaction(slot_reservation_data)
-        return ParkingSlotRepository.change_slot_status(slot_uuid, "reserved")
+        return ParkingSlotRepository.change_slot_status(slot_uuid=slot_uuid, new_status="reserved")
 
     @staticmethod
     def release_slot(slot_data):
@@ -93,9 +99,13 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def cancel_transaction(transaction_uuid: str):
         """Cancels the transaction for a user."""
-        return ParkingTransactionRepository.update_transaction_status(
+        slot_id = ParkingTransactionRepository.get_transaction(
+            transaction_uuid=transaction_uuid
+        ).get("slot_id")
+        ParkingTransactionRepository.update_transaction_status(
             transaction_uuid, "cancelled"
         )
+        return ParkingSlotRepository.change_slot_status(slot_id=slot_id, new_status="open")
 
     @staticmethod
     def view_transaction(transaction_uuid: str):
@@ -144,15 +154,22 @@ class TransactionVerification:
     """Wraps the service actions for transaction verification operations"""
 
     @staticmethod
-    def verify_entry_transaction(transaction_qr_code_data):
+    def verify_entry_transaction(transaction_qr_code_data, payment_status):
         """Verifies the entry transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
         if transaction_data.get("status") != "reserved":
             raise QRCodeError("Invalid transaction status.")
         transaction_uuid = transaction_data.get("uuid")
-        return ParkingTransactionRepository.update_transaction_status(
+        ParkingTransactionRepository.update_transaction_status(
             transaction_uuid, "active",
+        )
+        ParkingTransactionRepository.update_entry_exit_time(
+            transaction_uuid=transaction_uuid,
+            entry_time=datetime.now(pytz.timezone('Asia/Manila'))
+        )
+        return ParkingTransactionRepository.update_payment_status(
+            transaction_uuid, payment_status
         )
 
     @staticmethod
@@ -164,20 +181,31 @@ class TransactionVerification:
             raise QRCodeError("Invalid transaction status.")
 
     @staticmethod
-    def get_transaction_details_from_qr_code(qr_code_data):
+    def get_transaction_details_from_qr_code(qr_code_data, manager_id):
         """Get the transaction details from a QR code."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(qr_code_data)
         transaction_uuid = transaction_data.get("uuid")
+        establishment_uuid = transaction_data.get("establishment_uuid")
+        establishment_info = ParkingEstablishmentRepository.get_establishment(
+            establishment_uuid=establishment_uuid
+        )
+        user_id = CompanyProfileRepository.get_company_profile(
+            profile_id=establishment_info.get("profile_id")
+        ).get("user_id")
+        if manager_id != user_id:
+            raise InvalidQRContent("Invalid QR code content, the establishment does not match.")
         transaction_data = ParkingTransactionRepository.get_transaction(
             transaction_uuid=transaction_uuid
         )
-        user_id = transaction_data.get("user_id")
-        user_info = UserRepository.get_user(user_id=user_id)
+        parking_slot_info = ParkingSlotRepository.get_slot(
+            slot_id=transaction_data.get("slot_id")
+        )
+        user_info = UserRepository.get_user(user_id=transaction_data.get("user_id"))
         return {
-            "transaction_uuid": transaction_uuid,
             "user_info": user_info,
             "transaction_data": transaction_data,
+            "parking_slot_info": parking_slot_info,
         }
 
 
@@ -232,3 +260,34 @@ class Transaction:  # pylint: disable=too-few-public-methods
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
         return ParkingTransactionRepository.get_all_transactions(user_id=user_id)
+    @classmethod
+    def get_establishment_transaction(cls, user_id):
+        """Get all the transactions for the establishment."""
+        profile_id = CompanyProfileRepository.get_company_profile(user_id=user_id).get("profile_id")
+        establishment_id = ParkingEstablishmentRepository.get_establishment(
+            profile_id=profile_id
+        ).get("establishment_id")
+        parking_slots = ParkingSlotRepository.get_slots(establishment_id=establishment_id)
+        parking_slots_id = [slot.get("slot_id") for slot in parking_slots]
+        transactions = []
+        for slot_id in parking_slots_id:
+            # transactions.append(ParkingTransactionRepository.get_all_transactions(
+            # slot_id=slot_id
+            # ))
+            transaction = ParkingTransactionRepository.get_all_transactions(slot_id=slot_id)
+            if transaction:
+                transactions.append(transaction)
+        return transactions
+    @classmethod
+    def get_transaction(cls, transaction_uuid):
+        """Get the transaction details."""
+        transaction = ParkingTransactionRepository.get_transaction(
+            transaction_uuid=transaction_uuid
+        )
+        slot_info = ParkingSlotRepository.get_slot(slot_id=transaction.get("slot_id"))
+        user_info = UserRepository.get_user(user_id=transaction.get("user_id"))
+        return {
+            "transaction": transaction,
+            "slot_info": slot_info,
+            "user_info": user_info
+        }

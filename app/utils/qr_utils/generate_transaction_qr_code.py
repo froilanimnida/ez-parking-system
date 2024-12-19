@@ -169,7 +169,7 @@ class QRCodeUtils:
             str: Base64 encoded image data
         """
         qr = QRCode(
-            version=25,
+            version=20,
             error_correction=ERROR_CORRECT_H,
             box_size=10,
             border=4,

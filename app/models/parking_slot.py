@@ -198,6 +198,7 @@ class ParkingSlotRepository:
         """
         with session_scope() as session:
             slot = None
+            print(slot_code)
             if slot_code:
                 slot = session.query(ParkingSlot).filter_by(slot_code=slot_code).join(
                     VehicleType,
@@ -221,7 +222,7 @@ class ParkingSlotRepository:
                     "vehicle_type_size": slot.vehicle_type.size_category.value
                 })
                 return slot_dict
-            raise SlotNotFound("Slot not found")
+            return {}
 
 
     @staticmethod
@@ -317,23 +318,38 @@ class ParkingSlotRepository:
                 slot_dict.pop("vehicle_type_id")
                 slots.append(slot_dict)
             return slots
-
     @staticmethod
+    @overload
+    def change_slot_status(
+        slot_id: int, new_status: Literal["open", "occupied", "reserved", "closed"]
+    ) -> int: ...
+    @staticmethod
+    @overload
     def change_slot_status(
         slot_uuid: str, new_status: Literal["open", "occupied", "reserved", "closed"]
+    ) -> int: ...
+    @staticmethod
+    def change_slot_status(
+        slot_uuid: str = None, slot_id: int = None,
+        new_status: Literal["open", "occupied", "reserved", "closed"] = "open"
     ) -> int:
         """
         Change the status of a parking slot.
-
+    
         Parameters:
             slot_uuid (str): The UUID of the slot.
+            slot_id (int): The ID of the slot.
             new_status (SlotStatus): The new status of the slot.
-
+    
         Returns:
             int: The ID of the updated slot.
         """
         with session_scope() as session:
-            slot = session.query(ParkingSlot).filter_by(uuid=slot_uuid).first()
+            slot = None
+            if slot_uuid:
+                slot = session.query(ParkingSlot).filter_by(uuid=slot_uuid).first()
+            if slot_id:
+                slot = session.query(ParkingSlot).filter_by(slot_id=slot_id).first()
             if slot:
                 slot.slot_status = new_status
                 return slot.slot_id
