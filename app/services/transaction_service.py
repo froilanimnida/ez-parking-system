@@ -127,6 +127,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
                 "uuid": transaction_data.get("uuid"),
                 "status": transaction_data.get("status"),
                 "plate_number": user_plate_number,
+                "establishment_uuid": establishment_info.get("uuid"),
             }
         )
         base64_image = qr_code_utils.generate_qr_code(qr_data)

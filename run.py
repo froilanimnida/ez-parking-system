@@ -11,6 +11,8 @@ load_dotenv(find_dotenv())
 
 from app import create_app
 
+app = create_app()
+
 def create_ssl_context():
     """This function creates an SSL context for the Flask app."""
     from ssl import SSLContext, PROTOCOL_TLS_SERVER
@@ -23,7 +25,6 @@ def create_ssl_context():
 
 def run_dev_server():
     """Run the development server with SSL"""
-    app = create_app()
     run_simple(
         hostname="0.0.0.0",
         ssl_context=create_ssl_context(),
@@ -38,7 +39,6 @@ ENVIRONMENT = getenv("ENVIRONMENT", "")
 
 if __name__ == "__main__":
     if ENVIRONMENT == "production":
-        app = create_app()
         app.run(host="0.0.0.0", port=5000)
     else:
         from watchfiles import run_process

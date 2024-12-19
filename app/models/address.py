@@ -6,14 +6,7 @@ Represents the ORM model for the address table. This is connected to the company
 
 from typing import overload
 
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    TIMESTAMP,
-    func,
-)
+from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, func
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -24,9 +17,7 @@ class Address(Base):  # pylint: disable=too-few-public-methods, missing-class-do
     __tablename__ = "address"
 
     address_id = Column(Integer, primary_key=True, autoincrement=True)
-    profile_id = Column(
-        Integer, ForeignKey("company_profile.profile_id"), nullable=False
-    )
+    profile_id = Column(Integer, ForeignKey("company_profile.profile_id"), nullable=False)
     street = Column(String(255), nullable=False)
     barangay = Column(String(100), nullable=False)
     city = Column(String(100), nullable=False)
@@ -58,7 +49,6 @@ class Address(Base):  # pylint: disable=too-few-public-methods, missing-class-do
 
 class AddressRepository:
     """Wraps the logic for creating, updating, and deleting addresses."""
-
     @staticmethod
     def create_address(address_data: dict):
         """Create a new address."""

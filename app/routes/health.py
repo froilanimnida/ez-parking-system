@@ -1,7 +1,8 @@
 """Health check endpoint."""
 
-from flask_smorest import Blueprint
 from flask.views import MethodView
+from flask_smorest import Blueprint
+
 from app.utils.response_util import set_response
 
 health = Blueprint(

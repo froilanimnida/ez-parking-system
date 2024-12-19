@@ -11,18 +11,8 @@ from typing import Union, overload
 from uuid import uuid4
 
 from sqlalchemy import (
-    Boolean,
-    Column,
-    Integer,
-    Text,
-    UUID,
-    DECIMAL,
-    func,
-    update,
-    ForeignKey,
-    TIMESTAMP,
-    CheckConstraint,
-    String,
+    Boolean, Column, Integer, Text, UUID, DECIMAL, func, update, ForeignKey, TIMESTAMP,
+    CheckConstraint, String,
 )
 from sqlalchemy.orm import relationship
 

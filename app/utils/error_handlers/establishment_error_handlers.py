@@ -1,8 +1,7 @@
 """This module contains error handlers for establishment errors."""
 
 from app.exceptions.establishment_lookup_exceptions import (
-    EstablishmentDoesNotExist,
-    EstablishmentEditsNotAllowedException,
+    EstablishmentDoesNotExist, EstablishmentEditsNotAllowedException,
 )
 from app.utils.error_handlers.base_error_handler import handle_error
 

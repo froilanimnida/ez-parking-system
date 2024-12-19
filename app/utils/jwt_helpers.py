@@ -4,13 +4,7 @@ from datetime import datetime, timedelta, timezone
 from logging import getLogger
 
 from flask import Flask, Response
-from flask_jwt_extended import (
-    get_jwt,
-    set_access_cookies,
-    set_refresh_cookies,
-    get_jwt_identity,
-)
-
+from flask_jwt_extended import get_jwt, set_access_cookies, set_refresh_cookies, get_jwt_identity
 from flask_jwt_extended.exceptions import InvalidHeaderError
 
 from app.services.token_service import TokenService

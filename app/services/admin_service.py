@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+import pytz
 from flask import render_template
 
 from app.models.audit_log import AuditLogRepository
@@ -61,7 +62,7 @@ class UserBanningService:
             "performed_by": admin_id,
             "target_user": ban_data['user_id'],
             "details": f"User with user_id {ban_data['user_id']} has been banned.",
-            "performed_at": datetime.now(),
+            "performed_at": datetime.now(pytz.timezone('Asia/Manila')),
             "ip_address": ban_data['ip_address']
         })
 
@@ -74,7 +75,7 @@ class UserBanningService:
             "performed_by": admin_id,
             "target_user": user_id,
             "details": f"User with user_id {user_id} has been unbanned.",
-            "performed_at": datetime.now(),
+            "performed_at": datetime.now(pytz.timezone('Asia/Manila')),
             "ip_address": ip_address
         })
 

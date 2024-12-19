@@ -15,8 +15,7 @@ class CompanyProfile(Base):  # pylint: disable=too-few-public-methods
     """Business Profile Model"""
 
     __tablename__ = "company_profile"
-    __table_args__ = (
-        CheckConstraint(
+    __table_args__ = (CheckConstraint(
             "owner_type IN ('individual', 'company')",
             name="company_profile_owner_type_check",
         ),

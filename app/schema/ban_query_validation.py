@@ -5,7 +5,6 @@ from marshmallow import Schema, fields, validate, post_load
 
 class BanQueryValidation(Schema):
     """Validation schema for banning the plate numbers by the admin."""
-
     ban_reason = fields.Str(required=True, validate=validate.Length(min=1, max=255))
     user_id = fields.Str(required=True)
     ban_start = fields.DateTime(required=True)

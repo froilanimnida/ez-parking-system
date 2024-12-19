@@ -1,7 +1,7 @@
 """
-            This exception files contains exceptions that are
-            related to the authorization of the user.
-    """
+        This exception files contains exceptions that are
+        related to the authorization of the user.
+"""
 from app.exceptions.ez_parking_base_exception import EzParkingBaseException
 
 

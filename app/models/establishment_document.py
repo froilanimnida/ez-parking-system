@@ -1,17 +1,9 @@
 """Establishment Document Model."""
+
 from typing import overload
 
 from sqlalchemy import (
-    BigInteger,
-    CheckConstraint,
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    TIMESTAMP,
-    func,
-    text,
+    BigInteger, CheckConstraint, Column, ForeignKey, Integer, String, Text, TIMESTAMP, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship

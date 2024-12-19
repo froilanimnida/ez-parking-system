@@ -1,7 +1,7 @@
 """
-            This exception files contains exceptions that are
-            related QR Code Verification.
-    """
+    This exception files contains exceptions that are
+    related QR Code Verification.
+"""
 
 from app.exceptions.ez_parking_base_exception import EzParkingBaseException
 

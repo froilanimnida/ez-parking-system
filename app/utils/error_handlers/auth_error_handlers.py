@@ -3,18 +3,11 @@
 from flask_jwt_extended.exceptions import NoAuthorizationError
 
 from app.exceptions.authorization_exceptions import (
-    BannedUserException,
-    EmailNotFoundException,
-    MissingFieldsException,
-    InvalidPhoneNumberException,
-    PhoneNumberAlreadyTaken,
-    EmailAlreadyTaken,
-    IncorrectOTPException,
-    ExpiredOTPException,
-    RequestNewOTPException,
-    AccountIsNotVerifiedException,
+    BannedUserException, EmailNotFoundException, MissingFieldsException,
+    InvalidPhoneNumberException, PhoneNumberAlreadyTaken, EmailAlreadyTaken,
+    IncorrectOTPException, ExpiredOTPException,
+    RequestNewOTPException, AccountIsNotVerifiedException,
 )
-
 from app.utils.error_handlers.base_error_handler import handle_error
 
 
