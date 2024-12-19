@@ -7,10 +7,12 @@ from os import getenv, getpid, urandom, times
 from socket import gethostname
 from time import time_ns, time, perf_counter_ns
 
+import pytz
 from psutil import Process
 from pyotp import TOTP
 
 from app.exceptions.general_exceptions import FileSizeTooBig
+
 
 def get_otp_seed() -> str:
     """
@@ -64,7 +66,7 @@ def generate_otp() -> tuple:
             digits=6,
             interval=300,
             digest=sha256).now(),
-        datetime.now() + timedelta(minutes=5)
+        datetime.now(pytz.timezone('Asia/Manila')) + timedelta(minutes=5)
     )
 
 def generate_token():
@@ -75,7 +77,7 @@ def get_random_string() -> str:
     """ Generate a random string of 32 characters. """
     return urandom(32).hex()
 
-def check_file_size(request: dict) -> dict:
+def check_file_size(request):
     """ Check the size of the files in the request. """
     for key, file in request.files.items():
         if file.content_length > 1024 * 1024 * 10:

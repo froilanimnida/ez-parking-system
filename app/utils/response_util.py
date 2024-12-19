@@ -1,6 +1,7 @@
 """ This is the modularize set response function that can be use anywhere inside the project """
 
 from datetime import datetime
+
 from flask import make_response, jsonify, json
 
 

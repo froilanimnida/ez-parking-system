@@ -10,24 +10,19 @@ from flask_smorest import Blueprint
 
 from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
 from app.exceptions.transaction_exception import (
-    UserHasNoPlateNumberSetException,
-    HasExistingReservationException,
+    UserHasNoPlateNumberSetException, HasExistingReservationException
 )
 from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import (
-    CancelReservationSchema,
-    ReservationCreationSchema,
-    TransactionFormDetailsSchema,
-    ViewTransactionSchemaSchema,
+    CancelReservationSchema, ReservationCreationSchema, TransactionFormDetailsSchema,
+    ViewTransactionSchemaSchema
 )
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.qr_code_error_handlers import (
-    handle_invalid_qr_content,
-    handle_invalid_transaction_status,
+    handle_invalid_qr_content, handle_invalid_transaction_status
 )
 from app.utils.error_handlers.transaction_error_handlers import (
-    handle_user_has_no_plate_number_set,
-    handle_has_existing_reservation,
+    handle_user_has_no_plate_number_set, handle_has_existing_reservation,
 )
 from app.utils.response_util import set_response
 
@@ -51,9 +46,7 @@ def user_role_and_user_id_required():
                 )
             user_id = jwt_data.get("sub", {}).get("user_id")
             return fn(user_id=user_id, *args, **kwargs)
-
         return decorator
-
     return wrapper
 
 

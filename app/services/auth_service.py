@@ -8,7 +8,6 @@ from tempfile import NamedTemporaryFile
 
 import pytz
 from flask import render_template, current_app
-from flask_jwt_extended import create_access_token, create_refresh_token
 
 from app.exceptions.authorization_exceptions import (
     EmailAlreadyTaken, ExpiredOTPException, IncorrectOTPException, PhoneNumberAlreadyTaken,
@@ -61,19 +60,6 @@ class UserLoginService:  # pylint: disable=R0903
         return UserOTPService.generate_otp(email=user_email)
 
 
-class SessionTokenService:  # pylint: disable=R0903
-    """This class is responsible for the session token service."""
-    @staticmethod
-    def generate_session_token(email, user_id) -> str:
-        """This is the function responsible for generating the session token."""
-        return create_access_token(identity={"email": email, "user_id": user_id})
-
-    @staticmethod
-    def generate_refresh_token(email, user_id) -> str:
-        """Generate a refresh token."""
-        return create_refresh_token(identity={"email": email, "user_id": user_id})
-
-
 class UserOTPService:
     """Class to handle user OTP operations."""
 
@@ -114,7 +100,9 @@ class UserOTPService:
             raise RequestNewOTPException("Please request for a new OTP.")
 
         expiry = datetime.fromisoformat(expiry_str)
-        current_time = datetime.now(pytz.UTC) if expiry.tzinfo else datetime.now()
+        current_time = datetime.now(
+            pytz.timezone('Asia/Manila')
+        ) if expiry.tzinfo else datetime.now()
 
         if current_time > expiry:
             OTPOperations.delete_otp(email=email)
@@ -130,17 +118,15 @@ class UserOTPService:
 class UserRegistration:  # pylint: disable=R0903
     """User Registration Service"""
 
-    def create_new_user(self, sign_up_data: dict):
+    def create_new_user(self, sign_up_data: dict):  # pylint: disable=R0914
         """Create a new user account."""
+        now = datetime.now(pytz.timezone('Asia/Manila'))
         user_data = sign_up_data.get("user", {})
-
         UserRepository.is_field_taken(
             "email", sign_up_data.get("user", {}).get("email"), EmailAlreadyTaken
         )
         UserRepository.is_field_taken(
-            "phone_number",
-            sign_up_data.get("user", {}).get("phone_number"),
-            PhoneNumberAlreadyTaken
+            "phone_number", sign_up_data.get("user", {}).get("phone_number"),PhoneNumberAlreadyTaken
         )
         verification_token = generate_token()
         template = render_template(
@@ -152,28 +138,33 @@ class UserRegistration:  # pylint: disable=R0903
         user_data.update({
             "is_verified": False,
             "verification_token": verification_token,
-            "verification_expiry": datetime.now() + timedelta(days=7),
+            "verification_expiry": now + timedelta(days=7),
+            "created_at": now,
         })
         user_id = UserRepository.create_user(user_data)
         print(user_id)
         if sign_up_data.get("user", {}).get("role") == "parking_manager":
             company_profile = sign_up_data.get("company_profile", {})
-            company_profile.update({"user_id": user_id,})
+            company_profile.update({"user_id": user_id, "created_at": now, "updated_at": now})
             company_profile_id = self.add_new_company_profile(company_profile)
 
             address = sign_up_data.get("address", {})
-            address.update({"profile_id": company_profile_id,})
+            address.update({"profile_id": company_profile_id, "created_at": now, "updated_at": now})
             self.add_new_address(address)
 
             parking_establishment = sign_up_data.get("parking_establishment", {})
-            parking_establishment.update({"profile_id": company_profile_id})
+            parking_establishment.update({
+                "profile_id": company_profile_id, "created_at": now, "updated_at": now
+            })
             parking_establishment_id = self.add_new_parking_establishment(parking_establishment)
 
             pricing_plan = sign_up_data.get("pricing_plan", {})
             self.add_pricing_plan(parking_establishment_id, pricing_plan)
 
             payment_method = sign_up_data.get("payment_method", {})
-            payment_method.update({"establishment_id": parking_establishment_id})
+            payment_method.update({
+                "establishment_id": parking_establishment_id, "created_at": now, "updated_at": now
+            })
             self.add_payment_method(payment_method)
 
             operating_hours = sign_up_data.get("operating_hour", {})
@@ -275,7 +266,8 @@ class UserRegistration:  # pylint: disable=R0903
                 'filename': file.filename,
                 'mime_type': file.content_type,
                 'file_size': file.content_length if hasattr(file, 'content_length') else 0,
-                'status': 'pending'
+                'status': 'pending',
+                'uploaded_at': datetime.now(pytz.timezone('Asia/Manila'))
             }
             EstablishmentDocumentRepository.create_establishment_document(doc_data)
 

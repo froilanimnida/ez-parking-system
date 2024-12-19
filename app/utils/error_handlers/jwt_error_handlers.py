@@ -1,15 +1,8 @@
 """ JWT Error handler wrapper. """
 
 from flask_jwt_extended.exceptions import (
-    CSRFError,
-    NoAuthorizationError,
-    JWTDecodeError,
-    WrongTokenError,
-    RevokedTokenError,
-    UserClaimsVerificationError,
-    UserLookupError,
-    InvalidHeaderError,
-    InvalidQueryParamError,
+    CSRFError, NoAuthorizationError, JWTDecodeError, WrongTokenError, RevokedTokenError,
+    UserClaimsVerificationError, UserLookupError, InvalidHeaderError, InvalidQueryParamError,
     FreshTokenRequired,
 )
 

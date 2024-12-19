@@ -2,15 +2,16 @@
 
 # pylint: disable=R0914
 
+import hmac
+from base64 import b64encode, urlsafe_b64encode, urlsafe_b64decode
+from datetime import datetime, timedelta
+from hashlib import sha256
+from io import BytesIO
+from json import dumps, loads
 from os import urandom
 from re import match
-from io import BytesIO
-from datetime import datetime, timedelta, timezone
-from base64 import b64encode, urlsafe_b64encode, urlsafe_b64decode
-from json import dumps, loads
-from hashlib import sha256
-import hmac
 
+import pytz
 from qrcode import QRCode
 from qrcode.constants import ERROR_CORRECT_H
 from qrcode.image.styledpil import StyledPilImage
@@ -42,9 +43,10 @@ class QRCodeUtils:
         status = data.get("status")
         if status not in self.VALID_STATUSES:
             raise InvalidTransactionStatus(f"Invalid status: {status}")
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(pytz.timezone("Asia/Manila"))
         payload = {
             "uuid": data.get("uuid"),
+            "establishment_uuid": data.get("establishment_uuid"),
             "status": status,
             "plate": data.get("plate_number"),
             "timestamp": current_time.isoformat(),
@@ -129,7 +131,7 @@ class QRCodeUtils:
             ).hexdigest()
 
             expires_at_dt = datetime.fromisoformat(expires_at)
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(pytz.timezone("Asia/Manila"))
 
             if not hmac.compare_digest(decoded["signature"], expected_sig):
                 raise InvalidQRContent("Invalid signature")
@@ -167,7 +169,7 @@ class QRCodeUtils:
             str: Base64 encoded image data
         """
         qr = QRCode(
-            version=10,
+            version=25,
             error_correction=ERROR_CORRECT_H,
             box_size=10,
             border=4,

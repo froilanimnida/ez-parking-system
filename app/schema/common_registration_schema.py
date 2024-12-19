@@ -76,10 +76,7 @@ class CompanyProfile(Schema):
     owner_type = fields.Str(required=True, validate=validate.OneOf(['individual', 'company']))
     company_name = fields.Str(required=False)
     company_reg_number = fields.Str(required=False)
-    tin = fields.Str(
-        required=False, validate=validate.Regexp(r"^\d{3}-\d{3}-\d{3}-\d{3}$")
-    )
-
+    tin = fields.Str(required=False, validate=validate.Regexp(r"^\d{3}-\d{3}-\d{3}-\d{3}$"))
     @post_load
     def normalize_data(self, in_data, **kwargs):
         """Method to normalize the input data."""

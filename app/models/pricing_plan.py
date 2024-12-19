@@ -9,8 +9,8 @@ pricing plan of a parking establishment.
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Column, Integer, Numeric, Boolean, TIMESTAMP, func, ForeignKey,
-    UniqueConstraint, CheckConstraint, String
+    Column, Integer, Numeric, Boolean, TIMESTAMP, func, ForeignKey, UniqueConstraint,
+    CheckConstraint, String
 )
 from sqlalchemy.orm import relationship
 

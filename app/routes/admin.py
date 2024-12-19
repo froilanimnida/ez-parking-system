@@ -39,9 +39,7 @@ def admin_role_required():
                 )
             admin_id = jwt_data.get("sub", {}).get("user_id")
             return fn(admin_id=admin_id, *args, **kwargs)
-
         return decorator
-
     return wrapper
 
 @admin_blp.route("/users")
@@ -136,6 +134,7 @@ class GetBannedUsers(MethodView):
         # banned_users = admin_service.get_banned_users(admin_id)
         return set_response(200, {"code": "success", "data": "HELLO"})
 
+
 @admin_blp.route("/vehicle-types")
 class GetAllVehicleTypes(MethodView):
     @admin_blp.response(200, {"message": str})
@@ -197,8 +196,10 @@ class ApproveManagerApplication(MethodView):
     def post(self, ban_data, admin_id):  # pylint: disable=unused-argument
         # AdminService().approve_parking_applicant(ban_data)
         return set_response(
-            201, {"code": "success", "message": "Parking manager application approved."}
+            201,
+            {"code": "success", "message": "Parking manager application approved."}
         )
+
 @admin_blp.route("/establishment")
 class GetParkingEstablishment(MethodView):
     @admin_blp.arguments(EstablishmentCommonValidationSchema, location="query")

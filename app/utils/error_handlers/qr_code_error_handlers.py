@@ -1,9 +1,7 @@
 """ Returns tailored response for qr related errors. """
 
 from app.exceptions.qr_code_exceptions import (
-    InvalidQRContent,
-    InvalidTransactionStatus,
-    QRCodeExpired,
+    InvalidQRContent, InvalidTransactionStatus, QRCodeExpired
 )
 
 from app.utils.error_handlers.base_error_handler import handle_error
