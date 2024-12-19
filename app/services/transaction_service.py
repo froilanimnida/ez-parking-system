@@ -111,7 +111,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         )
         company_profile = CompanyProfileRepository.get_company_profile(
             profile_id=establishment_info.get("profile_id")
-                )
+        )
         owner_user_id = company_profile.get("user_id")
         contact_number = UserRepository.get_user(user_id=owner_user_id).get("contact_number")
         establishment_profile_id = company_profile.get("profile_id")
@@ -119,27 +119,26 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         user_plate_number = UserRepository.get_user(
             user_id=transaction_data.get("user_id")
         ).get("plate_number")
-        if transaction_data.get("status") not in ["active", "reserved"]:
-            return {"transaction_data": transaction_data}
-        qr_code_utils = QRCodeUtils()
-        qr_data = qr_code_utils.generate_qr_content(
-            data={
+        returned_data = {}
+        if transaction_data.get("status") in ["active", "reserved"]:
+            qr_code_utils = QRCodeUtils()
+            qr_data = qr_code_utils.generate_qr_content({
                 "uuid": transaction_data.get("uuid"),
                 "status": transaction_data.get("status"),
                 "plate_number": user_plate_number,
                 "establishment_uuid": establishment_info.get("uuid"),
-            }
-        )
-        base64_image = qr_code_utils.generate_qr_code(qr_data)
-        return {
+            })
+            base64_image = qr_code_utils.generate_qr_code(qr_data)
+            returned_data.update({"qr_code": base64_image})
+        returned_data.update({
             "transaction_data": transaction_data,
-            "qr_code": base64_image,
             "establishment_info": establishment_info,
             "slot_info": slot_info,
             "user_plate_number": user_plate_number,
             "address_info": address_info,
             "contact_number": contact_number,
-        }
+        })
+        return returned_data
 
 class TransactionVerification:
     """Wraps the service actions for transaction verification operations"""

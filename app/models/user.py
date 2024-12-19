@@ -103,8 +103,10 @@ class User(Base):
             "user_id": self.user_id,
             "uuid": str(self.uuid),
             "nickname": self.nickname,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
+            "first_name": self.first_name if self.first_name else "",
+            "last_name": self.last_name if self.last_name else "",
+            "middle_name": self.middle_name if self.middle_name else "",
+            "suffix": self.suffix if self.suffix else "",
             "email": self.email,
             "phone_number": self.phone_number,
             "role": self.role.value if self.role else None,
@@ -272,6 +274,24 @@ class UserRepository:
                 user_info.pop("verification_expiry")
                 users_list.append(user_info)
             return users_list
+        
+    @staticmethod
+    def update_user(user_id: int, update_data: dict):
+        """
+        Update the user information in the database.
+
+        Parameters:
+        user_id (int): The ID of the user to update.
+        update_data (dict): A dictionary containing the updated user information.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            return session.execute(
+                update(User).where(User.user_id == user_id).values(**update_data)
+            )
 
 class AuthOperations:  # pylint: disable=R0903 disable=C0115
     @classmethod
