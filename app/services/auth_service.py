@@ -49,6 +49,14 @@ class AuthService:
     @classmethod
     def verify_otp(cls, email: str, otp: str):  # pylint: disable=C0116
         return UserOTPService.verify_otp(email=email, otp=otp)
+    @classmethod
+    def get_profile(cls, user_id: int, role: str):
+        """Get user profile."""
+        return ProfileService.get_profile(user_id, role)
+    @classmethod
+    def update_profile(cls, user_id, update_data):
+        """Update user profile."""
+        return ProfileService.update_profile(user_id, update_data)
 
 
 class UserLoginService:  # pylint: disable=R0903
@@ -282,3 +290,14 @@ class EmailVerification:  # pylint: disable=R0903
     def verify_email(token: str):
         """Verify the email."""
         return UserRepository.verify_email(token)
+
+class ProfileService:
+    """Class to handle user profile operations."""
+    @classmethod
+    def get_profile(cls, user_id: int, role: str):  # pylint: disable=W0613
+        """Get user profile."""
+        return UserRepository.get_user(user_id)
+    @classmethod
+    def update_profile(cls, user_id, update_data):
+        """Update user profile."""
+        return UserRepository.update_user(user_id, update_data)
