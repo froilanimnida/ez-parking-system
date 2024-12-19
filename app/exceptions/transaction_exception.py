@@ -2,7 +2,6 @@
     Encapsulates all exceptions related to transactions
 """
 
-
 from app.exceptions.ez_parking_base_exception import EzParkingBaseException
 
 class HasExistingReservationException(EzParkingBaseException):

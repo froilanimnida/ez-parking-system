@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
-from app.utils.uuid_utility import UUIDUtility
 
 
 # noinspection PyTypeChecker
@@ -46,7 +45,6 @@ class BanUser(Base):  # pylint: disable=too-few-public-methods
         """Convert the ban user object to a dictionary."""
         if self is None:
             return {}
-        uuid_utility = UUIDUtility()
         return {
             "ban_id": self.ban_id,
             "user_id": self.user_id,
@@ -57,7 +55,7 @@ class BanUser(Base):  # pylint: disable=too-few-public-methods
             "banned_by": self.banned_by,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "uuid": uuid_utility.format_uuid(uuid_utility.binary_to_uuid(self.uuid)),
+            "uuid": str(self.uuid),
         }
 
 

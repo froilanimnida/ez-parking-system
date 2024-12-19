@@ -11,20 +11,20 @@ from flask_smorest import Blueprint
 
 from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.qr_code_exceptions import (
-    InvalidQRContent, InvalidTransactionStatus, QRCodeExpired,
+    InvalidQRContent, InvalidTransactionStatus, QRCodeExpired
 )
 from app.exceptions.slot_lookup_exceptions import SlotNotFound
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.parking_manager_validation import ParkingManagerRequestSchema
 from app.schema.response_schema import ApiResponse
 from app.schema.transaction_validation import ValidateEntrySchema
+from app.services.auth_service import AuthService
 from app.services.establishment_service import EstablishmentService
 from app.services.operating_hour_service import OperatingHourService
-from app.services.auth_service import AuthService
 from app.services.transaction_service import TransactionService
 from app.utils.error_handlers.general_error_handler import handle_file_size_too_big
 from app.utils.error_handlers.qr_code_error_handlers import (
-    handle_invalid_qr_content, handle_qr_code_expired,
+    handle_invalid_qr_content, handle_qr_code_expired
 )
 from app.utils.error_handlers.slot_lookup_error_handlers import handle_slot_not_found
 from app.utils.response_util import set_response
@@ -88,10 +88,8 @@ class CreateParkingManagerIndividualAccount(MethodView):
     def post(self):
         check_file_size(request)
         try:
-            # Initialize documents list (schema expects a list of dicts)
             documents_list = []
 
-            # Handle single file fields
             single_file_fields = [
                 'gov_id',
                 'proof_of_ownership',
@@ -100,7 +98,6 @@ class CreateParkingManagerIndividualAccount(MethodView):
                 'business_cert'
             ]
 
-            # Process single files
             for field in single_file_fields:
                 if field in request.files:
                     file = request.files[field]
@@ -110,7 +107,6 @@ class CreateParkingManagerIndividualAccount(MethodView):
                         "filename": file.filename
                     })
 
-            # Handle parking photos array
             for key in request.files:
                 if key.startswith('parking_photos['):
                     file = request.files[key]
@@ -121,10 +117,7 @@ class CreateParkingManagerIndividualAccount(MethodView):
                     })
 
             form_data = json.loads(request.form.get("sign_up_data"))
-
             form_data['documents'] = documents_list
-
-            # Validate complete data
         except Exception as e:  # pylint: disable=broad-exception-caught
             return set_response(
                 400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}

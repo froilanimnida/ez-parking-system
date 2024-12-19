@@ -4,13 +4,8 @@
 
 from flask.views import MethodView
 from flask_jwt_extended import (
-    get_jwt,
-    set_access_cookies,
-    jwt_required,
-    set_refresh_cookies,
-    unset_access_cookies,
-    unset_jwt_cookies,
-    unset_refresh_cookies,
+    get_jwt, set_access_cookies, jwt_required, set_refresh_cookies, unset_access_cookies,
+    unset_jwt_cookies, unset_refresh_cookies,
 )
 from flask_smorest import Blueprint
 
@@ -32,15 +27,9 @@ from app.schema.user_auth_schema import (
 from app.services.auth_service import AuthService
 from app.services.token_service import TokenService
 from app.utils.error_handlers.auth_error_handlers import (
-    handle_account_not_verified,
-    handle_banned_user,
-    handle_email_not_found,
-    handle_email_already_taken,
-    handle_phone_number_already_taken,
-    handle_invalid_phone_number,
-    handle_incorrect_otp,
-    handle_expired_otp,
-    handle_request_new_otp,
+    handle_account_not_verified, handle_banned_user, handle_email_not_found,
+    handle_email_already_taken, handle_phone_number_already_taken,
+    handle_invalid_phone_number, handle_incorrect_otp, handle_expired_otp, handle_request_new_otp,
 )
 from app.utils.response_util import set_response
 
@@ -66,9 +55,7 @@ class Login(MethodView):
     @jwt_required(True)
     def post(self, login_data):
         AuthService.login_user(login_data)
-        response = set_response(
-            200, {"code": "otp_sent", "message": "OTP sent successfully."}
-        )
+        response = set_response(200, {"code": "otp_sent", "message": "OTP sent successfully."})
         unset_jwt_cookies(response)
         unset_access_cookies(response)
         unset_refresh_cookies(response)
@@ -91,9 +78,7 @@ class GenerateOTP(MethodView):
         auth_service = AuthService()
         email = data.get("email")
         auth_service.generate_otp(email)
-        return set_response(
-            200, {"code": "otp_sent", "message": "OTP sent successfully."}
-        )
+        return set_response(200, {"code": "otp_sent", "message": "OTP sent successfully."})
 
 
 @auth_blp.route("/verify-otp")

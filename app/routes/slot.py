@@ -8,8 +8,7 @@ from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 
 from app.exceptions.slot_lookup_exceptions import (
-    NoSlotsFoundInTheGivenSlotCode,
-    NoSlotsFoundInTheGivenEstablishment,
+    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment,
     NoSlotsFoundInTheGivenVehicleType, SlotAlreadyExists,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
@@ -17,19 +16,14 @@ from app.routes.parking_manager import parking_manager_required
 from app.schema.parking_manager_validation import (
     CreateSlotSchema, DeleteSlotSchemaSchema, UpdateSlotSchemaSchema
 )
-from app.schema.query_validation import (
-    EstablishmentQueryValidationSchema,
-)
+from app.schema.query_validation import EstablishmentQueryValidationSchema
 from app.schema.response_schema import ApiResponse
 from app.services.slot_service import ParkingSlotService
 from app.utils.error_handlers.slot_lookup_error_handlers import (
-    handle_no_slots_found_in_the_given_slot_code,
-    handle_no_slots_found_in_the_given_establishment,
+    handle_no_slots_found_in_the_given_slot_code, handle_no_slots_found_in_the_given_establishment,
     handle_no_slots_found_in_the_given_vehicle_type, handle_slot_already_exists,
 )
-from app.utils.error_handlers.vehicle_type_error_handlers import (
-    handle_vehicle_type_does_not_exist,
-)
+from app.utils.error_handlers.vehicle_type_error_handlers import handle_vehicle_type_does_not_exist
 from app.utils.response_util import set_response
 
 slot_blp = Blueprint(
@@ -131,8 +125,7 @@ slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code
 )
 slot_blp.register_error_handler(
-    NoSlotsFoundInTheGivenEstablishment,
-    handle_no_slots_found_in_the_given_establishment,
+    NoSlotsFoundInTheGivenEstablishment,handle_no_slots_found_in_the_given_establishment,
 )
 slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenVehicleType, handle_no_slots_found_in_the_given_vehicle_type

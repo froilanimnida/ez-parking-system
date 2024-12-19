@@ -1,11 +1,8 @@
 """ Wraps the error handlers for the slot lookup related errors. """
 
 from app.exceptions.slot_lookup_exceptions import (
-    NoSlotsFoundInTheGivenSlotCode,
-    NoSlotsFoundInTheGivenEstablishment,
-    NoSlotsFoundInTheGivenVehicleType,
-    SlotNotFound,
-    SlotStatusTaken, SlotAlreadyExists
+    NoSlotsFoundInTheGivenSlotCode, NoSlotsFoundInTheGivenEstablishment,
+    NoSlotsFoundInTheGivenVehicleType, SlotNotFound, SlotStatusTaken, SlotAlreadyExists
 )
 from app.utils.error_handlers.base_error_handler import handle_error
 

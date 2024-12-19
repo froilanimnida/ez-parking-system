@@ -4,6 +4,8 @@
 
 from datetime import datetime
 
+import pytz
+
 from app.exceptions.slot_lookup_exceptions import NoSlotsFoundInTheGivenSlotCode, SlotAlreadyExists
 from app.models.audit_log import AuditLogRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository, ParkingEstablishment
@@ -56,7 +58,7 @@ class AddSlotService:
         slot_exists = ParkingSlotRepository.get_slot(new_slot_data.get("slot_code"))
         if slot_exists:
             raise SlotAlreadyExists("Slot already exists.")
-        now = datetime.now()
+        now = datetime.now(pytz.timezone('Asia/Manila'))
         establishment_id = ParkingEstablishment.get_establishment_id(
             new_slot_data.pop("establishment_uuid")
         )
