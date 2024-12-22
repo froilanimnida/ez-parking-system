@@ -45,7 +45,7 @@ class GetAllVehicleTypes(MethodView):
         )
 
 
-@vehicle_type_blp.route("/create-vehicle-type")
+@vehicle_type_blp.route("/create")
 class CreateVehicleType(MethodView):
     """Create a new vehicle type."""
 
