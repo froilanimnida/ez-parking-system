@@ -2,10 +2,8 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
-from functools import wraps
-
 from flask.views import MethodView
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 
 from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
@@ -18,6 +16,7 @@ from app.utils.error_handlers.establishment_error_handlers import (
     handle_establishment_does_not_exist
 )
 from app.utils.response_util import set_response
+from app.utils.role_decorator import admin_role_required
 
 admin_blp = Blueprint(
     "admin",
@@ -25,22 +24,6 @@ admin_blp = Blueprint(
     url_prefix="/api/v1/admin",
     description="Admin API for EZ Parking System Frontend",
 )
-
-
-def admin_role_required():
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            jwt_data = get_jwt()
-            is_admin = jwt_data.get("role") == "admin"
-            if not is_admin:
-                return set_response(
-                    401, {"code": "unauthorized", "message": "Admin required."}
-                )
-            admin_id = jwt_data.get("sub", {}).get("user_id")
-            return fn(admin_id=admin_id, *args, **kwargs)
-        return decorator
-    return wrapper
 
 @admin_blp.route("/users")
 class GetAllUsers(MethodView):
@@ -224,7 +207,6 @@ class GetParkingEstablishment(MethodView):
         company_profile_creator = establishment_info.get('company_profile').get('user_id')
         user_info = AdminService.get_user(company_profile_creator)
         establishment_info.update({"user": user_info})
-        print(company_profile_creator)
         return set_response(200, {"code": "success", "data": establishment_info})
 
 
