@@ -21,7 +21,7 @@ vehicle_type_blp = Blueprint(
 )
 
 
-@vehicle_type_blp.route("/get-all-vehicle-types")
+@vehicle_type_blp.route("/all")
 class GetAllVehicleTypes(MethodView):
     """Get all vehicle types."""
 

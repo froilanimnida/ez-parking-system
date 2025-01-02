@@ -12,7 +12,7 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenVehicleType, SlotAlreadyExists,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
-from app.routes.parking_manager import parking_manager_required
+from app.utils.role_decorator import parking_manager_role_required
 from app.schema.parking_manager_validation import (
     CreateSlotSchema, DeleteSlotSchemaSchema, UpdateSlotSchemaSchema
 )
@@ -66,7 +66,7 @@ class CreateSlot(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def post(self, new_slot_data, user_id):
         print(new_slot_data)
         ParkingSlotService.create_slot(new_slot_data, user_id, request.remote_addr)
@@ -89,7 +89,7 @@ class DeleteSlot(MethodView):
             422: "Unprocessable Entity",
         },
     )
-    @parking_manager_required()
+    @parking_manager_role_required()
     @jwt_required(False)
     def delete(self, data, user_id):
         data.update({"ip_address": request.remote_addr, "manager_id": user_id})
@@ -112,7 +112,7 @@ class UpdateSlot(MethodView):
             401: "Unauthorized",
         },
     )
-    @parking_manager_required()
+    @parking_manager_role_required()
     @jwt_required(False)
     def post(self, slot_data, user_id):
         slot_data.update({"ip_address": request.remote_addr, "manager_id": user_id})

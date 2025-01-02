@@ -2,11 +2,9 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
-from functools import wraps
-
 from flask import request, json
 from flask.views import MethodView
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 
 from app.exceptions.general_exceptions import FileSizeTooBig
@@ -35,6 +33,7 @@ from app.utils.error_handlers.slot_lookup_error_handlers import (
 )
 from app.utils.response_util import set_response
 from app.utils.security import check_file_size
+from app.utils.role_decorator import parking_manager_role_required
 
 parking_manager_blp = Blueprint(
     "parking_manager",
@@ -42,27 +41,6 @@ parking_manager_blp = Blueprint(
     url_prefix="/api/v1/parking-manager",
     description="Parking Manager API for EZ Parking System Frontend",
 )
-
-
-def parking_manager_required():
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            jwt_data = get_jwt()
-            is_parking_manager = jwt_data.get("role") == "parking_manager"
-            is_admin = jwt_data.get("role") == "admin"
-            if not is_parking_manager and not is_admin:
-                return set_response(
-                    401,
-                    {
-                        "code": "unauthorized",
-                        "message": "Parking manager or admin required.",
-                    },
-                )
-            user_id = jwt_data.get("sub", {}).get("user_id")
-            return fn(*args, user_id=user_id, **kwargs)
-        return decorator
-    return wrapper
 
 
 @parking_manager_blp.route("/vehicle-types")
@@ -77,7 +55,7 @@ class GetAllVehicleTypes(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     @jwt_required(False)
     def get(self, user_id):  # pylint: disable=unused-argument
         vehicle_types = VehicleTypeService().get_all_vehicle_types()
@@ -162,7 +140,7 @@ class CreateParkingManagerIndividualAccount(MethodView):
 @parking_manager_blp.route("/validate/entry")
 class EstablishmentEntry(MethodView):
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
         description="Routes that will validate the token of the reservation qr code and update"
@@ -200,7 +178,7 @@ class GetQRContentOverview(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def get(self, data, user_id):
         data = TransactionService.get_transaction_details_from_qr_code(
             data.get("qr_content"), user_id
@@ -232,7 +210,7 @@ class GetAllEstablishmentsInfo(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def get(self, user_id):
         data = EstablishmentService.get_establishment(user_id)
         return set_response(
@@ -258,7 +236,7 @@ class GetScheduleHours(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def get(self, user_id):
         operating_hours = OperatingHourService.get_operating_hours(user_id)
         return set_response(
@@ -284,7 +262,7 @@ class UpdateScheduleHours(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def patch(self, data, user_id):  # pylint: disable=unused-argument
         # OperatingHourService.update_operating_hours(data, user_id)
         return set_response(
@@ -308,7 +286,7 @@ class Slots(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def get(self, user_id):
         slots = ParkingManagerService.get_all_slots(user_id)
         return set_response(
@@ -333,7 +311,7 @@ class CreateSlot(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def post(self, data, user_id):
         ParkingManagerService.create_slot(data, user_id, request.remote_addr)
         return set_response(
@@ -358,7 +336,7 @@ class GetTransactions(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def get(self, user_id):
         transactions = TransactionService.get_establishment_transaction(user_id)
         return set_response(
@@ -383,7 +361,7 @@ class GetTransaction(MethodView):
         },
     )
     @jwt_required(False)
-    @parking_manager_required()
+    @parking_manager_role_required()
     def get(self, data, user_id):  # pylint: disable=unused-argument
         transaction = TransactionService.get_transaction(data.get("transaction_uuid"))
         return set_response(

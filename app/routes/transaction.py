@@ -2,10 +2,8 @@
 
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
-from functools import wraps
-
 from flask.views import MethodView
-from flask_jwt_extended import get_jwt, jwt_required
+from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 
 from app.exceptions.qr_code_exceptions import InvalidQRContent, InvalidTransactionStatus
@@ -25,6 +23,7 @@ from app.utils.error_handlers.transaction_error_handlers import (
     handle_user_has_no_plate_number_set, handle_has_existing_reservation,
 )
 from app.utils.response_util import set_response
+from app.utils.role_decorator import user_role_required
 
 transactions_blp = Blueprint(
     "transactions",
@@ -34,26 +33,10 @@ transactions_blp = Blueprint(
 )
 
 
-def user_role_and_user_id_required():
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            jwt_data = get_jwt()
-            is_user = jwt_data.get("role") == "user"
-            if not is_user:
-                return set_response(
-                    401, {"code": "unauthorized", "message": "User required."}
-                )
-            user_id = jwt_data.get("sub", {}).get("user_id")
-            return fn(user_id=user_id, *args, **kwargs)
-        return decorator
-    return wrapper
-
-
 @transactions_blp.route("/create")
 class CreateReservation(MethodView):
     @jwt_required(False)
-    @user_role_and_user_id_required()
+    @user_role_required()
     @transactions_blp.arguments(ReservationCreationSchema)
     @transactions_blp.response(201, ApiResponse)
     @transactions_blp.doc(
@@ -76,7 +59,7 @@ class CreateReservation(MethodView):
 class CancelReservation(MethodView):
 
     @jwt_required(False)
-    @user_role_and_user_id_required()
+    @user_role_required()
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.arguments(CancelReservationSchema)
     @transactions_blp.doc(
@@ -97,7 +80,7 @@ class CancelReservation(MethodView):
 @transactions_blp.route("/view")
 class ViewTransaction(MethodView):
     @jwt_required(False)
-    @user_role_and_user_id_required()
+    @user_role_required()
     @transactions_blp.arguments(ViewTransactionSchemaSchema, location="query")
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.doc(
@@ -118,7 +101,7 @@ class ViewTransaction(MethodView):
 @transactions_blp.route("/checkout")
 class TransactionOverview(MethodView):
     @jwt_required(False)
-    @user_role_and_user_id_required()
+    @user_role_required()
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.arguments(TransactionFormDetailsSchema, location="query")
     @transactions_blp.doc(
@@ -141,7 +124,7 @@ class TransactionOverview(MethodView):
 @transactions_blp.route("/all")
 class GetAllUserTransaction(MethodView):
     @jwt_required(False)
-    @user_role_and_user_id_required()
+    @user_role_required()
     @transactions_blp.response(200, ApiResponse)
     @transactions_blp.doc(
         description="Get all the transactions of the user.",

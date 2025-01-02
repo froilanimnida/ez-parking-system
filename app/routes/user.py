@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from flask_smorest import Blueprint
 
 from app.exceptions.authorization_exceptions import EmailAlreadyTaken
-from app.routes.transaction import user_role_and_user_id_required
+from app.utils.role_decorator import user_role_required
 from app.schema.common_schema_validation import UserUpdateProfileSchema
 from app.schema.response_schema import ApiResponse
 from app.schema.user_auth_schema import UserRegistrationSchema
@@ -51,7 +51,7 @@ class UserProfile(MethodView):
         },
     )
     @jwt_required(True)
-    @user_role_and_user_id_required()
+    @user_role_required()
     def get(self, user_id):
         user_data = AuthService.get_profile(user_id, role=get_jwt().get("role"))
         return set_response(
@@ -69,7 +69,7 @@ class UpdateUserProfile(MethodView):
         },
     )
     @jwt_required(optional=False)
-    @user_role_and_user_id_required()
+    @user_role_required()
     def patch(self, update_data, user_id):
         AuthService.update_profile(user_id, update_data)
         return set_response(
