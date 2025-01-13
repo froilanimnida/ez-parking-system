@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from logging import getLogger
 
-from flask import Flask, Response
+from flask import Response
 from flask_jwt_extended import get_jwt, set_access_cookies, set_refresh_cookies, get_jwt_identity
 from flask_jwt_extended.exceptions import InvalidHeaderError
 
@@ -52,7 +52,7 @@ def refresh_expiring_jwts(response: Response) -> Response:
         return response
 
 
-def add_jwt_after_request_handler(app: Flask) -> None:
+def add_jwt_after_request_handler(app) -> None:
     """
     Attaches the JWT refresh logic as an after_request handler.
 

@@ -8,12 +8,13 @@ from flask_cors import CORS
 
 def set_up_cors(app: Flask):
     """Set up CORS for the application."""
-    # CORS Configuration
+    allowed_origins = getenv("FRONTEND_URL").split(",")
+
     CORS(
         app,
         supports_credentials=True,
-        origins=getenv("FRONTEND_URL"),
-        allow_headers=["Content-Type", "X-CSRF-TOKEN", "Accept"],
+        origins=allowed_origins,
+        allow_headers=["Content-Type", "X-CSRF-TOKEN", "Accept", "Authorization"],
         expose_headers=["Set-Cookie", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
