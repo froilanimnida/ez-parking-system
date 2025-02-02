@@ -56,9 +56,6 @@ class Login(MethodView):
     def post(self, login_data):
         AuthService.login_user(login_data)
         response = set_response(200, {"code": "otp_sent", "message": "OTP sent successfully."})
-        unset_jwt_cookies(response)
-        unset_access_cookies(response)
-        unset_refresh_cookies(response)
         return response
 
 
@@ -110,6 +107,21 @@ class VerifyOTP(MethodView):
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response
+
+
+@auth_blp.route('protected-route')
+class ProtectedRoute(MethodView):
+    @auth_blp.response(200, ApiResponse)
+    @auth_blp.doc(
+        description="A protected route that requires a valid JWT token.",
+        responses={
+            200: {"description": "Protected route accessed."},
+            401: {"description": "Unauthorized"},
+        },
+    )
+    @jwt_required()
+    def post(self):
+        return set_response(200, {"code": "success", "message": "Protected route accessed."})
 
 
 @auth_blp.route("/logout")

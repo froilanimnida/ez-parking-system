@@ -39,7 +39,7 @@ ENVIRONMENT = getenv("ENVIRONMENT", "")
 
 if __name__ == "__main__":
     if ENVIRONMENT == "production":
-        app.run(host="0.0.0.0", port=5000)
+        app.run(host="192.168.254.12", port=5000)
     else:
         from watchfiles import run_process
         run_process(
