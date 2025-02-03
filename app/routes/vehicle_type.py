@@ -48,7 +48,6 @@ class GetAllVehicleTypes(MethodView):
 @vehicle_type_blp.route("/create")
 class CreateVehicleType(MethodView):
     """Create a new vehicle type."""
-
     @vehicle_type_blp.arguments(CreateVehicleTypeSchema)
     @vehicle_type_blp.response(201, ApiResponse)
     @vehicle_type_blp.doc(
@@ -70,5 +69,29 @@ class CreateVehicleType(MethodView):
             {
                 "code": "success",
                 "message": "Vehicle type created successfully.",
+            },
+        )
+
+@vehicle_type_blp.route("/update")
+class UpdateVehicleType(MethodView):
+    """Update a vehicle type."""
+    @vehicle_type_blp.response(200, ApiResponse)
+    @vehicle_type_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update a vehicle type.",
+        responses={
+            200: "Vehicle type updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    def patch(self):
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Vehicle type updated successfully.",
             },
         )

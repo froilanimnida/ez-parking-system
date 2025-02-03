@@ -27,7 +27,7 @@ def run_dev_server():
     """Run the development server with SSL"""
     run_simple(
         hostname="0.0.0.0",
-        ssl_context=create_ssl_context(),
+        # ssl_context=create_ssl_context(),
         port=5000,
         application=app,
         threaded=True,
@@ -39,7 +39,7 @@ ENVIRONMENT = getenv("ENVIRONMENT", "")
 
 if __name__ == "__main__":
     if ENVIRONMENT == "production":
-        app.run(host="0.0.0.0", port=5000)
+        app.run(host="192.168.254.12", port=5000)
     else:
         from watchfiles import run_process
         run_process(

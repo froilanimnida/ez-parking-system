@@ -1,3 +1,14 @@
 {
-	"cSpell.words": ["LOCALSTACK"]
+	"cSpell.words": ["LOCALSTACK"],
+	"sqltools.connections": [
+		{
+			"previewLimit": 50,
+			"server": "localhost",
+			"port": 5432,
+			"driver": "PostgreSQL",
+			"name": "ez-parking | localhost",
+			"database": "ez-parking",
+			"username": "postgres"
+		}
+	]
 }
