@@ -79,7 +79,7 @@ class UserOTPService:
             template_name_or_list="auth/one-time-password.html", otp=otp_code, user_name=email,
         )
         OTPOperations.set_otp({"email": email, "otp_secret": otp_code, "otp_expiry": otp_expiry})
-        # send_mail(message=one_time_password_template, email=email, subject="One Time Password")
+        send_mail(message=one_time_password_template, email=email, subject="One Time Password")
 
     @classmethod
     def verify_otp(cls, otp: str, email: str) -> tuple[int, str]:
