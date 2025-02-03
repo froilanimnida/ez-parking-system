@@ -8,7 +8,12 @@ from flask_cors import CORS
 
 def set_up_cors(app: Flask):
     """Set up CORS for the application."""
-    allowed_origins = getenv("FRONTEND_URL").split(",")
+    allowed_origins = [
+        getenv("FRONTEND_URL").split(","),
+        "https://ez-parking.expo.app",
+        "https://ez-parking-gamma.vercel.app",
+        "https://ez-parking.vercel.app"
+    ]
 
     CORS(
         app,
