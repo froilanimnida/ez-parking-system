@@ -22,7 +22,7 @@ def set_up_cors(app: Flask):
         app,
         supports_credentials=True,
         origins=allowed_origins,
-        allow_headers=["Content-Type", "X-CSRF-TOKEN", "Accept", "Authorization"],
+        allow_headers=["Content-Type", "X-CSRF-TOKEN", "Accept", "Authorization", "csrf_refresh_token", "refresh_token_cookie"],
         expose_headers=["Set-Cookie", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
