@@ -12,7 +12,8 @@ def set_up_cors(app: Flask):
     static_origins = [
         "https://ez-parking.expo.app",
         "https://ez-parking-gamma.vercel.app",
-        "https://ez-parking.vercel.app"
+        "https://ez-parking.vercel.app",
+        "https://fuzzy-fortnight-j7vvwpjqjwr2vq6-8081.app.github.dev"
     ]
 
     allowed_origins = frontend_urls + static_origins
