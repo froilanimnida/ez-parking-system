@@ -40,7 +40,6 @@ class SlotFeature(PyEnum):
     disabled = "disabled"
     ev_charging = "ev_charging"
 
-
 class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     """Define the parking_slot table model."""
     __tablename__ = "parking_slot"
@@ -54,11 +53,16 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
     slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.open)
     is_active = Column(Boolean, nullable=False, default=True)
-    slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
+    slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00) # Remove this for consolidation of pricing to per-slot based
     floor_level = Column(SmallInteger, nullable=False, default=1)
-    base_rate = Column(Numeric(10, 2), default=None)
+    base_rate = Column(Numeric(10, 2), default=None) # Remove this forc consolidation of pricing to per-slot based
     is_premium = Column(Boolean, nullable=False, default=False)
     slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
+    # New pricing fields
+    # base_price_per_hour DECIMAL(10,2) NOT NULL,
+    # base_price_per_day DECIMAL(10,2) NOT NULL,
+    # base_price_per_month DECIMAL(10,2) NOT NULL,
+    # price_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.00,
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
@@ -335,12 +339,12 @@ class ParkingSlotRepository:
     ) -> int:
         """
         Change the status of a parking slot.
-    
+
         Parameters:
             slot_uuid (str): The UUID of the slot.
             slot_id (int): The ID of the slot.
             new_status (SlotStatus): The new status of the slot.
-    
+
         Returns:
             int: The ID of the updated slot.
         """
