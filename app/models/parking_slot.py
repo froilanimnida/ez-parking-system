@@ -53,12 +53,12 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
     slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.open)
     is_active = Column(Boolean, nullable=False, default=True)
-    slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00) # Remove this for consolidation of pricing to per-slot based
+    slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00) # TODO: Remove this for consolidation of pricing to per-slot based
     floor_level = Column(SmallInteger, nullable=False, default=1)
-    base_rate = Column(Numeric(10, 2), default=None) # Remove this forc consolidation of pricing to per-slot based
+    base_rate = Column(Numeric(10, 2), default=None) # TODO: Remove this for consolidation of pricing to per-slot based
     is_premium = Column(Boolean, nullable=False, default=False)
     slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
-    # New pricing fields
+    # TODO: New pricing fields
     # base_price_per_hour DECIMAL(10,2) NOT NULL,
     # base_price_per_day DECIMAL(10,2) NOT NULL,
     # base_price_per_month DECIMAL(10,2) NOT NULL,

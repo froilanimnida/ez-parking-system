@@ -50,6 +50,8 @@ class GetEstablishments(MethodView):
             }
         )
 
+# TODO: Add the nearest route if beyond 2km it will not be included otherwise put it
+# TODO: Add suggestion for city in the frontend
 
 @establishment_blp.route("/view")
 class GetEstablishmentInfo(MethodView):

@@ -19,9 +19,9 @@ class ParkingManagerRequestSchema(Schema):
     company_profile = fields.Nested(CompanyProfile, required=True)
     address = fields.Nested(Address, required=True)
     parking_establishment = fields.Nested(ParkingEstablishment, required=True)
-    operating_hour = fields.Nested(OperatingHour, required=True)
+    operating_hour = fields.Nested(OperatingHour, required=True) # TODO: Amend this part and simplify the database to make the day of the week number based i.e 1 for monday, 2 for tuesday...
     payment_method = fields.Nested(PaymentMethod, required=True)
-    pricing_plan = fields.Nested(PricingPlan, required=True)
+    pricing_plan = fields.Nested(PricingPlan, required=True) # TODO: Remove this for simplification of the database
     documents = fields.List(fields.Dict(), required=True)
 
 
