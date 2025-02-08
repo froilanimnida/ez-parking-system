@@ -37,7 +37,6 @@ slot_blp = Blueprint(
 
 @slot_blp.route("/get-all-slots")
 class GetSlotsByEstablishmentID(MethodView):
-    @slot_blp.arguments(EstablishmentQueryValidationSchema, location="query")
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
         description="Get all slots by establishment uuid",
@@ -47,8 +46,8 @@ class GetSlotsByEstablishmentID(MethodView):
         },
     )
     @jwt_required(True)
-    def get(self, data):
-        slots = ParkingSlotService.get_all_slots(data.get("establishment_uuid"))
+    def get(self, user_id):
+        slots = ParkingSlotService.get_all_slots(user_id)
         return set_response(200, {"slots": slots})
 
 

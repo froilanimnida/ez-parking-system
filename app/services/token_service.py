@@ -20,8 +20,10 @@ class TokenService:  # pylint: disable=C0115, R0903
             expires_delta=timedelta(days=1) if not remember_me else timedelta(days=30),
             fresh=True,
             additional_claims={"role": role},
+            
         )
         refresh_token = create_refresh_token(
             identity={"email": email, "user_id": user_id}
+            
         )
         return access_token, refresh_token

@@ -15,8 +15,8 @@ from app.models.parking_slot import ParkingSlotRepository
 class ParkingSlotService:
     """Wraps the logic for getting the list of slots."""
     @staticmethod
-    def get_all_slots(establishment_uuid: str):
-        return GetSlotService.get_all_slots(establishment_uuid)
+    def get_all_slots(parking_manager_id: int):
+        return GetSlotService.get_all_slots(parking_manager_id=parking_manager_id)
     @staticmethod
     def get_slot(slot_uuid: str):
         return GetSlotService.get_slot(slot_uuid)
@@ -35,7 +35,8 @@ class ParkingSlotService:
 class GetSlotService:
     """Wraps the logic for getting the list of slots, calling the model layer classes."""
     @staticmethod
-    def get_all_slots(establishment_uuid: str):  # pylint: disable=C0116
+    def get_all_slots(parking_manager_id: int):  # pylint: disable=C0116
+        parking_manager_establishment = ParkingEstablishmentRepository.get_establishment()
         return ParkingSlotRepository.get_slots(
             establishment_id=ParkingEstablishmentRepository.get_establishment(
             establishment_uuid
