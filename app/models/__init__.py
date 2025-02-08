@@ -11,5 +11,5 @@ from app.models.establishment_document import EstablishmentDocument
 from app.models.operating_hour import OperatingHour
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_transaction import ParkingTransaction
-from app.models.pricing_plan import PricingPlan
+# from app.models.pricing_plan import PricingPlan
 from app.models.vehicle_type import VehicleType

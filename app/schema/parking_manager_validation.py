@@ -6,8 +6,7 @@ from marshmallow import Schema, fields, post_load, validates_schema, validate
 from marshmallow.exceptions import ValidationError
 
 from app.schema.common_registration_schema import (
-    CompanyProfile, UserData, Address, ParkingEstablishment, OperatingHour, PaymentMethod,
-    PricingPlan
+    CompanyProfile, UserData, Address, ParkingEstablishment, OperatingHour, PaymentMethod
 )
 from app.schema.common_schema_validation import SlotCommonValidationSchema
 from app.schema.slot_validation import CreateSlotSchema
@@ -21,7 +20,6 @@ class ParkingManagerRequestSchema(Schema):
     parking_establishment = fields.Nested(ParkingEstablishment, required=True)
     operating_hour = fields.Nested(OperatingHour, required=True)
     payment_method = fields.Nested(PaymentMethod, required=True)
-    pricing_plan = fields.Nested(PricingPlan, required=True)
     documents = fields.List(fields.Dict(), required=True)
 
 

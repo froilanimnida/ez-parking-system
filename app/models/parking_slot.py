@@ -40,7 +40,6 @@ class SlotFeature(PyEnum):
     disabled = "disabled"
     ev_charging = "ev_charging"
 
-
 class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     """Define the parking_slot table model."""
     __tablename__ = "parking_slot"
@@ -54,11 +53,15 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
     slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.open)
     is_active = Column(Boolean, nullable=False, default=True)
-    slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
+    # slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     floor_level = Column(SmallInteger, nullable=False, default=1)
-    base_rate = Column(Numeric(10, 2), default=None)
+    # base_rate = Column(Numeric(10, 2), default=None)
     is_premium = Column(Boolean, nullable=False, default=False)
     slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
+    base_price_per_hour = Column(Numeric(10, 2), nullable=False, default=0.00)
+    base_rate_per_day = Column(Numeric(10, 2), nullable=False, default=0.00)
+    base_rate_per_month = Column(Numeric(10, 2), nullable=False, default=0.00)
+    price_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
@@ -93,11 +96,14 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "vehicle_type_id": self.vehicle_type_id,
             "slot_status": self.slot_status.value if self.slot_status else None,
             "is_active": self.is_active,
-            "slot_multiplier": str(self.slot_multiplier),
+            # "slot_multiplier": str(self.slot_multiplier),
             "floor_level": self.floor_level,
-            "base_rate": str(self.base_rate),
+            # "base_rate": str(self.base_rate),
             "is_premium": self.is_premium,
             "slot_features": self.slot_features.value if self.slot_features else None,
+            "base_price_per_hour": str(self.base_price_per_hour),
+            "base_rate_per_day": str(self.base_rate_per_day),
+            "base_rate_per_month": str(self.base_rate_per_month),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -335,12 +341,12 @@ class ParkingSlotRepository:
     ) -> int:
         """
         Change the status of a parking slot.
-    
+
         Parameters:
             slot_uuid (str): The UUID of the slot.
             slot_id (int): The ID of the slot.
             new_status (SlotStatus): The new status of the slot.
-    
+
         Returns:
             int: The ID of the updated slot.
         """

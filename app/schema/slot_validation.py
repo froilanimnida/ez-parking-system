@@ -45,3 +45,7 @@ class CreateSlotParkingManagerSchema(SlotCodeValidationQuerySchema):
     slot_features = fields.Str(required=False, missing="standard", validate=validate.OneOf(
         ['standard', 'covered', "vip", "disabled", "ev_charging"]
     ))
+    base_price_per_hour = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))
+    base_price_per_day = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))
+    base_price_per_month = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))
+    price_multiplier = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))

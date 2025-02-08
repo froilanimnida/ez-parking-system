@@ -1,4 +1,5 @@
 """
+# TODO: Drop this schema
 This module defines the PricingPlan model which represents the
 pricing plan of a parking establishment.
 """
