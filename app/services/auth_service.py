@@ -19,7 +19,6 @@ from app.models.establishment_document import EstablishmentDocumentRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.payment_method import PaymentMethodRepository
-from app.models.pricing_plan import PricingPlanRepository
 from app.models.user import AuthOperations, OTPOperations, UserRepository
 from app.tasks import send_mail
 from app.utils.bucket import R2TransactionalUpload, UploadFile

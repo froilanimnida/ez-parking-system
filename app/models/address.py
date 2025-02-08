@@ -20,8 +20,8 @@ class Address(Base):  # pylint: disable=too-few-public-methods, missing-class-do
     profile_id = Column(Integer, ForeignKey("company_profile.profile_id"), nullable=False)
     street = Column(String(255), nullable=False)
     barangay = Column(String(100), nullable=False)
-    city = Column(String(100), nullable=False) # TODO: Make this a predefined drop down list for easy searching and structure search
-    province = Column(String(100), nullable=False) # TODO: Make this a predefined drop down list for easy searching and structure search
+    city = Column(String(100), nullable=False)
+    province = Column(String(100), nullable=False)
     postal_code = Column(String(10), nullable=False)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(

@@ -18,9 +18,7 @@ class ParkingManagerRequestSchema(Schema):
     company_profile = fields.Nested(CompanyProfile, required=True)
     address = fields.Nested(Address, required=True)
     parking_establishment = fields.Nested(ParkingEstablishment, required=True)
-    operating_hour = fields.Nested(
-        OperatingHour, required=True
-    ) # TODO: Amend this part and simplify the database to make the day of the week number based i.e 1 for monday...
+    operating_hour = fields.Nested(OperatingHour, required=True)
     payment_method = fields.Nested(PaymentMethod, required=True)
     documents = fields.List(fields.Dict(), required=True)
 

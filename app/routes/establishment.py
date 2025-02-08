@@ -50,8 +50,26 @@ class GetEstablishments(MethodView):
             }
         )
 
-# TODO: Add the nearest route if beyond 2km it will not be included otherwise put it
-# TODO: Add suggestion for city in the frontend
+@establishment_blp.route("/nearest")
+class GetNearestEstablishments(MethodView):
+    @establishment_blp.arguments(EstablishmentQuerySchema, location="query")
+    @establishment_blp.response(200, EstablishmentResponseSchema)
+    @establishment_blp.doc(
+        description="Get establishments with optional filters and sorting",
+        responses={
+            200: "Establishments retrieved successfully.",
+            400: "Bad Request",
+        },
+    )
+    def get(self, query_params):
+        # establishments = EstablishmentService.get_nearest_establishments(query_params)
+        return set_response(
+            200,
+            {
+                "code": "success", "message": "Establishments retrieved successfully.",
+                # "establishments": establishments
+            }
+        )
 
 @establishment_blp.route("/view")
 class GetEstablishmentInfo(MethodView):

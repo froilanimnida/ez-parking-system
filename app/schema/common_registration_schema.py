@@ -89,7 +89,14 @@ class Address(Schema):
     """Schema for address."""
     street = fields.Str(required=True)
     barangay = fields.Str(required=True)
-    city = fields.Str(required=True)
+    city = fields.Str(required=True, validate=[
+        validate.Length(min=3, max=50),
+        validate.OneOf([
+            "quezon_city", "manila", "makati", "taguig", "pasig", "mandaluyong", "san_juan",
+            "caloocan", "malabon", "navotas", "valenzuela", "marikina", "muntinlupa", "las_pinas",
+            "paranaque", "pasay", "pateros", "taguig"
+        ])
+    ])
     province = fields.Str(required=False)
     postal_code = fields.Str(required=True, validate=validate.Regexp(r"^\d{4}$"))
 

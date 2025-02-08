@@ -13,7 +13,6 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.parking_slot import ParkingSlotRepository, ParkingSlot
 from app.models.parking_transaction import ParkingTransactionRepository
 from app.models.payment_method import PaymentMethodRepository
-from app.models.pricing_plan import PricingPlanRepository
 from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
 

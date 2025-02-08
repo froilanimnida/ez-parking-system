@@ -13,7 +13,6 @@ from app.models.parking_establishment import (
 )
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.payment_method import PaymentMethodRepository
-from app.models.pricing_plan import PricingPlanRepository
 
 
 class EstablishmentService:
