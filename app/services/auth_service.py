@@ -166,8 +166,8 @@ class UserRegistration:  # pylint: disable=R0903
             })
             parking_establishment_id = self.add_new_parking_establishment(parking_establishment)
 
-            pricing_plan = sign_up_data.get("pricing_plan", {})
-            self.add_pricing_plan(parking_establishment_id, pricing_plan)
+            # pricing_plan = sign_up_data.get("pricing_plan", {})
+            # self.add_pricing_plan(parking_establishment_id, pricing_plan)
 
             payment_method = sign_up_data.get("payment_method", {})
             payment_method.update({
@@ -196,7 +196,7 @@ class UserRegistration:  # pylint: disable=R0903
         return ParkingEstablishmentRepository.create_establishment(establishment_data)
 
     @staticmethod
-    def add_pricing_plan(establishment_id: int, pricing_plan_data: dict):
+    def add_pricing_plan(establishment_id: int, pricing_plan_data: dict):  # pylint: disable=unused-argument
         """Add pricing plans for a parking establishment."""
         pricing_plans = []
         for rate_type, plan in pricing_plan_data.items(): # pylint: disable=W0612
@@ -206,7 +206,7 @@ class UserRegistration:  # pylint: disable=R0903
                 'rate': float(plan['rate'])
             })
 
-        return PricingPlanRepository.create_pricing_plan(establishment_id, pricing_plans)
+        # return PricingPlanRepository.create_pricing_plan(establishment_id, pricing_plans)
 
     @staticmethod
     def add_new_company_profile(company_profile_data: dict):

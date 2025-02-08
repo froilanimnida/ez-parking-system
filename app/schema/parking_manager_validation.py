@@ -6,8 +6,7 @@ from marshmallow import Schema, fields, post_load, validates_schema, validate
 from marshmallow.exceptions import ValidationError
 
 from app.schema.common_registration_schema import (
-    CompanyProfile, UserData, Address, ParkingEstablishment, OperatingHour, PaymentMethod,
-    PricingPlan
+    CompanyProfile, UserData, Address, ParkingEstablishment, OperatingHour, PaymentMethod
 )
 from app.schema.common_schema_validation import SlotCommonValidationSchema
 from app.schema.slot_validation import CreateSlotSchema
@@ -19,9 +18,10 @@ class ParkingManagerRequestSchema(Schema):
     company_profile = fields.Nested(CompanyProfile, required=True)
     address = fields.Nested(Address, required=True)
     parking_establishment = fields.Nested(ParkingEstablishment, required=True)
-    operating_hour = fields.Nested(OperatingHour, required=True) # TODO: Amend this part and simplify the database to make the day of the week number based i.e 1 for monday, 2 for tuesday...
+    operating_hour = fields.Nested(
+        OperatingHour, required=True
+    ) # TODO: Amend this part and simplify the database to make the day of the week number based i.e 1 for monday...
     payment_method = fields.Nested(PaymentMethod, required=True)
-    pricing_plan = fields.Nested(PricingPlan, required=True) # TODO: Remove this for simplification of the database
     documents = fields.List(fields.Dict(), required=True)
 
 

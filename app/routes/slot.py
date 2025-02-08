@@ -12,6 +12,7 @@ from app.exceptions.slot_lookup_exceptions import (
     NoSlotsFoundInTheGivenVehicleType, SlotAlreadyExists,
 )
 from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
+from app.schema.common_schema_validation import SlotCommonValidationSchema
 from app.utils.role_decorator import parking_manager_role_required
 from app.schema.parking_manager_validation import (
     CreateSlotSchema, DeleteSlotSchemaSchema, UpdateSlotSchemaSchema
@@ -36,7 +37,7 @@ slot_blp = Blueprint(
 
 @slot_blp.route("/get-all-slots")
 class GetSlotsByEstablishmentID(MethodView):
-    @slot_blp.arguments(EstablishmentQueryValidationSchema)
+    @slot_blp.arguments(EstablishmentQueryValidationSchema, location="query")
     @slot_blp.response(200, ApiResponse)
     @slot_blp.doc(
         description="Get all slots by establishment uuid",
@@ -97,6 +98,25 @@ class DeleteSlot(MethodView):
         return set_response(
             200, {"code": "success", "message": "Slot deleted successfully."}
         )
+
+@slot_blp.route("/get-slot")
+class GetSlot(MethodView):
+    @slot_blp.arguments(SlotCommonValidationSchema, location="query")
+    @slot_blp.response(200, ApiResponse)
+    @slot_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get a slot.",
+        responses={
+            200: "Slot retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @parking_manager_role_required()
+    @jwt_required(False)
+    def get(self, data, user_id):  # pylint: disable=unused-argument
+        slot = ParkingSlotService.get_slot(data.get("slot_uuid"))
+        return set_response(200, {"slot": slot})
 
 
 @slot_blp.route("/update")
