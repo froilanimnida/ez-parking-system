@@ -102,8 +102,8 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "is_premium": self.is_premium,
             "slot_features": self.slot_features.value if self.slot_features else None,
             "base_price_per_hour": str(self.base_price_per_hour),
-            "base_rate_per_day": str(self.base_rate_per_day),
-            "base_rate_per_month": str(self.base_rate_per_month),
+            "base_price_per_day": str(self.base_price_per_day),
+            "base_price_per_month": str(self.base_price_per_month),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
