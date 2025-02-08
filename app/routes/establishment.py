@@ -61,7 +61,7 @@ class GetNearestEstablishments(MethodView):
             400: "Bad Request",
         },
     )
-    def get(self, query_params):
+    def get(self, query_params):  # pylint: disable=unused-argument
         # establishments = EstablishmentService.get_nearest_establishments(query_params)
         return set_response(
             200,
