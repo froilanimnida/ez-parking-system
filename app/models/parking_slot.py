@@ -59,8 +59,8 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     is_premium = Column(Boolean, nullable=False, default=False)
     slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
     base_price_per_hour = Column(Numeric(10, 2), nullable=False, default=0.00)
-    base_rate_per_day = Column(Numeric(10, 2), nullable=False, default=0.00)
-    base_rate_per_month = Column(Numeric(10, 2), nullable=False, default=0.00)
+    base_price_per_day = Column(Numeric(10, 2), nullable=False, default=0.00)
+    base_price_per_month = Column(Numeric(10, 2), nullable=False, default=0.00)
     price_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
@@ -102,8 +102,8 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "is_premium": self.is_premium,
             "slot_features": self.slot_features.value if self.slot_features else None,
             "base_price_per_hour": str(self.base_price_per_hour),
-            "base_rate_per_day": str(self.base_rate_per_day),
-            "base_rate_per_month": str(self.base_rate_per_month),
+            "base_price_per_day": str(self.base_price_per_day),
+            "base_price_per_month": str(self.base_price_per_month),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
