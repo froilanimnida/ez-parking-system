@@ -59,8 +59,8 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     is_premium = Column(Boolean, nullable=False, default=False)
     slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
     base_price_per_hour = Column(Numeric(10, 2), nullable=False, default=0.00)
-    base_rate_per_day = Column(Numeric(10, 2), nullable=False, default=0.00)
-    base_rate_per_month = Column(Numeric(10, 2), nullable=False, default=0.00)
+    base_price_per_day = Column(Numeric(10, 2), nullable=False, default=0.00)
+    base_price_per_month = Column(Numeric(10, 2), nullable=False, default=0.00)
     price_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     created_at = Column(TIMESTAMP, default=func.current_timestamp())
     updated_at = Column(
