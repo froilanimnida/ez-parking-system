@@ -29,8 +29,6 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     MAIL_DEFAULT_SENDER = getenv("MAIL_DEFAULT_SENDER")
 
     JWT_TOKEN_LOCATION = ["cookies", "headers"]
-    JWT_HEADER_NAME = "Authorization"
-    JWT_HEADER_TYPE = "Bearer"
     JWT_COOKIE_SECURE = bool(getenv("JWT_COOKIE_SECURE", "True"))
     JWT_SESSION_COOKIE = False
     JWT_COOKIE_CSRF_PROTECT = True
@@ -40,12 +38,6 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
     
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    JWT_ACCESS_CSRF_COOKIE_NAME = "X-CSRF-TOKEN"
-    JWT_ACCESS_COOKIE_NAME = "Authorization"
-
-    JWT_REFRESH_COOKIE_NAME = "refresh_token_cookie"
-    JWT_REFRESH_CSRF_COOKIE_NAME = "csrf_refresh_token"
-    
 
     LOGGING_LEVEL = "INFO"
     LOGGING_PATH = path.join(getcwd(), "logs", "authentication.log")
