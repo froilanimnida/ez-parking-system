@@ -110,6 +110,8 @@ class UserOTPService:
         current_time = datetime.now(
             pytz.timezone('Asia/Manila')
         ) if expiry.tzinfo else datetime.now()
+        print("OTP Expiry: ", expiry)
+        print("Current Time: ", current_time)
 
         if current_time > expiry:
             OTPOperations.delete_otp(email=email)
