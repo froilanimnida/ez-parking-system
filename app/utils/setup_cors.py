@@ -1,5 +1,6 @@
 """This module contains the function to set up CORS for the application."""
 
+from datetime import timedelta
 from os import getenv
 
 from flask import Flask
@@ -28,5 +29,6 @@ def set_up_cors(app: Flask):
         ],
         expose_headers=["Set-Cookie", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        max_age=timedelta(days=1)
     )
     return app

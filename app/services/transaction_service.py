@@ -236,7 +236,6 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
         )
         establishment_id = establishment_info.get("establishment_id")
         profile_id = establishment_info.get("profile_id")
-        # pricing_plans = PricingPlanRepository.get_pricing_plans(establishment_id)
         address = AddressRepository.get_address(profile_id=profile_id)
         operating_hours = OperatingHoursRepository.get_operating_hours(establishment_id)
         payment_methods = PaymentMethodRepository.get_payment_methods(establishment_id)
@@ -244,7 +243,6 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
         return {
             "establishment_info": establishment_info,
             "address": address,
-            # "pricing_plans": pricing_plans,
             "operating_hours": operating_hours,
             "payment_methods": payment_methods,
             "slot_info": slot_info,

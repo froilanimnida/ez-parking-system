@@ -17,7 +17,6 @@ from app.utils.role_decorator import parking_manager_role_required
 from app.schema.parking_manager_validation import (
     CreateSlotSchema, DeleteSlotSchemaSchema, UpdateSlotSchemaSchema
 )
-from app.schema.query_validation import EstablishmentQueryValidationSchema
 from app.schema.response_schema import ApiResponse
 from app.services.slot_service import ParkingSlotService
 from app.utils.error_handlers.slot_lookup_error_handlers import (
@@ -35,20 +34,7 @@ slot_blp = Blueprint(
 )
 
 
-@slot_blp.route("/get-all-slots")
-class GetSlotsByEstablishmentID(MethodView):
-    @slot_blp.response(200, ApiResponse)
-    @slot_blp.doc(
-        description="Get all slots by establishment uuid",
-        responses={
-            200: {"description": "Slots retrieved successfully"},
-            400: {"description": "Bad Request"},
-        },
-    )
-    @jwt_required(True)
-    def get(self, user_id):
-        slots = ParkingSlotService.get_all_slots(user_id)
-        return set_response(200, {"slots": slots})
+
 
 
 @slot_blp.route("/create")

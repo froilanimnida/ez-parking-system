@@ -22,6 +22,8 @@ class ReservationCreationSchema(SlotCommonValidationSchema):
     duration_type = fields.Str(
         required=True, validate=validate.OneOf(['monthly', 'daily', 'hourly'])
     )
+    scheduled_entry_time = fields.DateTime(required=True)
+    scheduled_exit_time = fields.DateTime(required=True)
     amount_due = fields.Float(required=True)
     @post_load
     def add_payment_status(self, in_data, **kwargs):  # pylint: disable=unused-argument

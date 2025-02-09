@@ -55,6 +55,8 @@ class ParkingTransaction(
         nullable=False,
     )
     user_id = Column(Integer, ForeignKey("user.user_id"), nullable=True)
+    scheduled_entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
+    scheduled_exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
     entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
     exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
     payment_status = Column(
@@ -94,6 +96,9 @@ class ParkingTransaction(
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "duration_type": self.duration_type.value if self.duration_type else None,
+            "duration": self.duration,
+            "scheduled_entry_time": self.scheduled_entry_time,
+            "scheduled_exit_time": self.scheduled_exit_time,
         }
 
 

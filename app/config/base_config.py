@@ -33,10 +33,13 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_HEADER_NAME = "Authorization"
     JWT_HEADER_TYPE = "Bearer"
     JWT_COOKIE_SECURE = bool(getenv("JWT_COOKIE_SECURE", "True"))
-    JWT_COOKIE_DOMAIN = getenv("JWT_COOKIE_DOMAIN", "https://fuzzy-fortnight-j7vvwpjqjwr2vq6-8081.app.github.dev/")
+    JWT_COOKIE_DOMAIN = getenv(
+        "JWT_COOKIE_DOMAIN",
+        "fuzzy-fortnight-j7vvwpjqjwr2vq6-8081.app.github.dev"
+    )
     JWT_SESSION_COOKIE = False
     JWT_COOKIE_CSRF_PROTECT = True
-    JWT_COOKIE_SAMESITE = None
+    JWT_COOKIE_SAMESITE = "None"
     JWT_CSRF_CHECK_FORM = False
     JWT_CSRF_IN_COOKIES = True
     JWT_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]

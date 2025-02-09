@@ -3,11 +3,13 @@
 # pylint: disable=missing-function-docstring, too-few-public-methods
 
 from datetime import datetime
+from typing import overload
 
 import pytz
 
 from app.exceptions.slot_lookup_exceptions import NoSlotsFoundInTheGivenSlotCode, SlotAlreadyExists
 from app.models.audit_log import AuditLogRepository
+from app.models.company_profile import CompanyProfileRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository, ParkingEstablishment
 from app.models.parking_slot import ParkingSlotRepository
 
@@ -15,8 +17,19 @@ from app.models.parking_slot import ParkingSlotRepository
 class ParkingSlotService:
     """Wraps the logic for getting the list of slots."""
     @staticmethod
+    @overload
     def get_all_slots(parking_manager_id: int):
-        return GetSlotService.get_all_slots(parking_manager_id=parking_manager_id)
+        ...
+    @staticmethod
+    @overload
+    def get_all_slots(establishment_uuid: str):
+        ...
+    @staticmethod
+    def get_all_slots(parking_manager_id: int = None, establishment_uuid: str = None):
+        if parking_manager_id:
+            return GetSlotService.get_all_slots(parking_manager_id)
+        establishment_id = ParkingEstablishment.get_establishment_id(establishment_uuid)
+        return GetSlotService.get_all_slots(establishment_id)
     @staticmethod
     def get_slot(slot_uuid: str):
         return GetSlotService.get_slot(slot_uuid)
@@ -36,10 +49,15 @@ class GetSlotService:
     """Wraps the logic for getting the list of slots, calling the model layer classes."""
     @staticmethod
     def get_all_slots(parking_manager_id: int):  # pylint: disable=C0116
-        parking_manager_establishment = ParkingEstablishmentRepository.get_establishment()
+        company_profile_id = CompanyProfileRepository.get_company_profile(
+            user_id=parking_manager_id
+        ).get("profile_id")
+        parking_manager_establishment = ParkingEstablishmentRepository.get_establishment(
+           profile_id=company_profile_id
+        )
         return ParkingSlotRepository.get_slots(
             establishment_id=ParkingEstablishmentRepository.get_establishment(
-            establishment_uuid
+            parking_manager_establishment.get("establishment_id")
         ).get("establishment_id"))
     @staticmethod
     def get_slot(slot_uuid: str):

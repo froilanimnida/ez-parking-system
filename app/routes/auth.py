@@ -96,17 +96,30 @@ class VerifyOTP(MethodView):
         otp = data.get("otp")
         remember_me = data.get("remember_me")
         user_id, role = auth_service.verify_otp(email, otp)
+
         token_service = TokenService()
-        (
-            access_token,
-            refresh_token,
-        ) = token_service.generate_jwt_csrf_token(
+        access_token, refresh_token = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me
         )
+
         response = set_response(200, {"code": "success", "message": "OTP verified.", "role": role})
+
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
+
+        response.headers.add(
+            "Set-Cookie",
+            f"access_token_cookie={access_token};"
+            f"Path=/; Secure; HttpOnly; SameSite=None; Partitioned"
+        )
+        response.headers.add(
+            "Set-Cookie",
+            f"refresh_token_cookie={refresh_token};"
+            f"Path=/; Secure; HttpOnly; SameSite=None; Partitioned"
+        )
+
         return response
+
 
 
 @auth_blp.route('protected-route')
