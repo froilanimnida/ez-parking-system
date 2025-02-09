@@ -106,18 +106,6 @@ class VerifyOTP(MethodView):
 
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
-
-        response.headers.add(
-            "Set-Cookie",
-            f"access_token_cookie={access_token};"
-            f"Path=/; Secure; HttpOnly; SameSite=None; Partitioned"
-        )
-        response.headers.add(
-            "Set-Cookie",
-            f"refresh_token_cookie={refresh_token};"
-            f"Path=/; Secure; HttpOnly; SameSite=None; Partitioned"
-        )
-
         return response
 
 
