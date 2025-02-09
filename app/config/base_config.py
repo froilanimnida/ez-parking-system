@@ -31,12 +31,12 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     JWT_TOKEN_LOCATION = "cookies"
     JWT_COOKIE_SECURE = bool(getenv("JWT_COOKIE_SECURE", "True"))
     JWT_SESSION_COOKIE = False
-    JWT_COOKIE_CSRF_PROTECT = True
+    JWT_COOKIE_CSRF_PROTECT = False
     JWT_COOKIE_SAMESITE = "None"
     JWT_CSRF_CHECK_FORM = False
     JWT_CSRF_IN_COOKIES = True
     JWT_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
-    
+
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     LOGGING_LEVEL = "INFO"
