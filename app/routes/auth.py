@@ -120,7 +120,7 @@ class ProtectedRoute(MethodView):
             401: {"description": "Unauthorized"},
         },
     )
-    @jwt_required()
+    @jwt_required(locations=["cookies", "headers"])
     def post(self):
         return set_response(200, {"code": "success", "message": "Protected route accessed."})
 
