@@ -28,7 +28,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     MAIL_PASSWORD = getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = getenv("MAIL_DEFAULT_SENDER")
 
-    JWT_TOKEN_LOCATION = "cookies"
+    JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_COOKIE_SECURE = bool(getenv("JWT_COOKIE_SECURE", "True"))
     JWT_SESSION_COOKIE = False
     JWT_COOKIE_CSRF_PROTECT = False
