@@ -3,6 +3,8 @@
 from datetime import timedelta
 from os import getenv, getcwd, path
 
+import pytz
+
 
 class BaseConfig:  # pylint: disable=too-few-public-methods
     """Base configuration."""
@@ -52,3 +54,6 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     R2_SECRET_ACCESS_KEY = getenv("R2_SECRET_ACCESS_KEY")
     R2_BUCKET_NAME = getenv("R2_BUCKET_NAME")
     R2_ENDPOINT = getenv("R2_ENDPOINT")
+
+    STORAGE_TIMEZONE = pytz.UTC
+    DISPLAY_TIMEZONE = pytz.timezone(getenv("APP_TIMEZONE", "Asia/Manila"))

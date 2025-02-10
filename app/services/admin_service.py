@@ -1,8 +1,5 @@
 """ Wraps the operations that can be performed by the admin. """
 
-from datetime import datetime
-
-import pytz
 from flask import render_template
 
 from app.models.audit_log import AuditLogRepository
@@ -11,6 +8,7 @@ from app.models.company_profile import CompanyProfileRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.user import UserRepository
 from app.tasks import send_mail
+from app.utils.timezone_utils import get_current_time
 
 
 # pylint: disable=C0116
@@ -62,7 +60,7 @@ class UserBanningService:
             "performed_by": admin_id,
             "target_user": ban_data['user_id'],
             "details": f"User with user_id {ban_data['user_id']} has been banned.",
-            "performed_at": datetime.now(pytz.timezone('Asia/Manila')),
+            "performed_at": get_current_time(),
             "ip_address": ban_data['ip_address']
         })
 
@@ -75,7 +73,7 @@ class UserBanningService:
             "performed_by": admin_id,
             "target_user": user_id,
             "details": f"User with user_id {user_id} has been unbanned.",
-            "performed_at": datetime.now(pytz.timezone('Asia/Manila')),
+            "performed_at": get_current_time(),
             "ip_address": ip_address
         })
 

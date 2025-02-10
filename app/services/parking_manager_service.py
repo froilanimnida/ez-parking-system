@@ -1,14 +1,11 @@
 """" Wraps the services that the parking manager can call """
 
-from datetime import datetime
-
-import pytz
-
 from app.exceptions.slot_lookup_exceptions import SlotAlreadyExists
 from app.models.audit_log import AuditLogRepository
 from app.models.company_profile import CompanyProfileRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.parking_slot import ParkingSlotRepository
+from app.utils.timezone_utils import get_current_time
 
 
 class ParkingManagerService:  # pylint: disable=R0903
@@ -45,7 +42,7 @@ class SlotOperation:
         slot_exists = ParkingSlotRepository.get_slot(slot_code=data.get("slot_code"))
         if slot_exists:
             raise SlotAlreadyExists("Slot already exists.")
-        now = datetime.now(pytz.timezone('Asia/Manila'))
+        now = get_current_time()
         profile_id = CompanyProfileRepository.get_company_profile(
             user_id=manager_id
         ).get("profile_id")

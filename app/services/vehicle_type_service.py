@@ -1,11 +1,8 @@
 """This module contains the business logic for vehicle type."""
 
-from datetime import datetime
-
-import pytz
-
 from app.models.audit_log import AuditLogRepository
 from app.models.vehicle_type import VehicleTypeRepository
+from app.utils.timezone_utils import get_current_time
 
 
 class VehicleTypeService:  # pylint: disable=R0903
@@ -43,7 +40,7 @@ class CreateNewVehicleType:  # pylint: disable=R0903
     @staticmethod
     def create_new_vehicle_type(new_vehicle_type_data: dict, admin_id, ip_address):
         """Create a new vehicle type."""
-        now = datetime.now(pytz.timezone('Asia/Manila'))
+        now = get_current_time()
         new_vehicle_type_data.update({
             "created_at": now,
             "updated_at": now,
@@ -63,7 +60,7 @@ class UpdateVehicleType:  # pylint: disable=R0903
     @staticmethod
     def update_vehicle_type(vehicle_type_data: dict, user_id: int, ip_address: str):
         """Update vehicle type."""
-        now = datetime.now(pytz.timezone('Asia/Manila'))
+        now = get_current_time()
         vehicle_type_data.update({
             "updated_at": now,
         })

@@ -1,9 +1,5 @@
 """This module contains the services for the transaction operations."""
 
-from datetime import datetime
-
-import pytz
-
 from app.exceptions.qr_code_exceptions import QRCodeError, InvalidQRContent
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
 from app.models.address import AddressRepository
@@ -15,6 +11,7 @@ from app.models.parking_transaction import ParkingTransactionRepository
 from app.models.payment_method import PaymentMethodRepository
 from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
+from app.utils.timezone_utils import get_current_time
 
 
 class TransactionService:  # pylint: disable=too-few-public-methods
@@ -83,7 +80,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def reserve_slot(slot_reservation_data: dict):
         """Reserves the slot for a user."""
-        now = datetime.now(pytz.timezone('Asia/Manila'))
+        now = get_current_time()
         slot_uuid = slot_reservation_data.pop("slot_uuid")
         slot_reservation_data.update({"slot_id": ParkingSlot.get_id(slot_uuid)})
         slot_reservation_data.update({"created_at": now})
@@ -165,7 +162,7 @@ class TransactionVerification:
         )
         ParkingTransactionRepository.update_entry_exit_time(
             transaction_uuid=transaction_uuid,
-            entry_time=datetime.now(pytz.timezone('Asia/Manila'))
+            entry_time=get_current_time(),
         )
         return ParkingTransactionRepository.update_payment_status(
             transaction_uuid, payment_status

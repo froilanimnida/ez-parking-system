@@ -27,7 +27,7 @@ def run_dev_server():
     """Run the development server with SSL"""
     run_simple(
         hostname="0.0.0.0",
-        # ssl_context=create_ssl_context(),
+        ssl_context=create_ssl_context(),
         port=5000,
         application=app,
         threaded=True,
