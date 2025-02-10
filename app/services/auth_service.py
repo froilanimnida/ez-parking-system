@@ -167,9 +167,6 @@ class UserRegistration:  # pylint: disable=R0903
             })
             parking_establishment_id = self.add_new_parking_establishment(parking_establishment)
 
-            # pricing_plan = sign_up_data.get("pricing_plan", {})
-            # self.add_pricing_plan(parking_establishment_id, pricing_plan)
-
             payment_method = sign_up_data.get("payment_method", {})
             payment_method.update({
                 "establishment_id": parking_establishment_id, "created_at": now, "updated_at": now
@@ -179,8 +176,8 @@ class UserRegistration:  # pylint: disable=R0903
             operating_hours = sign_up_data.get("operating_hour", {})
             self.add_operating_hours(parking_establishment_id, operating_hours)
 
-            documents = sign_up_data.get("documents", [])
-            self.add_establishment_documents(parking_establishment_id, documents)
+            # documents = sign_up_data.get("documents", [])
+            # self.add_establishment_documents(parking_establishment_id, documents)
 
         return send_mail(
                 sign_up_data.get("user", {}).get("email"), template, "Welcome to EZ Parking"

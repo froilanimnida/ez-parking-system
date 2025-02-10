@@ -20,7 +20,7 @@ class ParkingManagerRequestSchema(Schema):
     parking_establishment = fields.Nested(ParkingEstablishment, required=True)
     operating_hour = fields.Nested(OperatingHour, required=True)
     payment_method = fields.Nested(PaymentMethod, required=True)
-    documents = fields.List(fields.Dict(), required=True)
+    # documents = fields.List(fields.Dict(), required=True)
 
 
 

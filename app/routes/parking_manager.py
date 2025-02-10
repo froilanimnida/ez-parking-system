@@ -88,42 +88,42 @@ class CreateParkingManagerIndividualAccount(MethodView):
     )
     @jwt_required(optional=True)
     def post(self):
-        check_file_size(request)
-        try:
-            documents_list = []
+        # check_file_size(request)
+        # try:
+        #     documents_list = []
 
-            single_file_fields = [
-                'gov_id',
-                'proof_of_ownership',
-                'bir_cert',
-                'liability_insurance',
-                'business_cert'
-            ]
+        #     single_file_fields = [
+        #         'gov_id',
+        #         'proof_of_ownership',
+        #         'bir_cert',
+        #         'liability_insurance',
+        #         'business_cert'
+        #     ]
 
-            for field in single_file_fields:
-                if field in request.files:
-                    file = request.files[field]
-                    documents_list.append({
-                        "type": field,
-                        "file": file,
-                        "filename": file.filename
-                    })
+        #     for field in single_file_fields:
+        #         if field in request.files:
+        #             file = request.files[field]
+        #             documents_list.append({
+        #                 "type": field,
+        #                 "file": file,
+        #                 "filename": file.filename
+        #             })
 
-            for key in request.files:
-                if key.startswith('parking_photos['):
-                    file = request.files[key]
-                    documents_list.append({
-                        "type": "parking_photo",
-                        "file": file,
-                        "filename": file.filename
-                    })
+        #     for key in request.files:
+        #         if key.startswith('parking_photos['):
+        #             file = request.files[key]
+        #             documents_list.append({
+        #                 "type": "parking_photo",
+        #                 "file": file,
+        #                 "filename": file.filename
+        #             })
 
-            form_data = json.loads(request.form.get("sign_up_data"))
-            form_data['documents'] = documents_list
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            return set_response(
-                400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
-            )
+        #     form_data = json.loads(request.form.get("sign_up_data"))
+        #     form_data['documents'] = documents_list
+        # except Exception as e:  # pylint: disable=broad-exception-caught
+        #     return set_response(
+        #         400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
+        #     )
         parking_manager_request_schema = ParkingManagerRequestSchema()
         validated_sign_up_data = parking_manager_request_schema.load(form_data)
         auth_service = AuthService()
