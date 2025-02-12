@@ -252,16 +252,19 @@ class ParkingEstablishmentRepository:
                 raise EstablishmentDoesNotExist("Establishment does not exist.")
             return establishment.to_dict()
     @staticmethod
-    def update_parking_establishment(establishment_data: dict):
+    def update_parking_establishment(establishment_data: dict, establishment_id: int):
         """Update parking establishment details."""
         with session_scope() as session:
-            establishment_id = ParkingEstablishment.get_establishment_id(
-                establishment_uuid=establishment_data.get("establishment_uuid")
-            )
+            immutable_fields = [
+                'establishment_uuid', 'uuid',
+                'establishment_id', 'profile_id', 'created_at'
+            ]
+            update_data = {k: v for k, v in establishment_data.items() if k not in immutable_fields}
+
             session.execute(
                 update(ParkingEstablishment)
                 .where(ParkingEstablishment.establishment_id == establishment_id)
-                .values(establishment_data)
+                .values(update_data)
             )
             session.commit()
     @staticmethod
