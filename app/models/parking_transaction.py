@@ -3,7 +3,8 @@
 # pylint: disable=R0401, R0801, C0415, E1102, C0103
 
 from enum import Enum as PyEnum
-from typing import Literal, overload
+from datetime import datetime
+from typing import Literal, Dict, Any, TypedDict, overload
 
 from sqlalchemy import (
     Column, Enum, Integer, ForeignKey, TIMESTAMP, text, Numeric, UUID, update, func
@@ -13,7 +14,17 @@ from sqlalchemy.orm import relationship
 from app.models.base import Base
 from app.models.parking_slot import ParkingSlot
 from app.utils.db import session_scope
+from app.utils.timezone_utils import get_current_time
 
+class TransactionUpdate(TypedDict, total=False):
+    """Type definition for transaction updates"""
+    status: Literal["active", "completed", "cancelled"]
+    payment_status: Literal["pending", "completed", "failed", "paid"]
+    entry_time: datetime
+    exit_time: datetime
+    amount_due: float
+    duration: int
+    duration_type: str
 
 # Define custom Enum types for 'payment_status' and 'transaction_status'
 class PaymentStatusEnum(str, PyEnum):
@@ -226,6 +237,45 @@ class ParkingTransactionRepository:
             )
             session.commit()
 
+    @classmethod
+    def update_transaction(
+        cls,
+        transaction_uuid: str,
+        update_data: TransactionUpdate
+    ) -> Dict[str, Any]:
+        """
+        Update a parking transaction with the provided data.
+
+        Args:
+            transaction_uuid: UUID of the transaction
+            update_data: Dictionary containing fields to update
+
+        Returns:
+            dict: Updated transaction data
+
+        Raises:
+            SQLAlchemyError: If database operation fails
+            ValueError: If invalid update data is provided
+        """
+        with session_scope() as session:
+            # Add automatic updated_at timestamp
+            update_values = {
+                **update_data,
+                "updated_at": get_current_time()
+            }
+
+            # Perform the update and return the updated record
+            result = session.execute(
+                update(ParkingTransaction)
+                .values(**update_values)
+                .where(ParkingTransaction.uuid == transaction_uuid)
+                .returning(ParkingTransaction)
+            )
+
+            updated_transaction = result.scalar_one()
+            return updated_transaction.to_dict()
+
+
 
     @classmethod
     def is_user_have_an_ongoing_transaction(cls, user_id: int) -> bool:
@@ -238,3 +288,7 @@ class ParkingTransactionRepository:
                 .first()
             )
             return bool(transaction)
+
+
+class BusinessIntelligence:  # pylint: disable=too-few-public-methods
+    """Class for business intelligence operations."""

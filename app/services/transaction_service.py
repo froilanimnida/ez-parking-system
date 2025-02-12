@@ -157,16 +157,11 @@ class TransactionVerification:
         if transaction_data.get("status") != "reserved":
             raise QRCodeError("Invalid transaction status.")
         transaction_uuid = transaction_data.get("uuid")
-        ParkingTransactionRepository.update_transaction_status(
-            transaction_uuid, "active",
-        )
-        ParkingTransactionRepository.update_entry_exit_time(
-            transaction_uuid=transaction_uuid,
-            entry_time=get_current_time(),
-        )
-        return ParkingTransactionRepository.update_payment_status(
-            transaction_uuid, payment_status
-        )
+        return ParkingTransactionRepository.update_transaction(transaction_uuid, update_data={
+            "payment_status": payment_status,
+            "entry_time": get_current_time(),
+            "status": "active"
+        })
 
     @staticmethod
     def verify_exit_transaction(transaction_qr_code_data):
@@ -175,6 +170,14 @@ class TransactionVerification:
         transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
         if transaction_data.get("status") != "active":
             raise QRCodeError("Invalid transaction status.")
+        return ParkingTransactionRepository.update_transaction(
+            transaction_data.get("uuid"),
+            update_data={
+                "payment_status": "completed",
+                "exit_time": get_current_time(),
+                "status": "completed"
+            }
+        )
 
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data, manager_id):
