@@ -290,5 +290,383 @@ class ParkingTransactionRepository:
             return bool(transaction)
 
 
-class BusinessIntelligence:  # pylint: disable=too-few-public-methods
-    """Class for business intelligence operations."""
+class BusinessIntelligence:
+    """Class for business intelligence and analytics operations."""
+
+    @staticmethod
+    def get_duration_analysis(establishment_id: int = None,
+                            start_date: datetime = None,
+                            end_date: datetime = None) -> dict:
+        """Analyze parking duration patterns.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            Dictionary containing duration metrics
+        """
+        with session_scope() as session:
+            query = session.query(
+                func.avg(
+                    func.extract('epoch', ParkingTransaction.exit_time) -
+                    func.extract('epoch', ParkingTransaction.entry_time)
+                ).label('avg_duration'),
+                func.min(
+                    func.extract('epoch', ParkingTransaction.exit_time) -
+                    func.extract('epoch', ParkingTransaction.entry_time)
+                ).label('min_duration'),
+                func.max(
+                    func.extract('epoch', ParkingTransaction.exit_time) -
+                    func.extract('epoch', ParkingTransaction.entry_time)
+                ).label('max_duration'),
+                ParkingTransaction.duration_type,
+                func.count(ParkingTransaction.transaction_id).label('count')
+            ).filter(
+                ParkingTransaction.status == 'completed',
+                ParkingTransaction.entry_time.isnot(None),
+                ParkingTransaction.exit_time.isnot(None)
+            ).group_by(ParkingTransaction.duration_type)
+
+            if establishment_id:
+                query = query.join(
+                    ParkingSlot
+                ).filter(ParkingSlot.establishment_id == establishment_id)
+
+            if start_date:
+                query = query.filter(ParkingTransaction.created_at >= start_date)
+            if end_date:
+                query = query.filter(ParkingTransaction.created_at <= end_date)
+
+            results = query.all()
+
+            return [{
+                'duration_type': result.duration_type.value,
+                'average_duration_hours': round(result.avg_duration / 3600, 2),
+                'min_duration_hours': round(result.min_duration / 3600, 2),
+                'max_duration_hours': round(result.max_duration / 3600, 2),
+                'transaction_count': result.count
+            } for result in results]
+
+    @staticmethod
+    def get_payment_analytics(establishment_id: int = None,
+                            start_date: datetime = None,
+                            end_date: datetime = None) -> dict:
+        """Analyze payment patterns and status.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            Dictionary containing payment analytics
+        """
+        with session_scope() as session:
+            query = session.query(
+                ParkingTransaction.payment_status,
+                func.count(ParkingTransaction.transaction_id).label('count'),
+                func.sum(ParkingTransaction.amount_due).label('total_amount')
+            ).group_by(ParkingTransaction.payment_status)
+
+            if establishment_id:
+                query = query.join(
+                    ParkingSlot
+                ).filter(ParkingSlot.establishment_id == establishment_id)
+
+            if start_date:
+                query = query.filter(ParkingTransaction.created_at >= start_date)
+            if end_date:
+                query = query.filter(ParkingTransaction.created_at <= end_date)
+
+            results = query.all()
+
+            return [{
+                'payment_status': result.payment_status.value,
+                'transaction_count': result.count,
+                'total_amount': float(result.total_amount or 0)
+            } for result in results]
+
+    @staticmethod
+    def get_slot_utilization_by_type(establishment_id: int = None,
+                                    start_date: datetime = None,
+                                    end_date: datetime = None) -> list:
+        """Analyze slot utilization by vehicle type.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            List of slot utilization metrics by vehicle type
+        """
+        with session_scope() as session:
+            query = session.query(
+                ParkingSlot.vehicle_type_id,
+                func.count(ParkingTransaction.transaction_id).label('transaction_count'),
+                func.sum(
+                    func.extract('epoch', ParkingTransaction.exit_time) -
+                    func.extract('epoch', ParkingTransaction.entry_time)
+                ).label('total_duration')
+            ).join(
+                ParkingTransaction,
+                ParkingSlot.slot_id == ParkingTransaction.slot_id
+            ).group_by(ParkingSlot.vehicle_type_id)
+
+            if establishment_id:
+                query = query.filter(ParkingSlot.establishment_id == establishment_id)
+
+            if start_date:
+                query = query.filter(ParkingTransaction.created_at >= start_date)
+            if end_date:
+                query = query.filter(ParkingTransaction.created_at <= end_date)
+
+            results = query.all()
+
+            return [{
+                'vehicle_type_id': result.vehicle_type_id,
+                'transaction_count': result.transaction_count,
+                'total_duration_hours': round(result.total_duration / 3600, 2) if result.total_duration else 0
+            } for result in results]
+
+    @staticmethod
+    def get_premium_vs_standard_analysis(establishment_id: int = None,
+                                       start_date: datetime = None,
+                                       end_date: datetime = None) -> dict:
+        """Compare premium vs standard slot performance.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            Dictionary containing comparative analysis
+        """
+        with session_scope() as session:
+            query = session.query(
+                ParkingSlot.is_premium,
+                func.count(ParkingTransaction.transaction_id).label('transaction_count'),
+                func.sum(ParkingTransaction.amount_due).label('total_revenue'),
+                func.avg(ParkingTransaction.amount_due).label('avg_revenue')
+            ).join(
+                ParkingTransaction,
+                ParkingSlot.slot_id == ParkingTransaction.slot_id
+            ).group_by(ParkingSlot.is_premium)
+
+            if establishment_id:
+                query = query.filter(ParkingSlot.establishment_id == establishment_id)
+
+            if start_date:
+                query = query.filter(ParkingTransaction.created_at >= start_date)
+            if end_date:
+                query = query.filter(ParkingTransaction.created_at <= end_date)
+
+            results = query.all()
+
+            return [{
+                'slot_type': 'premium' if result.is_premium else 'standard',
+                'transaction_count': result.transaction_count,
+                'total_revenue': float(result.total_revenue or 0),
+                'average_revenue': float(result.avg_revenue or 0)
+            } for result in results]
+
+    @staticmethod
+    def get_seasonal_trends(establishment_id: int = None,
+                          days: int = 90) -> list:
+        """Analyze seasonal trends in parking usage.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            days: Number of past days to analyze
+
+        Returns:
+            List of daily usage trends
+        """
+        with session_scope() as session:
+            query = session.query(
+                func.date_trunc('day', ParkingTransaction.created_at).label('date'),
+                func.count(ParkingTransaction.transaction_id).label('daily_transactions'),
+                func.sum(ParkingTransaction.amount_due).label('daily_revenue')
+            ).filter(
+                ParkingTransaction.created_at >= func.current_date() - text(f'interval \'{days} days\'')
+            ).group_by(
+                func.date_trunc('day', ParkingTransaction.created_at)
+            ).order_by('date')
+
+            if establishment_id:
+                query = query.join(
+                    ParkingSlot
+                ).filter(ParkingSlot.establishment_id == establishment_id)
+
+            results = query.all()
+
+            return [{
+                'date': result.date.strftime('%Y-%m-%d'),
+                'daily_transactions': result.daily_transactions,
+                'daily_revenue': float(result.daily_revenue or 0)
+            } for result in results]
+
+    @staticmethod
+    def get_occupancy_rate(establishment_id: int = None, start_date: datetime = None,
+                          end_date: datetime = None) -> dict:
+        """Calculate parking slot occupancy rates.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            Dictionary containing occupancy metrics
+        """
+        with session_scope() as session:
+            # Base query for total slots
+            slots_query = session.query(ParkingSlot)
+            if establishment_id:
+                slots_query = slots_query.filter(ParkingSlot.establishment_id == establishment_id)
+
+            total_slots = slots_query.count()
+
+            # Query for occupied slots
+            occupied_query = slots_query.filter(
+                ParkingSlot.slot_status.in_(['occupied', 'reserved'])
+            )
+
+            occupied_slots = occupied_query.count()
+
+            return {
+                'total_slots': total_slots,
+                'occupied_slots': occupied_slots,
+                'occupancy_rate': (occupied_slots / total_slots * 100) if total_slots > 0 else 0,
+                'available_slots': total_slots - occupied_slots
+            }
+
+    @staticmethod
+    def get_revenue_analysis(establishment_id: int = None,
+                           start_date: datetime = None,
+                           end_date: datetime = None) -> dict:
+        """Analyze revenue from parking transactions.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            Dictionary containing revenue metrics
+        """
+        with session_scope() as session:
+            query = session.query(
+                func.sum(ParkingTransaction.amount_due).label('total_revenue'),
+                func.count(ParkingTransaction.transaction_id).label('total_transactions'),
+                func.avg(ParkingTransaction.amount_due).label('average_transaction_value')
+            ).join(
+                ParkingSlot,
+                ParkingSlot.slot_id == ParkingTransaction.slot_id
+            ).filter(
+                ParkingTransaction.payment_status == 'completed'
+            )
+
+            if establishment_id:
+                query = query.filter(ParkingSlot.establishment_id == establishment_id)
+
+            if start_date:
+                query = query.filter(ParkingTransaction.created_at >= start_date)
+            if end_date:
+                query = query.filter(ParkingTransaction.created_at <= end_date)
+
+            result = query.first()
+
+            return {
+                'total_revenue': float(result.total_revenue or 0),
+                'total_transactions': result.total_transactions,
+                'average_transaction_value': float(result.average_transaction_value or 0)
+            }
+
+    @staticmethod
+    def get_peak_hours_analysis(establishment_id: int = None,
+                              days: int = 30) -> list:
+        """Analyze peak hours based on parking transactions.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            days: Number of past days to analyze
+
+        Returns:
+            List of hourly occupancy rates
+        """
+        with session_scope() as session:
+            start_date = datetime.now() - timedelta(days=days)
+
+            query = session.query(
+                func.extract('hour', ParkingTransaction.entry_time).label('hour'),
+                func.count(ParkingTransaction.transaction_id).label('count')
+            ).join(
+                ParkingSlot,
+                ParkingSlot.slot_id == ParkingTransaction.slot_id
+            ).filter(
+                ParkingTransaction.entry_time >= start_date,
+                ParkingTransaction.status != 'cancelled'
+            )
+
+            if establishment_id:
+                query = query.filter(ParkingSlot.establishment_id == establishment_id)
+
+            query = query.group_by(
+                func.extract('hour', ParkingTransaction.entry_time)
+            ).order_by('hour')
+
+            results = query.all()
+
+            return [{
+                'hour': result.hour,
+                'transaction_count': result.count
+            } for result in results]
+
+    @staticmethod
+    def get_vehicle_type_distribution(establishment_id: int = None,
+                                    start_date: datetime = None,
+                                    end_date: datetime = None) -> list:
+        """Analyze distribution of vehicle types using parking facilities.
+
+        Args:
+            establishment_id: Optional filter by establishment
+            start_date: Start date for analysis
+            end_date: End date for analysis
+
+        Returns:
+            List of vehicle type distributions
+        """
+        with session_scope() as session:
+            query = session.query(
+                VehicleType.name,
+                func.count(ParkingTransaction.transaction_id).label('count')
+            ).join(
+                ParkingSlot,
+                ParkingSlot.slot_id == ParkingTransaction.slot_id
+            ).join(
+                VehicleType,
+                VehicleType.vehicle_type_id == ParkingSlot.vehicle_type_id
+            ).filter(
+                ParkingTransaction.status != 'cancelled'
+            )
+
+            if establishment_id:
+                query = query.filter(ParkingSlot.establishment_id == establishment_id)
+
+            if start_date:
+                query = query.filter(ParkingTransaction.created_at >= start_date)
+            if end_date:
+                query = query.filter(ParkingTransaction.created_at <= end_date)
+
+            query = query.group_by(VehicleType.name)
+
+            results = query.all()
+
+            return [{
+                'vehicle_type': result.name,
+                'count': result.count
+            } for result in results]
