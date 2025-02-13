@@ -54,7 +54,6 @@ class GetAllVehicleTypes(MethodView):
             401: "Unauthorized",
         },
     )
-    @jwt_required(False)
     @parking_manager_role_required()
     @jwt_required(False)
     def get(self, user_id):  # pylint: disable=unused-argument
