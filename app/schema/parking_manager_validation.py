@@ -25,7 +25,22 @@ class ParkingManagerRequestSchema(Schema):
 class UpdateParkingScheduleSchema(Schema):
     """Validation schema for updating parking schedule."""
     is_24_hours = fields.Boolean(required=True)
-    operating_hour = fields.List(fields.Nested(OperatingHour), required=True)
+    operating_hour = fields.Dict(
+        keys=fields.Str(validate=validate.OneOf([
+            "monday", "tuesday", "wednesday", "thursday",
+            "friday", "saturday", "sunday"
+        ])),
+        values=fields.Dict(
+            keys=fields.Str(),
+            values=fields.Raw(),
+            required_keys={
+                "enabled": fields.Boolean(required=True),
+                "open": fields.Time(required=True),
+                "close": fields.Time(required=True)
+            }
+        ),
+        required=True
+    )
 
 
 
