@@ -104,24 +104,19 @@ class OperatingHoursRepository:
         """
         with session_scope() as session:
             existing_hours = session.query(OperatingHour).filter_by(
-                establishment_id=establishment_id
-            ).all()
-    
+                establishment_id=establishment_id).all()
             for day, hours in operating_hours.items():
                 operating_hour = next(
                     (h for h in existing_hours if h.day_of_week == day.lower()),
                     None
                 )
-    
                 if not operating_hour:
                     operating_hour = OperatingHour(
                         establishment_id=establishment_id,
                         day_of_week=day.lower()
                     )
                     session.add(operating_hour)
-    
                 operating_hour.is_enabled = hours.get('enabled', False)
-    
                 opening_time = hours.get('open')
                 if opening_time:
                     if isinstance(opening_time, str):
@@ -129,7 +124,6 @@ class OperatingHoursRepository:
                         operating_hour.opening_time = time(hour, minute)
                     elif isinstance(opening_time, time):
                         operating_hour.opening_time = opening_time
-    
                 closing_time = hours.get('close')
                 if closing_time:
                     if isinstance(closing_time, str):

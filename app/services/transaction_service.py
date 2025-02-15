@@ -28,9 +28,17 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         return TransactionVerification.verify_entry_transaction(qr_content, payment_status)
 
     @staticmethod
-    def verify_exit_code(qr_content: str, payment_status: str, exit_time: str, amount_due: float):
+    def verify_exit_code(
+        qr_content: str, payment_status: str, exit_time: str, amount_due: float, slot_id
+    ):
         """Verifies the exit code for a user."""
-        return TransactionVerification.verify_exit_transaction(exit_code, payment_status, exit_time, amount_due)
+        return TransactionVerification.verify_exit_transaction(
+            qr_content,
+            payment_status,
+            exit_time,
+            amount_due,
+            slot_id
+        )
 
     @staticmethod
     def occupy_slot(parking_data):
@@ -164,19 +172,21 @@ class TransactionVerification:
         })
 
     @staticmethod
-    def verify_exit_transaction(qr_content, payment_status, exit_time, amount_due):
+    def verify_exit_transaction(qr_content, payment_status, exit_time, amount_due, slot_id):
         """Verifies the exit transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(qr_content)
+        print(transaction_data)
         if transaction_data.get("status") != "active":
             raise QRCodeError("Invalid transaction status.")
+        ParkingSlotRepository.change_slot_status(slot_id=slot_id, new_status="open")
         return ParkingTransactionRepository.update_transaction(
             transaction_data.get("uuid"),
             update_data={
-                "payment_status": "completed",
-                "exit_time": get_current_time(),
-                "status": "completed"
-
+                "payment_status": payment_status,
+                "exit_time": exit_time,
+                "status": "completed",
+                "amount_due": amount_due
             }
         )
 

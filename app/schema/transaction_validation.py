@@ -45,8 +45,8 @@ class ValidateTransaction(ValidateEntrySchema):
     """Validation schema for transaction validation."""
     payment_status = fields.Str(required=True, validate=validate.OneOf(['pending', 'paid']))
 
-class ValidateExitTransaction(ValidateEntrySchema):
+class ValidateExitTransaction(ValidateTransaction):
     """Validation schema for exit transaction validation."""
-    payment_status = fields.Str(required=True, validate=validate.OneOf(['pending', 'paid']))
     exit_time = fields.DateTime(required=True)
     amount_due = fields.Float(required=True)
+    slot_id = fields.Int(required=True)

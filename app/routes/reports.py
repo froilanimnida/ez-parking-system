@@ -1,11 +1,16 @@
 """ Business Intelligence Routes """
 
 from flask.views import MethodView
+from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 from app.utils.response_util import set_response
+from app.utils.role_decorator import parking_manager_role_required
 
 reports_blp = Blueprint(
-    "reports", __name__, url_prefix="/reports", description="Reports API for EZ Parking System Frontend"
+    "reports",
+    __name__,
+    url_prefix="/reports",
+    description="Reports API for EZ Parking System Frontend"
 )
 
 @reports_blp.route("/occupancy")
@@ -49,7 +54,7 @@ class PeakHoursReport(MethodView):
     )
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self,, user_id):
+    def get(self, user_id):  # pylint: disable=unused-argument
         """
         Return a peak hours report.
         """

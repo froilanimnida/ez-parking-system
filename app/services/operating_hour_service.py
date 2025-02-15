@@ -15,7 +15,11 @@ class OperatingHourService:
 
     @staticmethod
     def update_operating_hours(manager_id, operating_hours, is24_7):
-        return UpdateOperatingHoursService.update_operating_hours(manager_id, operating_hours, is24_7)
+        return UpdateOperatingHoursService.update_operating_hours(
+            manager_id,
+            operating_hours,
+            is24_7
+        )
 
 
 class GetOperatingHoursService:

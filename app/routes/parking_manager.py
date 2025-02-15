@@ -14,10 +14,14 @@ from app.exceptions.qr_code_exceptions import (
 from app.exceptions.slot_lookup_exceptions import SlotNotFound, SlotAlreadyExists
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.common_schema_validation import TransactionCommonValidationSchema
-from app.schema.parking_manager_validation import ParkingManagerRequestSchema, UpdateParkingScheduleSchema
+from app.schema.parking_manager_validation import (
+    ParkingManagerRequestSchema, UpdateParkingScheduleSchema
+)
 from app.schema.response_schema import ApiResponse
 from app.schema.slot_validation import CreateSlotParkingManagerSchema
-from app.schema.transaction_validation import ValidateEntrySchema, ValidateTransaction
+from app.schema.transaction_validation import (
+    ValidateEntrySchema, ValidateTransaction, ValidateExitTransaction
+)
 from app.services.auth_service import AuthService
 from app.services.establishment_service import EstablishmentService
 from app.services.operating_hour_service import OperatingHourService
@@ -177,13 +181,14 @@ class EstablishmentExit(MethodView):
             404: "Not Found",
         },
     )
-    @parking_manager_blp.arguments(ValidateTransaction)
+    @parking_manager_blp.arguments(ValidateExitTransaction)
     @parking_manager_blp.response(200, ApiResponse)
     def patch(self, data, user_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService()
+        print(data)
         transaction_service.verify_exit_code(
             data.get("qr_content"), data.get("payment_status"),
-            data.get("exit_time"),data.get("amount_due")
+            data.get("exit_time"),data.get("amount_due"), data.get("slot_id")
         )
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}
@@ -290,8 +295,11 @@ class UpdateScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def patch(self, data, user_id):  # pylint: disable=unused-argument
-        print(data)
-        OperatingHourService.update_operating_hours(manager_id=user_id, is24_7=data.get("is24_7"), operating_hours=data.get("operating_hour"))
+        OperatingHourService.update_operating_hours(
+            manager_id=user_id,
+            is24_7=data.get("is24_7"),
+            operating_hours=data.get("operating_hour")
+        )
         return set_response(
             200,
             {

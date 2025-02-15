@@ -1,9 +1,9 @@
 """ Parking transaction module that represents the parking transaction database table. """
 
-# pylint: disable=R0401, R0801, C0415, E1102, C0103
+# pylint: disable=R0401, R0801, C0415, E1102, C0103, W0613
 
 from enum import Enum as PyEnum
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal, Dict, Any, TypedDict, overload
 
 from sqlalchemy import (
@@ -495,7 +495,7 @@ class BusinessIntelligence:
                 ),
                 func.sum(ParkingTransaction.amount_due).label('daily_revenue')
             ).filter(
-                ParkingTransaction.created_at >= func.current_date() - text(f'interval \'{days} days\'')
+                ParkingTransaction.created_at >= func.current_date() - text(f'interval \'{days} days\'')  # pylint: disable=C0301
             ).group_by(
                 func.date_trunc('day', ParkingTransaction.created_at)
             ).order_by('date')
@@ -534,7 +534,6 @@ class BusinessIntelligence:
 
             total_slots = slots_query.count()
 
-            # Query for occupied slots
             occupied_query = slots_query.filter(
                 ParkingSlot.slot_status.in_(['occupied', 'reserved'])
             )
