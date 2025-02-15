@@ -14,7 +14,7 @@ from app.exceptions.qr_code_exceptions import (
 from app.exceptions.slot_lookup_exceptions import SlotNotFound, SlotAlreadyExists
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.common_schema_validation import TransactionCommonValidationSchema
-from app.schema.parking_manager_validation import ParkingManagerRequestSchema
+from app.schema.parking_manager_validation import ParkingManagerRequestSchema, UpdateParkingScheduleSchema
 from app.schema.response_schema import ApiResponse
 from app.schema.slot_validation import CreateSlotParkingManagerSchema
 from app.schema.transaction_validation import ValidateEntrySchema, ValidateTransaction
@@ -54,8 +54,8 @@ class GetAllVehicleTypes(MethodView):
             401: "Unauthorized",
         },
     )
-    @parking_manager_role_required()
     @jwt_required(False)
+    @parking_manager_role_required()
     def get(self, user_id):  # pylint: disable=unused-argument
         vehicle_types = VehicleTypeService().get_all_vehicle_types()
         return set_response(200, {"code": "success", "data": vehicle_types})
@@ -162,6 +162,33 @@ class EstablishmentEntry(MethodView):
             200, {"code": "success", "message": "Transaction successfully verified."}
         )
 
+@parking_manager_blp.route("/validate/exit")
+class EstablishmentExit(MethodView):
+    @jwt_required(False)
+    @parking_manager_role_required()
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="""Routes that will validate the token of the exit qr code and update
+        the status of slot to be available.""",
+        responses={
+            200: "Transaction successfully verified",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    @parking_manager_blp.arguments(ValidateTransaction)
+    @parking_manager_blp.response(200, ApiResponse)
+    def patch(self, data, user_id):  # pylint: disable=unused-argument
+        transaction_service = TransactionService()
+        transaction_service.verify_exit_code(
+            data.get("qr_content"), data.get("payment_status"),
+            data.get("exit_time"),data.get("amount_due")
+        )
+        return set_response(
+            200, {"code": "success", "message": "Transaction successfully verified."}
+        )
+
 
 @parking_manager_blp.route("/qr-content/overview")
 class GetQRContentOverview(MethodView):
@@ -249,7 +276,7 @@ class GetScheduleHours(MethodView):
 
 @parking_manager_blp.route("/operating-hours/update")
 class UpdateScheduleHours(MethodView):
-    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location="json")
+    @parking_manager_blp.arguments(UpdateParkingScheduleSchema, location="json")
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
@@ -263,7 +290,7 @@ class UpdateScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def patch(self, data, user_id):  # pylint: disable=unused-argument
-        # OperatingHourService.update_operating_hours(data, user_id)
+        OperatingHourService.update_operating_hours(manager_id=user_id, is24_7=data.get("is24_7"), operating_hours=data.get("operating_hour"))
         return set_response(
             200,
             {

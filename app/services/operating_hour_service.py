@@ -14,8 +14,8 @@ class OperatingHourService:
         return GetOperatingHoursService.get_operating_hours(manager_id)
 
     @staticmethod
-    def update_operating_hours(manager_id, operating_hours):
-        pass
+    def update_operating_hours(manager_id, operating_hours, is24_7):
+        return UpdateOperatingHoursService.update_operating_hours(manager_id, operating_hours, is24_7)
 
 
 class GetOperatingHoursService:
@@ -55,7 +55,7 @@ class UpdateOperatingHoursService:
             OperatingHoursRepository.update_operating_hours(
                 parking_establishment_id, operating_hours)
         ParkingEstablishmentRepository.update_parking_establishment(
-            parking_establishment_id, is24_7)
+            {"is24_7": is24_7}, parking_establishment_id)
         return {
             "operating_hours": operating_hours,
             "is_24_7": is24_7

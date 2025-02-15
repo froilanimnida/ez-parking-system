@@ -22,6 +22,11 @@ class ParkingManagerRequestSchema(Schema):
     payment_method = fields.Nested(PaymentMethod, required=True)
     documents = fields.List(fields.Dict(), required=True)
 
+class UpdateParkingScheduleSchema(Schema):
+    """Validation schema for updating parking schedule."""
+    is_24_hours = fields.Boolean(required=True)
+    operating_hour = fields.List(fields.Nested(OperatingHour), required=True)
+
 
 
 class UpdateSlotSchemaSchema(SlotCommonValidationSchema, CreateSlotSchema):

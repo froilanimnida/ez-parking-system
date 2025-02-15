@@ -13,6 +13,7 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.models.parking_slot import ParkingSlot
+from app.models.vehicle_type import VehicleType
 from app.utils.db import session_scope
 from app.utils.timezone_utils import get_current_time
 
@@ -428,7 +429,8 @@ class BusinessIntelligence:
             return [{
                 'vehicle_type_id': result.vehicle_type_id,
                 'transaction_count': result.transaction_count,
-                'total_duration_hours': round(result.total_duration / 3600, 2) if result.total_duration else 0
+                'total_duration_hours': round(
+                    result.total_duration / 3600, 2) if result.total_duration else 0
             } for result in results]
 
     @staticmethod
@@ -488,7 +490,9 @@ class BusinessIntelligence:
         with session_scope() as session:
             query = session.query(
                 func.date_trunc('day', ParkingTransaction.created_at).label('date'),
-                func.count(ParkingTransaction.transaction_id).label('daily_transactions'),
+                func.count(ParkingTransaction.transaction_id).label(
+                    'daily_transactions'
+                ),
                 func.sum(ParkingTransaction.amount_due).label('daily_revenue')
             ).filter(
                 ParkingTransaction.created_at >= func.current_date() - text(f'interval \'{days} days\'')
