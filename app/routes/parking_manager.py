@@ -290,6 +290,7 @@ class UpdateScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def patch(self, data, user_id):  # pylint: disable=unused-argument
+        print(data)
         OperatingHourService.update_operating_hours(manager_id=user_id, is24_7=data.get("is24_7"), operating_hours=data.get("operating_hour"))
         return set_response(
             200,

@@ -52,8 +52,11 @@ class UpdateOperatingHoursService:
             ParkingEstablishmentRepository.update_parking_establishment(establishment_data={
                 "is24_7": is24_7}, establishment_id=parking_establishment_id)
         else:
+            print(operating_hours)
             OperatingHoursRepository.update_operating_hours(
                 parking_establishment_id, operating_hours)
+        ParkingEstablishmentRepository.update_parking_establishment(
+            {"is24_7": is24_7}, parking_establishment_id)
         return {
             "operating_hours": operating_hours,
             "is_24_7": is24_7

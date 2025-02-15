@@ -18,8 +18,8 @@ def create_ssl_context():
     from ssl import SSLContext, PROTOCOL_TLS_SERVER
     ssl_context = SSLContext(protocol=PROTOCOL_TLS_SERVER)
     ssl_context.load_cert_chain(
-        certfile="certificates/localhost+2.pem",
-        keyfile="certificates/localhost+2-key.pem",
+        certfile="certificates/localhost.pem",
+        keyfile="certificates/localhost-key.pem",
     )
     return ssl_context
 
