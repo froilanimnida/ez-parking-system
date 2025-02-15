@@ -54,8 +54,6 @@ class UpdateOperatingHoursService:
         else:
             OperatingHoursRepository.update_operating_hours(
                 parking_establishment_id, operating_hours)
-        ParkingEstablishmentRepository.update_parking_establishment(
-            {"is24_7": is24_7}, parking_establishment_id)
         return {
             "operating_hours": operating_hours,
             "is_24_7": is24_7
