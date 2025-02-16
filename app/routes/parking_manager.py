@@ -91,7 +91,7 @@ class CreateParkingManagerIndividualAccount(MethodView):
         },
     )
     @jwt_required(optional=True)
-    def post(self):
+    def post(self):  # pylint: disable=R0914
         check_file_size(request)
         try:
             documents_list = []
@@ -127,7 +127,6 @@ class CreateParkingManagerIndividualAccount(MethodView):
             parking_establishment = json.loads(request.form.get("parking_establishment"))
             operating_hour = json.loads(request.form.get("operating_hour"))
             payment_method = json.loads(request.form.get("payment_method"))
-            
             form_data = {
                 "user": user_data,
                 "company_profile": company_profile,

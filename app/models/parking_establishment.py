@@ -19,7 +19,6 @@ from sqlalchemy.orm import relationship
 from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
 from app.models.base import Base
 from app.models.parking_slot import ParkingSlot
-from app.models.pricing_plan import PricingPlan
 from app.utils.db import session_scope
 
 
