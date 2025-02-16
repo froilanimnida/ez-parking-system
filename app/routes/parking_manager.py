@@ -6,6 +6,7 @@ from flask import request, json
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
+from marshmallow import ValidationError
 
 from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.qr_code_exceptions import (
@@ -78,7 +79,7 @@ class CreateParkingManagerCompanyAccount(MethodView):
         )
 
 
-@parking_manager_blp.route("/individual/account/create")
+@parking_manager_blp.route("/account/create")
 class CreateParkingManagerIndividualAccount(MethodView):
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
@@ -120,15 +121,34 @@ class CreateParkingManagerIndividualAccount(MethodView):
                         "file": file,
                         "filename": file.filename
                     })
-
-            form_data = json.loads(request.form.get("sign_up_data"))
+            user_data = json.loads(request.form.get("user"))
+            company_profile = json.loads(request.form.get("company_profile"))
+            address = json.loads(request.form.get("address"))
+            parking_establishment = json.loads(request.form.get("parking_establishment"))
+            operating_hour = json.loads(request.form.get("operating_hour"))
+            payment_method = json.loads(request.form.get("payment_method"))
+            
+            form_data = {
+                "user": user_data,
+                "company_profile": company_profile,
+                "address": address,
+                "parking_establishment": parking_establishment,
+                "operating_hour": operating_hour,
+                "payment_method": payment_method,
+                "documents": documents_list
+            }
             form_data['documents'] = documents_list
         except Exception as e:  # pylint: disable=broad-exception-caught
             return set_response(
                 400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
             )
         parking_manager_request_schema = ParkingManagerRequestSchema()
-        validated_sign_up_data = parking_manager_request_schema.load(form_data)
+        try:
+            validated_sign_up_data = parking_manager_request_schema.load(form_data)
+        except ValidationError as err:
+            return set_response(
+                422, {"code": "error", "message": "Validation error", "errors": err.messages}
+            )
         auth_service = AuthService()
         auth_service.create_new_user(validated_sign_up_data)
 

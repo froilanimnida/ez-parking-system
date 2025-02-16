@@ -9,7 +9,7 @@ health = Blueprint(
     "health", __name__, url_prefix="/health", description="Health check endpoint."
 )
 
-@health.route("check")
+@health.route("/check")
 class HealthCheck(MethodView):
     """Health check endpoint for API monitoring."""
     @health.doc(

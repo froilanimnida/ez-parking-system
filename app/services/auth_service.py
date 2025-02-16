@@ -176,8 +176,8 @@ class UserRegistration:  # pylint: disable=R0903
             operating_hours = sign_up_data.get("operating_hour", {})
             self.add_operating_hours(parking_establishment_id, operating_hours)
 
-            # documents = sign_up_data.get("documents", [])
-            # self.add_establishment_documents(parking_establishment_id, documents)
+            documents = sign_up_data.get("documents", [])
+            self.add_establishment_documents(parking_establishment_id, documents)
         return send_mail(
                 sign_up_data.get("user", {}).get("email"), template, "Welcome to EZ Parking"
             )
