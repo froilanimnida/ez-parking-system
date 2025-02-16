@@ -1,6 +1,7 @@
 """" Wraps the services that the parking manager can call """
 
 from app.exceptions.slot_lookup_exceptions import SlotAlreadyExists
+from app.models.address import AddressRepository
 from app.models.audit_log import AuditLogRepository
 from app.models.company_profile import CompanyProfileRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
@@ -22,6 +23,10 @@ class ParkingManagerService:  # pylint: disable=R0903
     def create_slot(new_slot_data: dict, user_id: int, ip_address):
         """ Create a new slot """
         return SlotOperation.create_slot(user_id, new_slot_data, ip_address)
+    @classmethod
+    def get_company_profile(cls, user_id):
+        """ Get company profile """
+        return CompanyProfileRepository.get_company_profile(user_id=user_id)
 
 
 class SlotOperation:
@@ -62,3 +67,35 @@ class SlotOperation:
             "performed_at": now,
             "ip_address": ip_address,
         })
+
+
+class CompanyOperation:
+    """ Wraps all the company operations """
+    @staticmethod
+    def get_company_profile(user_id):
+        """ Get company profile """
+        company_profile = CompanyProfileRepository.get_company_profile(user_id=user_id)
+        address_data = AddressRepository.get_address(profile_id=company_profile.get("profile_id"))
+        # company_document = EstablishmentDocumentRepository.get_establishment_documents(
+        #     establishment_id=company_profile.get("profile_id")
+        # )
+        return {
+            "company_profile": company_profile,
+            "address": address_data,
+            # "company_document": company_document
+        }
+    @staticmethod
+    def update_company_profile(user_id: int, company_data: dict, address_data: dict):
+        """ Update company profile """
+        company_profile = CompanyProfileRepository.get_company_profile(user_id=user_id)
+        CompanyProfileRepository.update_company_profile(
+            profile_id=company_profile.get("profile_id"),
+            company_data=company_data
+        )
+        AddressRepository.update_address(address_id=company_profile.get("profile_id"),
+            address_data=address_data,
+        )
+        return {
+            "company_profile": company_data,
+            "address": address_data
+        }

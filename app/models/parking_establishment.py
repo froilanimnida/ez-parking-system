@@ -170,8 +170,7 @@ class ParkingEstablishmentRepository:
                     .all()
                 )
                 return [establishment.to_dict() for establishment in establishments]
-            if establishment_name is not None or (user_longitude is not None and
-                                                  user_latitude is not None):
+            if user_longitude is not None and user_latitude is not None:
                 query = session.query(
                     ParkingEstablishment,
                     func.count(ParkingSlot.slot_id).label("total_slots"),
@@ -196,16 +195,12 @@ class ParkingEstablishmentRepository:
                 result = []
                 for establishment, total_slots, open_slots, occupied_slots, reserved_slots in \
                     establishments:
-                    pricing_plans = session.query(PricingPlan).filter(
-                        PricingPlan.establishment_id == establishment.establishment_id
-                    ).all()
                     establishment_dict = establishment.to_dict()
                     establishment_dict.update({
                         "total_slots": total_slots,
                         "open_slots": open_slots,
                         "occupied_slots": occupied_slots,
                         "reserved_slots": reserved_slots,
-                        "pricing_plans": [plan.to_dict() for plan in pricing_plans]
                     })
                     result.append(establishment_dict)
                 return result

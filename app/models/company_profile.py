@@ -101,3 +101,10 @@ class CompanyProfileRepository:
                 ).all()
                 return [company_profile.to_dict() for company_profile in company_profiles]
             return []
+    @staticmethod
+    def update_company_profile(profile_id: int, company_data: dict):
+        """Update company profile."""
+        with session_scope() as session:
+            session.query(
+                CompanyProfile
+            ).where(profile_id=profile_id).update(**company_data)

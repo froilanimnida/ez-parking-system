@@ -406,6 +406,52 @@ class GetTransaction(MethodView):
                 "data": transaction,
             },
         )
+@parking_manager_blp.route("/company-profile")
+class CompanyProfile(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get the company profile of the parking manager.",
+        responses={
+            200: "Company profile retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def get(self, user_id): # pylint: disable=unused-argument
+        # company_profile = ParkingManagerService.get_company_profile(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                # "data": company_profile,
+            },
+        )
+@parking_manager_blp.route("/company-profile/update")
+class UpdateCompanyProfile(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update the company profile of the parking manager.",
+        responses={
+            200: "Company profile updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def patch(self, user_id):  # pylint: disable=unused-argument
+        # ParkingManagerService.update_company_profile(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Company profile updated successfully.",
+            },
+        )
 
 parking_manager_blp.register_error_handler(SlotNotFound, handle_slot_not_found)
 parking_manager_blp.register_error_handler(InvalidQRContent, handle_invalid_qr_content)
