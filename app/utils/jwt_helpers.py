@@ -1,10 +1,19 @@
-""" Refresh tokens before expiry """
+"""This module contains helper functions for working with JWTs."""
 
-from flask import request
-from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
+from datetime import datetime, timedelta, timezone
+from logging import getLogger
+
+from flask import Response, request
+from flask_jwt_extended import get_jwt, set_access_cookies, set_refresh_cookies, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended.exceptions import InvalidHeaderError
 from werkzeug.exceptions import Unauthorized
 
+from app.services.token_service import TokenService
 from app.utils.timezone_utils import get_current_time
+
+logger = getLogger(__name__)
+
+
 
 def refresh_token_before_request():
     """
