@@ -14,7 +14,7 @@ from app.utils.celery_utils import make_celery
 from app.utils.error_handlers.system_wide_error_handler import (
     register_system_wide_error_handlers,
 )
-from app.utils.jwt_helpers import add_jwt_after_request_handler
+from app.utils.jwt_helpers import add_jwt_before_request_handler
 from app.utils.logger import setup_logging
 from app.utils.setup_cors import set_up_cors
 
@@ -39,5 +39,5 @@ def create_app():
     setup_logging(app)
     register_system_wide_error_handlers(app)
     register_blueprints(api)
-    add_jwt_after_request_handler(app)
+    add_jwt_before_request_handler(app)
     return app
