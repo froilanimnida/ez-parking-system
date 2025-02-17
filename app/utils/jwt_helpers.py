@@ -3,36 +3,36 @@
 from datetime import datetime, timedelta, timezone
 from logging import getLogger
 
-from flask import Response, request
-from flask_jwt_extended import get_jwt, set_access_cookies, set_refresh_cookies, get_jwt_identity, verify_jwt_in_request
+from flask import Response
+from flask_jwt_extended import get_jwt, set_access_cookies, set_refresh_cookies, get_jwt_identity
 from flask_jwt_extended.exceptions import InvalidHeaderError
-from werkzeug.exceptions import Unauthorized
 
 from app.services.token_service import TokenService
-from app.utils.timezone_utils import get_current_time
 
 logger = getLogger(__name__)
 
 
-
-def refresh_token_before_request():
+def refresh_expiring_jwts(response: Response) -> Response:
     """
-    Refresh JWT before request processing if it's about to expire.
-    This ensures the user has a valid token before hitting protected endpoints.
+    Refresh JWT and CSRF tokens if they're close to expiring.
+
+    Args:
+        response: Flask response object
+    Returns:
+        Response with refreshed tokens if needed
     """
     try:
-        verify_jwt_in_request()  # Ensures we have a valid JWT
+        # Get current JWT claims
         jwt_data = get_jwt()
         exp_timestamp = jwt_data["exp"]
 
-        now = get_current_time()
+        now = datetime.now(timezone.utc)
         target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
 
         if target_timestamp > exp_timestamp:
             identity = get_jwt_identity()
             role = jwt_data["sub"].get("role")
-
-            print("Refreshing access token before request...")
+            print("refreshing access token")
 
             token_service = TokenService()
             access_token, refresh_token = token_service.generate_jwt_csrf_token(
@@ -41,16 +41,26 @@ def refresh_token_before_request():
                 role=role
             )
 
-            response = Response()
             set_access_cookies(response, access_token)
             set_refresh_cookies(response, refresh_token)
 
-            logger.info("Access token refreshed before request.")
+            logger.info(
+                "JWT and CSRF tokens refreshed at %s UTC",
+                now.strftime("%Y-%m-%d %H:%M:%S")
+            )
 
-    except Exception as e:
-        logger.warning(f"JWT refresh failed: {e}")
-        raise Unauthorized("Invalid or expired token.")
+        return response
 
-# Attach it to the Flask app
-def add_jwt_before_request_handler(app):
-    app.before_request(refresh_token_before_request)
+    except (RuntimeError, KeyError, InvalidHeaderError) as e:
+        logger.debug("JWT refresh skipped: %s", e)
+        return response
+
+
+def add_jwt_after_request_handler(app) -> None:
+    """
+    Attaches the JWT refresh logic as an after_request handler.
+
+    Args:
+        app: Flask application instance
+    """
+    app.after_request(refresh_expiring_jwts)
