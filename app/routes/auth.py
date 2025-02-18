@@ -5,7 +5,7 @@
 from flask.views import MethodView
 from flask_jwt_extended import (
     get_jwt, set_access_cookies, jwt_required, set_refresh_cookies, unset_access_cookies,
-    unset_jwt_cookies, unset_refresh_cookies,
+    unset_jwt_cookies, unset_refresh_cookies, create_access_token, get_jwt_identity,
 )
 from flask_smorest import Blueprint
 
@@ -159,6 +159,25 @@ class VerifyToken(MethodView):
         return set_response(
             200, {"code": "success", "message": "Token verified successfully.", "role": role}
         )
+    
+@auth_blp.route("/refresh-token")
+class RefreshToken(MethodView):
+    @auth_blp.response(200, ApiResponse)
+    @auth_blp.doc(
+        description="Refresh the JWT token present in the request.",
+        responses={
+            200: {"description": "Token refreshed successfully."},
+            400: {"description": "Bad Request"},
+            401: {"description": "Unauthorized"},
+        },
+    )
+    @jwt_required(locations=["cookies", "headers"], refresh=True)
+    def post(self):
+        identity = get_jwt_identity()
+        access_token = create_access_token(identity=identity)
+        response = set_response(200, {"code": "success", "message": "Token refreshed successfully."})
+        set_access_cookies(response, access_token)
+        return response
 
 
 @auth_blp.route("/verify-email")
