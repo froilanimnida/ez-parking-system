@@ -159,7 +159,6 @@ class VerifyToken(MethodView):
         return set_response(
             200, {"code": "success", "message": "Token verified successfully.", "role": role}
         )
-    
 @auth_blp.route("/refresh-token")
 class RefreshToken(MethodView):
     @auth_blp.response(200, ApiResponse)
@@ -175,7 +174,13 @@ class RefreshToken(MethodView):
     def post(self):
         identity = get_jwt_identity()
         access_token = create_access_token(identity=identity)
-        response = set_response(200, {"code": "success", "message": "Token refreshed successfully."})
+        response = set_response(
+        200,
+            {
+                "code": "success",
+                "message": "Token refreshed successfully."
+            }
+        )
         set_access_cookies(response, access_token)
         return response
 
