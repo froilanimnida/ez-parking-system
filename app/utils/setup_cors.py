@@ -1,5 +1,6 @@
 """This module contains the function to set up CORS for the application."""
 
+from datetime import timedelta
 from os import getenv
 
 from flask import Flask
@@ -10,6 +11,7 @@ def set_up_cors(app: Flask):
     """Set up CORS for the application."""
     frontend_urls = getenv("FRONTEND_URL", "").split(",")
     static_origins = [
+        "http://localhost:8081",
         "https://ez-parking.expo.app",
         "https://ez-parking-gamma.vercel.app",
         "https://ez-parking.vercel.app",
@@ -28,5 +30,6 @@ def set_up_cors(app: Flask):
         ],
         expose_headers=["Set-Cookie", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        max_age=timedelta(days=1)
     )
     return app

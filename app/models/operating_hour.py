@@ -1,5 +1,6 @@
 """This module defines the OperatingHour model."""
 
+from datetime import time
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
@@ -89,13 +90,75 @@ class OperatingHoursRepository:
 
     @staticmethod
     def update_operating_hours(establishment_id, operating_hours: dict):
-        """Update operating hours for a parking establishment."""
+        """
+        Update operating hours for a parking establishment.
+    
+        Args:
+            establishment_id: ID of the establishment
+            operating_hours: Dictionary of operating hours with format:
+                {
+                    'monday': {'enabled': bool, 'open': str, 'close': str},
+                    'tuesday': {'enabled': bool, 'open': str, 'close': str},
+                    ...
+                }
+        """
         with session_scope() as session:
+            existing_hours = session.query(OperatingHour).filter_by(
+                establishment_id=establishment_id).all()
             for day, hours in operating_hours.items():
-                operating_hour = session.query(OperatingHour).filter_by(
-                    establishment_id=establishment_id, day_of_week=day
-                ).first()
-                operating_hour.is_enabled = hours.get('is_enabled')
-                operating_hour.opening_time = hours.get('opening_time')
-                operating_hour.closing_time = hours.get('closing_time')
-            session.commit()
+                operating_hour = next(
+                    (h for h in existing_hours if h.day_of_week == day.lower()),
+                    None
+                )
+                if not operating_hour:
+                    operating_hour = OperatingHour(
+                        establishment_id=establishment_id,
+                        day_of_week=day.lower()
+                    )
+                    session.add(operating_hour)
+                operating_hour.is_enabled = hours.get('enabled', False)
+                opening_time = hours.get('open')
+                if opening_time:
+                    if isinstance(opening_time, str):
+                        hour, minute = map(int, opening_time.split(':')[:2])
+                        operating_hour.opening_time = time(hour, minute)
+                    elif isinstance(opening_time, time):
+                        operating_hour.opening_time = opening_time
+                closing_time = hours.get('close')
+                if closing_time:
+                    if isinstance(closing_time, str):
+                        hour, minute = map(int, closing_time.split(':')[:2])
+                        operating_hour.closing_time = time(hour, minute)
+                    elif isinstance(closing_time, time):
+                        operating_hour.closing_time = closing_time
+    @staticmethod
+    def make_operating_hours_24_7(establishment_id):
+        """
+            Make operating hours 24/7 for a parking establishment.
+            Sets all days to enabled with 00:00 opening time and 23:59 closing time.
+        """
+        with session_scope() as session:
+            existing_hours = session.query(
+                OperatingHour).filter_by(
+                    establishment_id=establishment_id
+                    ).all()
+
+            for day in DayOfWeek:
+                existing_entry = next(
+                    (hour for hour in existing_hours if hour.day_of_week == day.value),
+                    None
+                )
+
+                if existing_entry:
+                    existing_entry.is_enabled = True
+                    existing_entry.opening_time = time(0, 0)
+                    existing_entry.closing_time = time(23, 59)
+                else:
+                    new_entry = OperatingHour(
+                        establishment_id=establishment_id,
+                        day_of_week=day.value,
+                        is_enabled=True,
+                        opening_time=time(0, 0),
+                        closing_time=time(23, 59)
+                    )
+                    session.add(new_entry)

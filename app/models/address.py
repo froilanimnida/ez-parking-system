@@ -85,8 +85,6 @@ class AddressRepository:
     def update_address(address_id: int, address_data: dict):
         """Update an address."""
         with session_scope() as session:
-            address = session.query(Address).filter_by(address_id=address_id).first()
-            for key, value in address_data.items():
-                setattr(address, key, value)
-            session.commit()
-            return address.to_dict()
+            session.query(Address).update(**address_data).where(
+                Address.address_id == address_id
+            )

@@ -194,27 +194,3 @@ class RateSchema(Schema):
             raise ValidationError('Daily rate cannot exceed ₱10,000')
         if self.context.get('rate_type') == 'monthly' and value > 50000:
             raise ValidationError('Monthly rate cannot exceed ₱50,000')
-
-
-# noinspection PyTypeChecker
-class PricingPlan(Schema):
-    """Schema for pricing plan."""
-    hourly = fields.Nested(RateSchema, required=False, context={'rate_type': 'hourly'})
-    daily = fields.Nested(RateSchema, required=False, context={'rate_type': 'daily'})
-    monthly = fields.Nested(RateSchema, required=False, context={'rate_type': 'monthly'})
-
-    @validates_schema
-    def validate_at_least_one_rate(self, data, **kwargs):
-        """Validate that at least one rate type is enabled."""
-        enabled_rates = [
-            rate['is_enabled']
-            for rate in [
-                data.get('hourly', {}),
-                data.get('daily', {}),
-                data.get('monthly', {})
-            ]
-            if rate
-        ]
-
-        if not any(enabled_rates):
-            raise ValidationError('At least one rate type must be enabled')

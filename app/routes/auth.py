@@ -5,7 +5,7 @@
 from flask.views import MethodView
 from flask_jwt_extended import (
     get_jwt, set_access_cookies, jwt_required, set_refresh_cookies, unset_access_cookies,
-    unset_jwt_cookies, unset_refresh_cookies,
+    unset_jwt_cookies, unset_refresh_cookies, create_access_token, get_jwt_identity,
 )
 from flask_smorest import Blueprint
 
@@ -96,17 +96,18 @@ class VerifyOTP(MethodView):
         otp = data.get("otp")
         remember_me = data.get("remember_me")
         user_id, role = auth_service.verify_otp(email, otp)
+
         token_service = TokenService()
-        (
-            access_token,
-            refresh_token,
-        ) = token_service.generate_jwt_csrf_token(
+        access_token, refresh_token = token_service.generate_jwt_csrf_token(
             email=email, user_id=user_id, role=role, remember_me=remember_me
         )
+
         response = set_response(200, {"code": "success", "message": "OTP verified.", "role": role})
+
         set_access_cookies(response, access_token)
         set_refresh_cookies(response, refresh_token)
         return response
+
 
 
 @auth_blp.route('protected-route')
@@ -119,7 +120,7 @@ class ProtectedRoute(MethodView):
             401: {"description": "Unauthorized"},
         },
     )
-    @jwt_required()
+    @jwt_required(locations=["cookies", "headers"])
     def post(self):
         return set_response(200, {"code": "success", "message": "Protected route accessed."})
 
@@ -158,6 +159,30 @@ class VerifyToken(MethodView):
         return set_response(
             200, {"code": "success", "message": "Token verified successfully.", "role": role}
         )
+@auth_blp.route("/refresh-token")
+class RefreshToken(MethodView):
+    @auth_blp.response(200, ApiResponse)
+    @auth_blp.doc(
+        description="Refresh the JWT token present in the request.",
+        responses={
+            200: {"description": "Token refreshed successfully."},
+            400: {"description": "Bad Request"},
+            401: {"description": "Unauthorized"},
+        },
+    )
+    @jwt_required(locations=["cookies", "headers"], refresh=True)
+    def post(self):
+        identity = get_jwt_identity()
+        access_token = create_access_token(identity=identity)
+        response = set_response(
+        200,
+            {
+                "code": "success",
+                "message": "Token refreshed successfully."
+            }
+        )
+        set_access_cookies(response, access_token)
+        return response
 
 
 @auth_blp.route("/verify-email")

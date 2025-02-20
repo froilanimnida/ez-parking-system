@@ -25,25 +25,29 @@ def refresh_expiring_jwts(response: Response) -> Response:
         # Get current JWT claims
         jwt_data = get_jwt()
         exp_timestamp = jwt_data["exp"]
+
         now = datetime.now(timezone.utc)
         target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
 
         if target_timestamp > exp_timestamp:
-            # Get identity from current token
             identity = get_jwt_identity()
             role = jwt_data["sub"].get("role")
+            print("refreshing access token")
 
-            # Generate new tokens with same claims
             token_service = TokenService()
             access_token, refresh_token = token_service.generate_jwt_csrf_token(
-                email=identity["email"], user_id=identity["user_id"], role=role
+                email=identity["email"],
+                user_id=identity["user_id"],
+                role=role
             )
 
-            # Set new tokens in cookies
             set_access_cookies(response, access_token)
             set_refresh_cookies(response, refresh_token)
 
-            logger.info("JWT and CSRF tokens refreshed")
+            logger.info(
+                "JWT and CSRF tokens refreshed at %s UTC",
+                now.strftime("%Y-%m-%d %H:%M:%S")
+            )
 
         return response
 

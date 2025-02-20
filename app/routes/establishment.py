@@ -93,6 +93,7 @@ class GetEstablishmentInfo(MethodView):
                 "establishment": establishment,
             }
         )
+
 @establishment_blp.route("/document")
 class GetEstablishmentDocument(MethodView):
     @establishment_blp.arguments(EstablishmentDocumentBaseSchema, location="query")
@@ -106,13 +107,37 @@ class GetEstablishmentDocument(MethodView):
     )
     def get(self, query_params):
         establishment_document, content_type, file_name = EstablishmentDocument.get_document(
-            query_params.get("document_uuid")
+            query_params.get("bucket_path")
         )
         return send_file(
             establishment_document,
             mimetype=content_type,
             as_attachment=True,
             download_name=file_name
+        )
+
+
+@establishment_blp.route("/slots")
+class GetEstablishmentSlots(MethodView):
+    @establishment_blp.arguments(EstablishmentQueryValidationSchema, location="query")
+    @establishment_blp.response(200, EstablishmentResponseSchema)
+    @establishment_blp.doc(
+        description="Get all slots of the establishment",
+        responses={
+            200: "Slots retrieved successfully.",
+            400: "Bad Request",
+        },
+    )
+    def get(self, query_params):  # pylint: disable=unused-argument
+        # establishment = EstablishmentService.get_establishment(
+        #     query_params.get("establishment_uuid")
+        # )
+        return set_response(
+            200,
+            {
+                "code": "success", "message": "Slots retrieved successfully.",
+                # "slots": establishment.get("slots", [])
+            }
         )
 
 establishment_blp.register_error_handler(
