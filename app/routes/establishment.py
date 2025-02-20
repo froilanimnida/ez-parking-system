@@ -107,7 +107,7 @@ class GetEstablishmentDocument(MethodView):
     )
     def get(self, query_params):
         establishment_document, content_type, file_name = EstablishmentDocument.get_document(
-            query_params.get("document_uuid")
+            query_params.get("bucket_path")
         )
         return send_file(
             establishment_document,
