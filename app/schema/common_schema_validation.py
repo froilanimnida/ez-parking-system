@@ -9,7 +9,7 @@ class EstablishmentCommonValidationSchema(Schema):
     """
     Common validation schema for establishment. It is used to validate the establishment_uuid.
     """
-    establishment_uuid = fields.Str(required=True)
+    bucket_path = fields.Str(required=True)
 
 class TransactionCommonValidationSchema(Schema):
     """ Common validation schema for transaction. It is used to validate the transaction_uuid. """
