@@ -425,29 +425,7 @@ class GetTransaction(MethodView):
                 "data": transaction,
             },
         )
-@parking_manager_blp.route("/company-profile")
-class CompanyProfile(MethodView):
-    @parking_manager_blp.response(200, ApiResponse)
-    @parking_manager_blp.doc(
-        security=[{"Bearer": []}],
-        description="Get the company profile of the parking manager.",
-        responses={
-            200: "Company profile retrieved successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @jwt_required(False)
-    @parking_manager_role_required()
-    def get(self, user_id): # pylint: disable=unused-argument
-        # company_profile = ParkingManagerService.get_company_profile(user_id)
-        return set_response(
-            200,
-            {
-                "code": "success",
-                # "data": company_profile,
-            },
-        )
+
 @parking_manager_blp.route("/company-profile/update")
 class UpdateCompanyProfile(MethodView):
     @parking_manager_blp.response(200, ApiResponse)

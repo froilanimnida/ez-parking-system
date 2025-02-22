@@ -173,6 +173,7 @@ class RefreshToken(MethodView):
     @jwt_required(locations=["cookies", "headers"], refresh=True)
     def post(self):
         identity = get_jwt_identity()
+        print(identity)
         access_token = create_access_token(identity=identity)
         response = set_response(
         200,

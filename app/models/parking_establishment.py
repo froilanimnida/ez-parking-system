@@ -262,13 +262,12 @@ class ParkingEstablishmentRepository:
             )
             session.commit()
     @staticmethod
-    def verify_parking_establishment(establishment_uuid: bytes):
+    def verify_parking_establishment(establishment_uuid):
         """Verify a parking establishment."""
         with session_scope() as session:
-            establishment_id = ParkingEstablishment.get_establishment_id(establishment_uuid)
             session.execute(
                 update(ParkingEstablishment)
-                .where(ParkingEstablishment.establishment_id == establishment_id)
+                .where(ParkingEstablishment.uuid == establishment_uuid)
                 .values(verified=True)
             )
             session.commit()
