@@ -137,18 +137,27 @@ class DurationStatsReport(MethodView):
 @reports_blp.route("/payment-stats")
 class PaymentStatsReport(MethodView):
     """Payment stats report endpoint."""
+    @reports_blp.arguments(IntervalSchema, location="query")
     @reports_blp.doc(
         description="Get payment stats report.",
         responses={200: {"description": "Payment stats report"}}
     )
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self, user_id):
+    def get(self, data, user_id):
         """
         Return a payment stats report.
         """
         print(user_id)
-        return set_response(200, {"code": "success", "message": "Payment stats report."})
+        data = Reports.payment_stats_report(user_id, data.get("start_date"), data.get("end_date"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Payment stats report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route('/utilization')
 class UtilizationReport(MethodView):

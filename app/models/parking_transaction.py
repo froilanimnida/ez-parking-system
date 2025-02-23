@@ -295,7 +295,7 @@ class BusinessIntelligence:
     @staticmethod
     def get_duration_analysis(establishment_id: int = None,
                             start_date: datetime = None,
-                            end_date: datetime = None) -> dict:
+                            end_date: datetime = None) -> list[dict[str, Any]]:
         """Analyze parking duration patterns.
 
         Args:
@@ -351,7 +351,7 @@ class BusinessIntelligence:
     @staticmethod
     def get_payment_analytics(establishment_id: int = None,
                             start_date: datetime = None,
-                            end_date: datetime = None) -> dict:
+                            end_date: datetime = None) -> list[dict[str, float | Any]]:
         """Analyze payment patterns and status.
 
         Args:
