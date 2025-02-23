@@ -54,9 +54,10 @@ class GetEstablishmentService:
     def get_establishments(cls, query_dict: dict) -> list:
         """Get establishments with optional filtering and sorting"""
         return ParkingEstablishmentRepository.get_establishments(
-            establishment_name=query_dict.get("establishment_name"),
             user_longitude=query_dict.get("user_longitude"),
-            user_latitude=query_dict.get("user_latitude")
+            user_latitude=query_dict.get("user_latitude"),
+            city=query_dict.get("city"),
+            establishment_name=query_dict.get("search_term"),
         )
 
     @classmethod
