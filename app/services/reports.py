@@ -43,6 +43,9 @@ class Reports:
         return RevenueReports.get_duration_stats_report(
             user_id, start_date, end_date
         )
+    @staticmethod
+    def trends(user_id):
+        return RevenueReports.get_trends(user_id)
 
 
 class RevenueReports:
@@ -147,3 +150,12 @@ class RevenueReports:
             start_date=start_date,
             end_date=end_date
         )
+    @staticmethod
+    def get_trends(user_id):
+        company_profile_id = CompanyProfileRepository.get_company_profile(
+            user_id=user_id
+        ).get("profile_id")
+        establishment_id = ParkingEstablishmentRepository.get_establishment(
+            profile_id=company_profile_id
+        ).get("establishment_id")
+        return BusinessIntelligence.get_seasonal_trends(establishment_id=establishment_id)

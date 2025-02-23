@@ -227,5 +227,12 @@ class TrendsReport(MethodView):
         """
         Return a trends report.
         """
-        print(user_id)
-        return set_response(200, {"code": "success", "message": "Trends report."})
+        data = Reports.trends(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Trends report.",
+                "data": data
+            }
+        )

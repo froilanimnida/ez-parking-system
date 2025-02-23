@@ -1,6 +1,6 @@
 """ Parking transaction module that represents the parking transaction database table. """
 
-# pylint: disable=R0401, R0801, C0415, E1102, C0103, W0613
+# pylint: disable=R0401, R0801, C0415, E1102, C0103, W0613,  C0301
 
 from enum import Enum as PyEnum
 from datetime import datetime, timedelta
@@ -475,34 +475,31 @@ class BusinessIntelligence:
     def get_seasonal_trends(establishment_id: int = None,
                           days: int = 90) -> list:
         """Analyze seasonal trends in parking usage.
-
+    
         Args:
             establishment_id: Optional filter by establishment
             days: Number of past days to analyze
-
+    
         Returns:
             List of daily usage trends
         """
         with session_scope() as session:
+            date_col = func.date_trunc('day', ParkingTransaction.created_at).label('date')
             query = session.query(
-                func.date_trunc('day', ParkingTransaction.created_at).label('date'),
+                date_col,
                 func.count(ParkingTransaction.transaction_id).label(
                     'daily_transactions'
                 ),
                 func.sum(ParkingTransaction.amount_due).label('daily_revenue')
             ).filter(
-                ParkingTransaction.created_at >= func.current_date() - text(f'interval \'{days} days\'')  # pylint: disable=C0301
-            ).group_by(
-                func.date_trunc('day', ParkingTransaction.created_at)
-            ).order_by('date')
-
+                ParkingTransaction.created_at >= func.current_date() - text(f'interval \'{days} days\'')
+            )
             if establishment_id:
                 query = query.join(
                     ParkingSlot
                 ).filter(ParkingSlot.establishment_id == establishment_id)
-
+            query = query.group_by(date_col).order_by(date_col)
             results = query.all()
-
             return [{
                 'date': result.date.strftime('%Y-%m-%d'),
                 'daily_transactions': result.daily_transactions,
