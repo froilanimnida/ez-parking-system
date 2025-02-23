@@ -428,9 +428,11 @@ class BusinessIntelligence:
                 ) if result.total_duration else 0
             } for result in results]
     @staticmethod
-    def get_premium_vs_standard_analysis(establishment_id: int = None,
-                                       start_date: datetime = None,
-                                       end_date: datetime = None) -> dict:
+    def get_premium_vs_standard_analysis(
+        establishment_id: int = None,
+        start_date: datetime = None,
+        end_date: datetime = None
+    ) -> list[dict[str, str | float | Any]]:
         """Compare premium vs standard slot performance.
 
         Args:

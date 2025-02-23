@@ -191,14 +191,22 @@ class PremiumAnalysisReport(MethodView):
         description="Get premium analysis report.",
         responses={200: {"description": "Premium analysis report"}}
     )
+    @reports_blp.arguments(IntervalSchema, location="query")
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self, user_id):
+    def get(self, data, user_id):
         """
         Return a premium analysis report.
         """
-        print(user_id)
-        return set_response(200, {"code": "success", "message": "Premium analysis report."})
+        data = Reports.premium_slot_analysis(user_id, data.get("start_date"), data.get("end_date"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Premium analysis report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route("/trends")
 class TrendsReport(MethodView):
