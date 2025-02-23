@@ -3,13 +3,16 @@
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
+
+from app.services.reports import Reports
+from app.schema.reports_validation import RevenueReportSchema
 from app.utils.response_util import set_response
 from app.utils.role_decorator import parking_manager_role_required
 
 reports_blp = Blueprint(
     "reports",
     __name__,
-    url_prefix="/reports",
+    url_prefix="/api/v1/reports",
     description="Reports API for EZ Parking System Frontend"
 )
 
@@ -26,24 +29,43 @@ class OccupancyReport(MethodView):
         """
         Return an occupancy report.
         """
-        print(user_id)
-        return set_response(200, {"code": "success", "message": "Occupancy report."})
+        data = Reports.occupancy_report(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Occupancy report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route("/revenue")
 class RevenueReport(MethodView):
     """Revenue report endpoint."""
+    @reports_blp.arguments(RevenueReportSchema, location="query")
     @reports_blp.doc(
         description="Get revenue report.",
         responses={200: {"description": "Revenue report"}}
     )
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self, user_id):
+    def get(self, data, user_id):
         """
         Return a revenue report.
         """
-        print(user_id)
-        return set_response(200, {"code": "success", "message": "Revenue report."})
+        reports = Reports.revenue_report(
+            user_id,
+            data.get("start_date"),
+            data.get("end_date")
+        )
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Revenue report.",
+                "data": reports
+            }
+        )
 
 @reports_blp.route("/peak-hours")
 class PeakHoursReport(MethodView):

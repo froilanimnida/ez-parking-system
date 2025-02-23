@@ -5,14 +5,14 @@ from flask_smorest import Blueprint
 
 from app.utils.response_util import set_response
 
-health = Blueprint(
+health_blp = Blueprint(
     "health", __name__, url_prefix="/health", description="Health check endpoint."
 )
 
-@health.route("/check")
+@health_blp.route("/check")
 class HealthCheck(MethodView):
     """Health check endpoint for API monitoring."""
-    @health.doc(
+    @health_blp.doc(
         description="Simple health check endpoint.",
         responses={200: {"description": "Health check passed"}}
     )

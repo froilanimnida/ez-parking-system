@@ -20,7 +20,7 @@ from app.utils.timezone_utils import get_current_time
 class TransactionUpdate(TypedDict, total=False):
     """Type definition for transaction updates"""
     status: Literal["active", "completed", "cancelled"]
-    payment_status: Literal["pending", "completed", "failed", "paid"]
+    payment_status: Literal["paid", "unpaid"]
     entry_time: datetime
     exit_time: datetime
     amount_due: float
@@ -30,10 +30,8 @@ class TransactionUpdate(TypedDict, total=False):
 # Define custom Enum types for 'payment_status' and 'transaction_status'
 class PaymentStatusEnum(str, PyEnum):
     """Encapsulate enumerate types of payment status."""
-    pending = "pending"
-    completed = "completed"
-    failed = "failed"
     paid = "paid"
+    unpaid = "unpaid"
 
 
 class TransactionStatusEnum(str, PyEnum):
@@ -72,7 +70,7 @@ class ParkingTransaction(
     entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
     exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
     payment_status = Column(
-        Enum(PaymentStatusEnum), nullable=False, server_default=text("'pending'::payment_status"),
+        Enum(PaymentStatusEnum), nullable=False, server_default=text("'unpaid'::payment_status"),
     )
     status = Column(
         Enum(TransactionStatusEnum), nullable=False,
@@ -570,7 +568,7 @@ class BusinessIntelligence:
                 ParkingSlot,
                 ParkingSlot.slot_id == ParkingTransaction.slot_id
             ).filter(
-                ParkingTransaction.payment_status == 'completed'
+                ParkingTransaction.payment_status == 'paid'
             )
 
             if establishment_id:

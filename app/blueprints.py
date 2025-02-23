@@ -5,12 +5,13 @@ from flask_smorest import Api
 from app.routes.auth import auth_blp
 from app.routes.establishment import establishment_blp
 from app.routes.parking_manager import parking_manager_blp
+from app.routes.reports import reports_blp
 from app.routes.slot import slot_blp
 from app.routes.transaction import transactions_blp
 from app.routes.admin import admin_blp
 from app.routes.user import user_auth_blp
 from app.routes.vehicle_type import vehicle_type_blp
-from app.routes.health import health
+from app.routes.health import health_blp
 
 
 def register_blueprints(app: Api):
@@ -23,4 +24,5 @@ def register_blueprints(app: Api):
     app.register_blueprint(admin_blp)
     app.register_blueprint(vehicle_type_blp)
     app.register_blueprint(user_auth_blp)
-    app.register_blueprint(health)
+    app.register_blueprint(health_blp)
+    app.register_blueprint(reports_blp)

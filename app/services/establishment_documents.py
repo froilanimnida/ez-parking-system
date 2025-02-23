@@ -1,7 +1,6 @@
 """ Wraps the logic for fetching establishment documents. """
 from io import BytesIO
 
-from app.models.establishment_document import EstablishmentDocumentRepository
 from app.utils.bucket import R2TransactionalUpload
 
 
