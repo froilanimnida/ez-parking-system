@@ -166,14 +166,23 @@ class UtilizationReport(MethodView):
         description="Get utilization report.",
         responses={200: {"description": "Utilization report"}}
     )
+    @reports_blp.arguments(IntervalSchema, location="query")
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self, user_id):
+    def get(self, data, user_id):
         """
         Return a utilization report.
         """
         print(user_id)
-        return set_response(200, {"code": "success", "message": "Utilization report."})
+        data = Reports.utilization_report(user_id, data.get("start_date"), data.get("end_date"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Utilization report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route("/premium-analysis")
 class PremiumAnalysisReport(MethodView):

@@ -386,11 +386,10 @@ class BusinessIntelligence:
                 'transaction_count': result.count,
                 'total_amount': float(result.total_amount or 0)
             } for result in results]
-
     @staticmethod
     def get_slot_utilization_by_type(establishment_id: int = None,
-                                    start_date: datetime = None,
-                                    end_date: datetime = None) -> list:
+                                     start_date: datetime = None,
+                                     end_date: datetime = None) -> list:
         """Analyze slot utilization by vehicle type.
 
         Args:
@@ -403,34 +402,31 @@ class BusinessIntelligence:
         """
         with session_scope() as session:
             query = session.query(
-                ParkingSlot.vehicle_type_id,
+                VehicleType.name.label('vehicle_type_name'),  # Fetch vehicle type name
                 func.count(ParkingTransaction.transaction_id).label('transaction_count'),
                 func.sum(
                     func.extract('epoch', ParkingTransaction.exit_time) -
                     func.extract('epoch', ParkingTransaction.entry_time)
                 ).label('total_duration')
             ).join(
-                ParkingTransaction,
-                ParkingSlot.slot_id == ParkingTransaction.slot_id
-            ).group_by(ParkingSlot.vehicle_type_id)
-
+                ParkingSlot, ParkingSlot.vehicle_type_id == VehicleType.vehicle_type_id
+            ).join(
+                ParkingTransaction, ParkingSlot.slot_id == ParkingTransaction.slot_id
+            ).group_by(VehicleType.name)
             if establishment_id:
                 query = query.filter(ParkingSlot.establishment_id == establishment_id)
-
             if start_date:
                 query = query.filter(ParkingTransaction.created_at >= start_date)
             if end_date:
                 query = query.filter(ParkingTransaction.created_at <= end_date)
-
             results = query.all()
-
             return [{
-                'vehicle_type_id': result.vehicle_type_id,
+                'vehicle_type_name': result.vehicle_type_name,
                 'transaction_count': result.transaction_count,
                 'total_duration_hours': round(
-                    result.total_duration / 3600, 2) if result.total_duration else 0
+                    result.total_duration / 3600, 2
+                ) if result.total_duration else 0
             } for result in results]
-
     @staticmethod
     def get_premium_vs_standard_analysis(establishment_id: int = None,
                                        start_date: datetime = None,

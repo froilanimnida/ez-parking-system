@@ -30,6 +30,12 @@ class Reports:
         return RevenueReports.get_payment_stats_report(
             user_id, start_date, end_date
         )
+    @staticmethod
+    def utilization_report(user_id, start_date, end_date):
+        return RevenueReports.get_utilization_report(
+            user_id, start_date, end_date
+        )
+
 
 class RevenueReports:
     """ Revenue report class """
@@ -90,6 +96,19 @@ class RevenueReports:
             profile_id=company_profile_id
         ).get("establishment_id")
         return BusinessIntelligence.get_payment_analytics(
+            establishment_id=establishment_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+    @staticmethod
+    def get_utilization_report(parking_manager_id, start_date, end_date):
+        company_profile_id = CompanyProfileRepository.get_company_profile(
+            user_id=parking_manager_id
+        ).get("profile_id")
+        establishment_id = ParkingEstablishmentRepository.get_establishment(
+            profile_id=company_profile_id
+        ).get("establishment_id")
+        return BusinessIntelligence.get_slot_utilization_by_type(
             establishment_id=establishment_id,
             start_date=start_date,
             end_date=end_date
