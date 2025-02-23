@@ -80,8 +80,15 @@ class PeakHoursReport(MethodView):
         """
         Return a peak hours report.
         """
-        return set_response(200, {"code": "success", "message": "Peak hours report."})
-
+        data = Reports.peak_hours_report(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Peak hours report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route("/vehicle-dist")
 class VehicleDistributionReport(MethodView):

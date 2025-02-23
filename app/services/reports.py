@@ -17,6 +17,9 @@ class Reports:
     @staticmethod
     def occupancy_report(user_id):
         return RevenueReports.get_occupancy_report(user_id)
+    @staticmethod
+    def peak_hours_report(user_id):
+        return RevenueReports.get_peak_hours_report(user_id)
 class RevenueReports:
     """ Revenue report class """
     @staticmethod
@@ -41,5 +44,16 @@ class RevenueReports:
             profile_id=company_profile_id
         ).get("establishment_id")
         return BusinessIntelligence.get_occupancy_rate(
+            establishment_id=parking_establishment_id
+        )
+    @staticmethod
+    def get_peak_hours_report(parking_manager_id):
+        company_profile_id = CompanyProfileRepository.get_company_profile(
+            user_id=parking_manager_id
+        ).get("profile_id")
+        parking_establishment_id = ParkingEstablishmentRepository.get_establishment(
+            profile_id=company_profile_id
+        ).get("establishment_id")
+        return BusinessIntelligence.get_peak_hours_analysis(
             establishment_id=parking_establishment_id
         )
