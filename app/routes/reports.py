@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 
 from app.services.reports import Reports
-from app.schema.reports_validation import RevenueReportSchema
+from app.schema.reports_validation import IntervalSchema
 from app.utils.response_util import set_response
 from app.utils.role_decorator import parking_manager_role_required
 
@@ -42,7 +42,7 @@ class OccupancyReport(MethodView):
 @reports_blp.route("/revenue")
 class RevenueReport(MethodView):
     """Revenue report endpoint."""
-    @reports_blp.arguments(RevenueReportSchema, location="query")
+    @reports_blp.arguments(IntervalSchema, location="query")
     @reports_blp.doc(
         description="Get revenue report.",
         responses={200: {"description": "Revenue report"}}
@@ -97,14 +97,26 @@ class VehicleDistributionReport(MethodView):
         description="Get vehicle distribution report.",
         responses={200: {"description": "Vehicle distribution report"}}
     )
+    @reports_blp.arguments(IntervalSchema, location="query")
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self, user_id):
+    def get(self, data, user_id):
         """
         Return a vehicle distribution report.
         """
-        print(user_id)
-        return set_response(200, {"code": "success", "message": "Vehicle distribution report."})
+        data = Reports.vehicle_distribution(
+            user_id,
+            data.get("start_date"),
+            data.get("end_date")
+        )
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Vehicle distribution report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route("/duration-stats")
 class DurationStatsReport(MethodView):
