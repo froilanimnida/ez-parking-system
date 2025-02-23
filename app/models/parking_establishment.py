@@ -5,7 +5,7 @@
     the model instance to a dictionary format.
 """
 
-# pylint: disable=E1102, C0415, disable=too-few-public-methods
+# pylint: disable=E1102, C0415, disable=too-few-public-methods, C0301, R1704
 
 from typing import Union, overload
 from uuid import uuid4
@@ -149,14 +149,16 @@ class ParkingEstablishmentRepository:
     @staticmethod
     @overload
     def get_establishments(
-        establishment_name: str = None, user_longitude: float = None, user_latitude: float = None, city: str = None
+        establishment_name: str = None,
+        user_longitude: float = None,
+        user_latitude: float = None,
+        city: str = None
     ) -> list:
         """Get all parking establishments."""
     @staticmethod
     @overload
     def get_establishments() -> list:
         """Get all parking establishments."""
-    
     @staticmethod
     def get_establishments(
         verification_status: bool = None, establishment_name: str = None,
@@ -171,7 +173,6 @@ class ParkingEstablishmentRepository:
                     .all()
                 )
                 return [establishment.to_dict() for establishment in establishments]
-            
             query = session.query(
                 ParkingEstablishment,
                 Address.city,
@@ -184,7 +185,6 @@ class ParkingEstablishmentRepository:
             ).group_by(ParkingEstablishment.establishment_id, Address.city).where(
                 ParkingEstablishment.verified.is_(True)
             )
-            
             if establishment_name is not None:
                 query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
             if city is not None:
@@ -195,22 +195,19 @@ class ParkingEstablishmentRepository:
                         latitude=user_latitude, longitude=user_longitude, ascending=True
                     )
                 )
-            
             establishments = query.all()
             result = []
             for establishment, city, total_slots, open_slots, occupied_slots, reserved_slots in establishments:
                 establishment_dict = establishment.to_dict()
                 establishment_dict.update({
-                    "city": city,  # Adding city from Address table
+                    "city": city,
                     "total_slots": total_slots,
                     "open_slots": open_slots,
                     "occupied_slots": occupied_slots,
                     "reserved_slots": reserved_slots,
                 })
                 result.append(establishment_dict)
-            
             return result
-    
     @staticmethod
     @overload
     def get_establishment(establishment_uuid: str) -> dict:

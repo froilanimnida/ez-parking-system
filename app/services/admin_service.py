@@ -1,5 +1,7 @@
 """ Wraps the operations that can be performed by the admin. """
 
+# pylint: disable=C0301, C0116
+
 from flask import render_template
 
 from app.models.audit_log import AuditLogRepository
@@ -9,10 +11,6 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.user import UserRepository
 from app.tasks import send_mail
 from app.utils.timezone_utils import get_current_time
-
-
-# pylint: disable=C0116
-
 
 class AdminService:
     """Service class for admin operations."""
@@ -82,29 +80,28 @@ class ParkingManagerOperations:
     """Service class for parking applicant operations."""
     @staticmethod
     def get_establishments() -> list:
-        """Get all parking establishments."""
+        """Get all parking establishments (both verified and non-verified)."""
         establishments = []
-        non_verified_parking_establishments = ParkingEstablishmentRepository.get_establishments()
-        if len(non_verified_parking_establishments) == 0:
+        non_verified_parking_establishments = ParkingEstablishmentRepository.get_establishments(
+            verification_status=False)
+        verified_parking_establishments = ParkingEstablishmentRepository.get_establishments(
+            verification_status=True
+        )
+        all_parking_establishments = non_verified_parking_establishments + verified_parking_establishments
+        if not all_parking_establishments:
             return []
-        company_profile_ids = [
-            parking_establishment['profile_id']
-            for parking_establishment in non_verified_parking_establishments
-        ]
+        company_profile_ids = list({est['profile_id'] for est in all_parking_establishments})
         company_profiles = CompanyProfileRepository.get_company_profiles(
             profile_ids=company_profile_ids
         )
-        for establishment in non_verified_parking_establishments:
-            profile = next((
-                profile for profile in company_profiles
-                if profile['profile_id'] == establishment['profile_id']
-            ), None)
+        profile_map = {profile['profile_id']: profile for profile in company_profiles}
+        for establishment in all_parking_establishments:
+            profile = profile_map.get(establishment['profile_id'])
             if profile:
-                applicant = {
+                establishments.append({
                     "establishment": establishment,
                     "company_profile": profile
-                }
-                establishments.append(applicant)
+                })
         return establishments
     @staticmethod
     def approve_parking_applicant(establishment_uuid: bytes) -> None:
