@@ -1,5 +1,5 @@
 """ This module contains the routes for the authentication endpoints. """
-
+from flask import request
 # pylint: disable=missing-function-docstring, missing-class-docstring, R0401
 
 from flask.views import MethodView
@@ -153,8 +153,10 @@ class VerifyToken(MethodView):
             401: {"description": "Unauthorized"},
         },
     )
-    @jwt_required(False)
+    @jwt_required(optional=False)
     def post(self):
+        print(request.cookies)
+        print(request.headers)
         role = get_jwt().get("role")
         return set_response(
             200, {"code": "success", "message": "Token verified successfully.", "role": role}
@@ -175,6 +177,8 @@ class RefreshToken(MethodView):
         identity = get_jwt_identity()
         print(identity)
         access_token = create_access_token(identity=identity)
+        print(identity)
+        print(access_token)
         response = set_response(
         200,
             {
@@ -182,7 +186,7 @@ class RefreshToken(MethodView):
                 "message": "Token refreshed successfully."
             }
         )
-        set_access_cookies(response, access_token)
+        # set_access_cookies(response, access_token)
         return response
 
 

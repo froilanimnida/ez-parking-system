@@ -11,7 +11,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
 
     SECRET_KEY = getenv("SECRET_KEY")
     JWT_SECRET_KEY = getenv("JWT_SECRET_KEY")
-    ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "")
+    ENCRYPTION_KEY = getenv("ENCRYPTION_KEY")
 
     JWT_ALGORITHM = "HS256"
     JWT_DECODE_ALGORITHMS = ["HS256"]
@@ -29,7 +29,10 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     MAIL_USERNAME = getenv("MAIL_USERNAME")
     MAIL_PASSWORD = getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = getenv("MAIL_DEFAULT_SENDER")
-
+    JWT_ACCESS_COOKIE_NAME = "access_token_cookie"
+    JWT_ACCESS_CSRF_COOKIE_NAME = "csrf_access_token"
+    JWT_REFRESH_CSRF_COOKIE_NAME = "csrf_refresh_token"
+    JWT_REFRESH_COOKIE_NAME = "refresh_token_cookie"
     JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_COOKIE_SECURE = bool(getenv("JWT_COOKIE_SECURE", "True"))
     JWT_SESSION_COOKIE = False
