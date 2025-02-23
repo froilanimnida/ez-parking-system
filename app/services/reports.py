@@ -38,6 +38,11 @@ class Reports:
     @staticmethod
     def premium_slot_analysis(user_id, start_date, end_date):
         return RevenueReports.get_premium_slot_analysis(user_id, start_date, end_date)
+    @staticmethod
+    def duration_stats_report(user_id, start_date, end_date):
+        return RevenueReports.get_duration_stats_report(
+            user_id, start_date, end_date
+        )
 
 
 class RevenueReports:
@@ -125,6 +130,19 @@ class RevenueReports:
             profile_id=company_profile_id
         ).get("establishment_id")
         return BusinessIntelligence.get_premium_vs_standard_analysis(
+            establishment_id=establishment_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+    @staticmethod
+    def get_duration_stats_report(parking_manager_id, start_date, end_date):
+        company_profile_id = CompanyProfileRepository.get_company_profile(
+            user_id=parking_manager_id
+        ).get("profile_id")
+        establishment_id = ParkingEstablishmentRepository.get_establishment(
+            profile_id=company_profile_id
+        ).get("establishment_id")
+        return BusinessIntelligence.get_duration_analysis(
             establishment_id=establishment_id,
             start_date=start_date,
             end_date=end_date

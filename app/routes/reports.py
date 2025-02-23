@@ -125,14 +125,22 @@ class DurationStatsReport(MethodView):
         description="Get duration stats report.",
         responses={200: {"description": "Duration stats report"}}
     )
+    @reports_blp.arguments(IntervalSchema, location="query")
     @jwt_required(False)
     @parking_manager_role_required()
-    def get(self, user_id):
+    def get(self, data, user_id):
         """
         Return a duration stats report.
         """
-        print(user_id)
-        return set_response(200, {"code": "success", "message": "Duration stats report."})
+        data = Reports.duration_stats_report(user_id, data.get("start_date"), data.get("end_date"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Duration stats report.",
+                "data": data
+            }
+        )
 
 @reports_blp.route("/payment-stats")
 class PaymentStatsReport(MethodView):
@@ -148,7 +156,6 @@ class PaymentStatsReport(MethodView):
         """
         Return a payment stats report.
         """
-        print(user_id)
         data = Reports.payment_stats_report(user_id, data.get("start_date"), data.get("end_date"))
         return set_response(
             200,
@@ -173,7 +180,6 @@ class UtilizationReport(MethodView):
         """
         Return a utilization report.
         """
-        print(user_id)
         data = Reports.utilization_report(user_id, data.get("start_date"), data.get("end_date"))
         return set_response(
             200,

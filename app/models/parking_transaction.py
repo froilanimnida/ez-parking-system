@@ -294,17 +294,17 @@ class BusinessIntelligence:
 
     @staticmethod
     def get_duration_analysis(establishment_id: int = None,
-                            start_date: datetime = None,
-                            end_date: datetime = None) -> list[dict[str, Any]]:
+                             start_date: datetime = None,
+                             end_date: datetime = None) -> dict[str, Any]:
         """Analyze parking duration patterns.
-
+    
         Args:
             establishment_id: Optional filter by establishment
             start_date: Start date for analysis
             end_date: End date for analysis
-
+    
         Returns:
-            Dictionary containing duration metrics
+            Dictionary containing aggregated duration metrics
         """
         with session_scope() as session:
             query = session.query(
@@ -320,33 +320,33 @@ class BusinessIntelligence:
                     func.extract('epoch', ParkingTransaction.exit_time) -
                     func.extract('epoch', ParkingTransaction.entry_time)
                 ).label('max_duration'),
-                ParkingTransaction.duration_type,
                 func.count(ParkingTransaction.transaction_id).label('count')
             ).filter(
                 ParkingTransaction.status == 'completed',
                 ParkingTransaction.entry_time.isnot(None),
                 ParkingTransaction.exit_time.isnot(None)
-            ).group_by(ParkingTransaction.duration_type)
-
+            )
             if establishment_id:
                 query = query.join(
                     ParkingSlot
                 ).filter(ParkingSlot.establishment_id == establishment_id)
-
             if start_date:
                 query = query.filter(ParkingTransaction.created_at >= start_date)
             if end_date:
                 query = query.filter(ParkingTransaction.created_at <= end_date)
-
-            results = query.all()
-
-            return [{
-                'duration_type': result.duration_type.value,
-                'average_duration_hours': round(result.avg_duration / 3600, 2),
-                'min_duration_hours': round(result.min_duration / 3600, 2),
-                'max_duration_hours': round(result.max_duration / 3600, 2),
-                'transaction_count': result.count
-            } for result in results]
+            result = query.first()
+            return {
+                'average_duration_hours': round(
+                    result.avg_duration / 3600, 2
+                ) if result.avg_duration else 0,
+                'min_duration_hours': round(
+                    result.min_duration / 3600, 2
+                ) if result.min_duration else 0,
+                'max_duration_hours': round(
+                    result.max_duration / 3600, 2
+                ) if result.max_duration else 0,
+                'total_transactions': result.count
+            }
 
     @staticmethod
     def get_payment_analytics(establishment_id: int = None,
