@@ -15,7 +15,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
 
     JWT_ALGORITHM = "HS256"
     JWT_DECODE_ALGORITHMS = ["HS256"]
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=60)
 
     API_TITLE = "EZ-Parking API"
     API_VERSION = "v1"
