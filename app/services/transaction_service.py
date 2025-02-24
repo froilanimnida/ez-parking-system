@@ -90,6 +90,9 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
         """Reserves the slot for a user."""
         now = get_current_time()
         slot_uuid = slot_reservation_data.pop("slot_uuid")
+        slot_status = ParkingSlotRepository.get_slot(slot_uuid=slot_uuid).get("slot_status")
+        if slot_status in ["reserved", "occupied", "closed"]:
+            raise SlotStatusTaken("Invalid slot status.")
         slot_reservation_data.update({"slot_id": ParkingSlot.get_id(slot_uuid)})
         slot_reservation_data.update({"created_at": now})
         slot_reservation_data.update({"updated_at": now})

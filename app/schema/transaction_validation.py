@@ -28,7 +28,7 @@ class ReservationCreationSchema(SlotCommonValidationSchema):
     @post_load
     def add_payment_status(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Add payment status."""
-        in_data["payment_status"] = "pending"
+        in_data["payment_status"] = "unpaid"
         return in_data
 
 
