@@ -34,6 +34,7 @@ class TokenService:  # pylint: disable=C0115, R0903
         access_token = create_access_token(
             identity={"email": email, "user_id": user_id},
             fresh=True,
+            expires_delta=timedelta(days=60),
             additional_claims={
                 "role": role,
                 "iat": datetime.timestamp(now)
