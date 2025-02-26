@@ -1,5 +1,7 @@
 """ This module contains the TokenService class. """
 
+# pylint: disable=unused-argument
+
 from typing import Literal
 from datetime import timedelta, datetime
 
