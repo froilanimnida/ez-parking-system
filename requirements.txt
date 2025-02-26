@@ -72,7 +72,7 @@ pytest-cov==6.0.0
 pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
-python-jose==3.3.0
+python-jose==3.4.0
 pytz==2024.2
 PyYAML==6.0.2
 qrcode==8.0
