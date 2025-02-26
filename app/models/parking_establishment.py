@@ -159,6 +159,7 @@ class ParkingEstablishmentRepository:
     @overload
     def get_establishments() -> list:
         """Get all parking establishments."""
+    
     @staticmethod
     def get_establishments(
         verification_status: bool = None, establishment_name: str = None,
@@ -179,7 +180,11 @@ class ParkingEstablishmentRepository:
                 func.count(ParkingSlot.slot_id).label("total_slots"),
                 func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "open").label("open_slots"),
                 func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "occupied").label("occupied_slots"),
-                func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "reserved").label("reserved_slots")
+                func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "reserved").label("reserved_slots"),
+                #     add the highest and lowest price as price range
+                func.min(ParkingSlot.base_price_per_hour).label("min_price_per_hour"),
+                func.max(ParkingSlot.base_price_per_hour).label("max_price_per_hour")
+            
             ).outerjoin(ParkingSlot).outerjoin(
                 Address, ParkingEstablishment.profile_id == Address.profile_id
             ).group_by(ParkingEstablishment.establishment_id, Address.city).where(
@@ -197,7 +202,9 @@ class ParkingEstablishmentRepository:
                 )
             establishments = query.all()
             result = []
-            for establishment, city, total_slots, open_slots, occupied_slots, reserved_slots in establishments:
+            for establishment, city, total_slots, open_slots, occupied_slots, reserved_slots, min_price_per_hour, max_price_per_hour in establishments:
+                if total_slots == 0:
+                    continue
                 establishment_dict = establishment.to_dict()
                 establishment_dict.update({
                     "city": city,
@@ -205,6 +212,11 @@ class ParkingEstablishmentRepository:
                     "open_slots": open_slots,
                     "occupied_slots": occupied_slots,
                     "reserved_slots": reserved_slots,
+                    "price_range": {
+                        "min_hourly_price": float(min_price_per_hour) if min_price_per_hour is not None else None,
+                        "max_hourly_price": float(max_price_per_hour) if max_price_per_hour is not None else None
+                        
+                    }
                 })
                 result.append(establishment_dict)
             return result
