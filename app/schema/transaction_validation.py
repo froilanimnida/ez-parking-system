@@ -22,11 +22,13 @@ class ReservationCreationSchema(SlotCommonValidationSchema):
     duration_type = fields.Str(
         required=True, validate=validate.OneOf(['monthly', 'daily', 'hourly'])
     )
+    scheduled_entry_time = fields.DateTime(required=True)
+    scheduled_exit_time = fields.DateTime(required=True)
     amount_due = fields.Float(required=True)
     @post_load
     def add_payment_status(self, in_data, **kwargs):  # pylint: disable=unused-argument
         """Add payment status."""
-        in_data["payment_status"] = "pending"
+        in_data["payment_status"] = "unpaid"
         return in_data
 
 
@@ -42,3 +44,9 @@ class ValidateEntrySchema(Schema):
 class ValidateTransaction(ValidateEntrySchema):
     """Validation schema for transaction validation."""
     payment_status = fields.Str(required=True, validate=validate.OneOf(['pending', 'paid']))
+
+class ValidateExitTransaction(ValidateTransaction):
+    """Validation schema for exit transaction validation."""
+    exit_time = fields.DateTime(required=True)
+    amount_due = fields.Float(required=True)
+    slot_id = fields.Int(required=True)

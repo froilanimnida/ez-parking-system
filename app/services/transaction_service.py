@@ -1,9 +1,5 @@
 """This module contains the services for the transaction operations."""
 
-from datetime import datetime
-
-import pytz
-
 from app.exceptions.qr_code_exceptions import QRCodeError, InvalidQRContent
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
 from app.models.address import AddressRepository
@@ -15,6 +11,7 @@ from app.models.parking_transaction import ParkingTransactionRepository
 from app.models.payment_method import PaymentMethodRepository
 from app.models.user import UserRepository
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
+from app.utils.timezone_utils import get_current_time
 
 
 class TransactionService:  # pylint: disable=too-few-public-methods
@@ -31,9 +28,17 @@ class TransactionService:  # pylint: disable=too-few-public-methods
         return TransactionVerification.verify_entry_transaction(qr_content, payment_status)
 
     @staticmethod
-    def verify_exit_code(exit_code):
+    def verify_exit_code(
+        qr_content: str, payment_status: str, exit_time: str, amount_due: float, slot_id
+    ):
         """Verifies the exit code for a user."""
-        return TransactionVerification.verify_exit_transaction(exit_code)
+        return TransactionVerification.verify_exit_transaction(
+            qr_content,
+            payment_status,
+            exit_time,
+            amount_due,
+            slot_id
+        )
 
     @staticmethod
     def occupy_slot(parking_data):
@@ -83,8 +88,11 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def reserve_slot(slot_reservation_data: dict):
         """Reserves the slot for a user."""
-        now = datetime.now(pytz.timezone('Asia/Manila'))
+        now = get_current_time()
         slot_uuid = slot_reservation_data.pop("slot_uuid")
+        slot_status = ParkingSlotRepository.get_slot(slot_uuid=slot_uuid).get("slot_status")
+        if slot_status in ["reserved", "occupied", "closed"]:
+            raise SlotStatusTaken("Invalid slot status.")
         slot_reservation_data.update({"slot_id": ParkingSlot.get_id(slot_uuid)})
         slot_reservation_data.update({"created_at": now})
         slot_reservation_data.update({"updated_at": now})
@@ -160,24 +168,30 @@ class TransactionVerification:
         if transaction_data.get("status") != "reserved":
             raise QRCodeError("Invalid transaction status.")
         transaction_uuid = transaction_data.get("uuid")
-        ParkingTransactionRepository.update_transaction_status(
-            transaction_uuid, "active",
-        )
-        ParkingTransactionRepository.update_entry_exit_time(
-            transaction_uuid=transaction_uuid,
-            entry_time=datetime.now(pytz.timezone('Asia/Manila'))
-        )
-        return ParkingTransactionRepository.update_payment_status(
-            transaction_uuid, payment_status
-        )
+        return ParkingTransactionRepository.update_transaction(transaction_uuid, update_data={
+            "payment_status": payment_status,
+            "entry_time": get_current_time(),
+            "status": "active"
+        })
 
     @staticmethod
-    def verify_exit_transaction(transaction_qr_code_data):
+    def verify_exit_transaction(qr_content, payment_status, exit_time, amount_due, slot_id):
         """Verifies the exit transaction for a user."""
         qr_code_utils = QRCodeUtils()
-        transaction_data = qr_code_utils.verify_qr_content(transaction_qr_code_data)
+        transaction_data = qr_code_utils.verify_qr_content(qr_content)
+        print(transaction_data)
         if transaction_data.get("status") != "active":
             raise QRCodeError("Invalid transaction status.")
+        ParkingSlotRepository.change_slot_status(slot_id=slot_id, new_status="open")
+        return ParkingTransactionRepository.update_transaction(
+            transaction_data.get("uuid"),
+            update_data={
+                "payment_status": payment_status,
+                "exit_time": exit_time,
+                "status": "completed",
+                "amount_due": amount_due
+            }
+        )
 
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data, manager_id):
@@ -236,7 +250,6 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
         )
         establishment_id = establishment_info.get("establishment_id")
         profile_id = establishment_info.get("profile_id")
-        # pricing_plans = PricingPlanRepository.get_pricing_plans(establishment_id)
         address = AddressRepository.get_address(profile_id=profile_id)
         operating_hours = OperatingHoursRepository.get_operating_hours(establishment_id)
         payment_methods = PaymentMethodRepository.get_payment_methods(establishment_id)
@@ -244,7 +257,6 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
         return {
             "establishment_info": establishment_info,
             "address": address,
-            # "pricing_plans": pricing_plans,
             "operating_hours": operating_hours,
             "payment_methods": payment_methods,
             "slot_info": slot_info,

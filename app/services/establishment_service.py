@@ -54,9 +54,10 @@ class GetEstablishmentService:
     def get_establishments(cls, query_dict: dict) -> list:
         """Get establishments with optional filtering and sorting"""
         return ParkingEstablishmentRepository.get_establishments(
-            establishment_name=query_dict.get("establishment_name"),
             user_longitude=query_dict.get("user_longitude"),
-            user_latitude=query_dict.get("user_latitude")
+            user_latitude=query_dict.get("user_latitude"),
+            city=query_dict.get("city"),
+            establishment_name=query_dict.get("search_term"),
         )
 
     @classmethod
@@ -64,6 +65,9 @@ class GetEstablishmentService:
         """Get parking establishment information."""
         parking_establishment_details = ParkingEstablishmentRepository.get_establishment(
             establishment_uuid=establishment_uuid
+        )
+        company_details = CompanyProfileRepository.get_company_profile(
+            profile_id=parking_establishment_details['profile_id']
         )
         parking_establishment_id = parking_establishment_details['establishment_id']
         parking_establishment_operating_hours = OperatingHoursRepository.get_operating_hours(
@@ -75,22 +79,15 @@ class GetEstablishmentService:
         parking_establishment_payment_methods = PaymentMethodRepository.get_payment_methods(
             establishment_id=parking_establishment_id
         )
-        # parking_establishment_pricing_plans = PricingPlanRepository.get_pricing_plans(
-        #     establishment_id=parking_establishment_id
-        # )
-        company_details = CompanyProfileRepository.get_company_profile(
-            profile_id=parking_establishment_details['profile_id']
-        )
         establishment_documents = EstablishmentDocumentRepository.get_establishment_documents(
             establishment_id=parking_establishment_id
         )
         return {
             "parking_establishment": parking_establishment_details,
             "operating_hours": parking_establishment_operating_hours,
+            "company_profile": company_details,
             "slots": parking_establishment_slot,
             "payment_methods": parking_establishment_payment_methods,
-            # "pricing_plans": parking_establishment_pricing_plans,
-            "company_profile": company_details,
             "establishment_documents": establishment_documents
         }
 
@@ -115,9 +112,6 @@ class AdministrativeService:
         payment_method = PaymentMethodRepository.get_payment_methods(
             parking_establishment.get("establishment_id")
         )
-        # pricing_plan = PricingPlanRepository.get_pricing_plans(
-        #     parking_establishment.get("establishment_id")
-        # )
         return {
             "company_profile": company_profile,
             "address": address,
@@ -125,7 +119,6 @@ class AdministrativeService:
             "establishment_document": establishment_document,
             "operating_hour": operating_hour,
             "payment_method": payment_method,
-            # "pricing_plan": pricing_plan,
         }
 
 
@@ -145,11 +138,9 @@ class UserQueryService:
         payment_methods = PaymentMethodRepository.get_payment_methods(
             establishment_id=establishment_id
         )
-        # pricing_plans = PricingPlanRepository.get_pricing_plans(establishment_id=establishment_id)
         return {
             "establishment": establishment_details,
             "operating_hours": operating_hours,
             "slots": slots,
             "payment_methods": payment_methods,
-            # "pricing_plans": pricing_plans
         }

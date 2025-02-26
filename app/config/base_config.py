@@ -3,17 +3,19 @@
 from datetime import timedelta
 from os import getenv, getcwd, path
 
+import pytz
+
 
 class BaseConfig:  # pylint: disable=too-few-public-methods
     """Base configuration."""
 
     SECRET_KEY = getenv("SECRET_KEY")
     JWT_SECRET_KEY = getenv("JWT_SECRET_KEY")
-    ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "")
+    ENCRYPTION_KEY = getenv("ENCRYPTION_KEY")
 
     JWT_ALGORITHM = "HS256"
     JWT_DECODE_ALGORITHMS = ["HS256"]
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=60)
 
     API_TITLE = "EZ-Parking API"
     API_VERSION = "v1"
@@ -27,22 +29,20 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     MAIL_USERNAME = getenv("MAIL_USERNAME")
     MAIL_PASSWORD = getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = getenv("MAIL_DEFAULT_SENDER")
-
-    JWT_ACCESS_COOKIE_NAME = "Authorization"
-    JWT_TOKEN_LOCATION = ["cookies", "headers"]
-    JWT_HEADER_NAME = "Authorization"
-    JWT_HEADER_TYPE = "Bearer"
+    JWT_ACCESS_COOKIE_NAME = "access_token_cookie"
+    JWT_ACCESS_CSRF_COOKIE_NAME = "csrf_access_token"
+    JWT_REFRESH_CSRF_COOKIE_NAME = "csrf_refresh_token"
+    JWT_REFRESH_COOKIE_NAME = "refresh_token_cookie"
+    JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_COOKIE_SECURE = bool(getenv("JWT_COOKIE_SECURE", "True"))
     JWT_SESSION_COOKIE = False
-    JWT_COOKIE_CSRF_PROTECT = True
+    JWT_COOKIE_CSRF_PROTECT = False
     JWT_COOKIE_SAMESITE = "None"
     JWT_CSRF_CHECK_FORM = False
     JWT_CSRF_IN_COOKIES = True
     JWT_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
-    JWT_ACCESS_CSRF_HEADER_NAME = "X-CSRF-TOKEN"
+
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    JWT_REFRESH_CSRF_HEADER_NAME = "X-CSRF-TOKEN"
-    JWT_ACCESS_CSRF_COOKIE_NAME = "X-CSRF-TOKEN"
 
     LOGGING_LEVEL = "INFO"
     LOGGING_PATH = path.join(getcwd(), "logs", "authentication.log")
@@ -57,3 +57,6 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     R2_SECRET_ACCESS_KEY = getenv("R2_SECRET_ACCESS_KEY")
     R2_BUCKET_NAME = getenv("R2_BUCKET_NAME")
     R2_ENDPOINT = getenv("R2_ENDPOINT")
+
+    STORAGE_TIMEZONE = pytz.UTC
+    DISPLAY_TIMEZONE = pytz.timezone(getenv("APP_TIMEZONE", "Asia/Manila"))

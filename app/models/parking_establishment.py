@@ -5,7 +5,7 @@
     the model instance to a dictionary format.
 """
 
-# pylint: disable=E1102, C0415, disable=too-few-public-methods
+# pylint: disable=E1102, C0415, disable=too-few-public-methods, C0301, R1704
 
 from typing import Union, overload
 from uuid import uuid4
@@ -17,9 +17,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
+from app.models.address import Address
 from app.models.base import Base
 from app.models.parking_slot import ParkingSlot
-from app.models.pricing_plan import PricingPlan
 from app.utils.db import session_scope
 
 
@@ -149,7 +149,10 @@ class ParkingEstablishmentRepository:
     @staticmethod
     @overload
     def get_establishments(
-        establishment_name: str = None, user_longitude: float = None, user_latitude: float = None
+        establishment_name: str = None,
+        user_longitude: float = None,
+        user_latitude: float = None,
+        city: str = None
     ) -> list:
         """Get all parking establishments."""
     @staticmethod
@@ -159,9 +162,9 @@ class ParkingEstablishmentRepository:
     @staticmethod
     def get_establishments(
         verification_status: bool = None, establishment_name: str = None,
-        user_longitude: float = None, user_latitude: float = None
+        user_longitude: float = None, user_latitude: float = None, city: str = None
     ) -> list:
-        """Get parking establishments by verification status."""
+        """Get parking establishments by verification status, including city from the Address table."""
         with session_scope() as session:
             if verification_status is not None:
                 establishments = (
@@ -170,47 +173,41 @@ class ParkingEstablishmentRepository:
                     .all()
                 )
                 return [establishment.to_dict() for establishment in establishments]
-            if establishment_name is not None or (user_longitude is not None and
-                                                  user_latitude is not None):
-                query = session.query(
-                    ParkingEstablishment,
-                    func.count(ParkingSlot.slot_id).label("total_slots"),
-                    func.count(ParkingSlot.slot_id).filter(
-                        ParkingSlot.slot_status == "open").label("open_slots"),
-                    func.count(ParkingSlot.slot_id).filter(
-                        ParkingSlot.slot_status == "occupied").label("occupied_slots"),
-                    func.count(ParkingSlot.slot_id).filter(
-                        ParkingSlot.slot_status == "reserved").label("reserved_slots")
-                ).outerjoin(ParkingSlot).group_by(ParkingEstablishment.establishment_id).where(
-                    ParkingEstablishment.verified.is_(True)
-                )
-                if establishment_name is not None:
-                    query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
-                if user_longitude is not None and user_latitude is not None:
-                    query = query.order_by(
-                        ParkingEstablishment.order_by_distance(
-                            latitude=user_latitude, longitude=user_longitude, ascending=True
-                        )
+            query = session.query(
+                ParkingEstablishment,
+                Address.city,
+                func.count(ParkingSlot.slot_id).label("total_slots"),
+                func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "open").label("open_slots"),
+                func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "occupied").label("occupied_slots"),
+                func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "reserved").label("reserved_slots")
+            ).outerjoin(ParkingSlot).outerjoin(
+                Address, ParkingEstablishment.profile_id == Address.profile_id
+            ).group_by(ParkingEstablishment.establishment_id, Address.city).where(
+                ParkingEstablishment.verified.is_(True)
+            )
+            if establishment_name is not None:
+                query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
+            if city is not None:
+                query = query.filter(Address.city.ilike(f"%{city}%"))
+            if user_longitude is not None and user_latitude is not None:
+                query = query.order_by(
+                    ParkingEstablishment.order_by_distance(
+                        latitude=user_latitude, longitude=user_longitude, ascending=True
                     )
-                establishments = query.all()
-                result = []
-                for establishment, total_slots, open_slots, occupied_slots, reserved_slots in \
-                    establishments:
-                    pricing_plans = session.query(PricingPlan).filter(
-                        PricingPlan.establishment_id == establishment.establishment_id
-                    ).all()
-                    establishment_dict = establishment.to_dict()
-                    establishment_dict.update({
-                        "total_slots": total_slots,
-                        "open_slots": open_slots,
-                        "occupied_slots": occupied_slots,
-                        "reserved_slots": reserved_slots,
-                        "pricing_plans": [plan.to_dict() for plan in pricing_plans]
-                    })
-                    result.append(establishment_dict)
-                return result
-            establishments = session.query(ParkingEstablishment).all()
-            return [establishment.to_dict() for establishment in establishments]
+                )
+            establishments = query.all()
+            result = []
+            for establishment, city, total_slots, open_slots, occupied_slots, reserved_slots in establishments:
+                establishment_dict = establishment.to_dict()
+                establishment_dict.update({
+                    "city": city,
+                    "total_slots": total_slots,
+                    "open_slots": open_slots,
+                    "occupied_slots": occupied_slots,
+                    "reserved_slots": reserved_slots,
+                })
+                result.append(establishment_dict)
+            return result
     @staticmethod
     @overload
     def get_establishment(establishment_uuid: str) -> dict:
@@ -252,26 +249,28 @@ class ParkingEstablishmentRepository:
                 raise EstablishmentDoesNotExist("Establishment does not exist.")
             return establishment.to_dict()
     @staticmethod
-    def update_parking_establishment(establishment_data: dict):
+    def update_parking_establishment(establishment_data: dict, establishment_id: int):
         """Update parking establishment details."""
         with session_scope() as session:
-            establishment_id = ParkingEstablishment.get_establishment_id(
-                establishment_uuid=establishment_data.get("establishment_uuid")
-            )
+            immutable_fields = [
+                'establishment_uuid', 'uuid',
+                'establishment_id', 'profile_id', 'created_at'
+            ]
+            update_data = {k: v for k, v in establishment_data.items() if k not in immutable_fields}
+
             session.execute(
                 update(ParkingEstablishment)
                 .where(ParkingEstablishment.establishment_id == establishment_id)
-                .values(establishment_data)
+                .values(update_data)
             )
             session.commit()
     @staticmethod
-    def verify_parking_establishment(establishment_uuid: bytes):
+    def verify_parking_establishment(establishment_uuid):
         """Verify a parking establishment."""
         with session_scope() as session:
-            establishment_id = ParkingEstablishment.get_establishment_id(establishment_uuid)
             session.execute(
                 update(ParkingEstablishment)
-                .where(ParkingEstablishment.establishment_id == establishment_id)
+                .where(ParkingEstablishment.uuid == establishment_uuid)
                 .values(verified=True)
             )
             session.commit()

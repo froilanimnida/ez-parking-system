@@ -160,9 +160,10 @@ class ParkingManagerApplications(MethodView):
         return set_response(200, {"code": "success", "data": parking_establishments})
 
 
-@admin_blp.route("/approve-parking-manager-application")
+@admin_blp.route("/approve-establishment")
 class ApproveManagerApplication(MethodView):
     @admin_blp.response(200, {"message": str})
+    @admin_blp.arguments(EstablishmentCommonValidationSchema)
     @admin_blp.doc(
         security=[{"Bearer": []}],
         description="Approve a parking manager application.",
@@ -176,8 +177,8 @@ class ApproveManagerApplication(MethodView):
     )
     @jwt_required(False)
     @admin_role_required()
-    def post(self, ban_data, admin_id):  # pylint: disable=unused-argument
-        # AdminService().approve_parking_applicant(ban_data)
+    def patch(self, data, admin_id):  # pylint: disable=unused-argument
+        AdminService().approve_parking_applicant(data.get("establishment_uuid"))
         return set_response(
             201,
             {"code": "success", "message": "Parking manager application approved."}

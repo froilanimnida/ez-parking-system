@@ -17,7 +17,9 @@ class QRCodeError(EzParkingBaseException):
 class InvalidQRContent(EzParkingBaseException):
     """Raised when QR content is invalid."""
 
-    def __init__(self, message="Invalid QR content."):
+    def __init__(
+        self,
+        message="The QR Code transaction is invalid or belongs to other establishment."):
         self.message = message
         super().__init__(message)
 

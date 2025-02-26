@@ -11,6 +11,7 @@ from json import dumps, loads
 from os import urandom
 from re import match
 
+from flask import current_app
 import pytz
 from qrcode import QRCode
 from qrcode.constants import ERROR_CORRECT_H
@@ -43,7 +44,9 @@ class QRCodeUtils:
         status = data.get("status")
         if status not in self.VALID_STATUSES:
             raise InvalidTransactionStatus(f"Invalid status: {status}")
-        current_time = datetime.now(pytz.timezone("Asia/Manila"))
+
+        # Use STORAGE_TIMEZONE (UTC) for storing timestamps
+        current_time = datetime.now(current_app.config["STORAGE_TIMEZONE"])
         payload = {
             "uuid": data.get("uuid"),
             "establishment_uuid": data.get("establishment_uuid"),
@@ -131,6 +134,8 @@ class QRCodeUtils:
             ).hexdigest()
 
             expires_at_dt = datetime.fromisoformat(expires_at)
+            if expires_at_dt.tzinfo is None:
+                expires_at_dt = current_app.config["STORAGE_TIMEZONE"].localize(expires_at_dt)
             current_time = datetime.now(pytz.timezone("Asia/Manila"))
 
             if not hmac.compare_digest(decoded["signature"], expected_sig):

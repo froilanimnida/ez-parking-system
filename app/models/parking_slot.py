@@ -53,9 +53,7 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
     vehicle_type_id = Column(Integer, ForeignKey("vehicle_type.vehicle_type_id"), nullable=False)
     slot_status = Column(ENUM(SlotStatus), nullable=False, default=SlotStatus.open)
     is_active = Column(Boolean, nullable=False, default=True)
-    # slot_multiplier = Column(Numeric(3, 2), nullable=False, default=1.00)
     floor_level = Column(SmallInteger, nullable=False, default=1)
-    # base_rate = Column(Numeric(10, 2), default=None)
     is_premium = Column(Boolean, nullable=False, default=False)
     slot_features = Column(ENUM(SlotFeature), nullable=False, default=SlotFeature.standard)
     base_price_per_hour = Column(Numeric(10, 2), nullable=False, default=0.00)
@@ -96,9 +94,7 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "vehicle_type_id": self.vehicle_type_id,
             "slot_status": self.slot_status.value if self.slot_status else None,
             "is_active": self.is_active,
-            # "slot_multiplier": str(self.slot_multiplier),
             "floor_level": self.floor_level,
-            # "base_rate": str(self.base_rate),
             "is_premium": self.is_premium,
             "slot_features": self.slot_features.value if self.slot_features else None,
             "base_price_per_hour": str(self.base_price_per_hour),

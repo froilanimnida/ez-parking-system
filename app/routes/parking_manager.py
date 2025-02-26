@@ -6,6 +6,7 @@ from flask import request, json
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
+from marshmallow import ValidationError
 
 from app.exceptions.general_exceptions import FileSizeTooBig
 from app.exceptions.qr_code_exceptions import (
@@ -14,10 +15,14 @@ from app.exceptions.qr_code_exceptions import (
 from app.exceptions.slot_lookup_exceptions import SlotNotFound, SlotAlreadyExists
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.common_schema_validation import TransactionCommonValidationSchema
-from app.schema.parking_manager_validation import ParkingManagerRequestSchema
+from app.schema.parking_manager_validation import (
+    ParkingManagerRequestSchema, UpdateParkingScheduleSchema
+)
 from app.schema.response_schema import ApiResponse
 from app.schema.slot_validation import CreateSlotParkingManagerSchema
-from app.schema.transaction_validation import ValidateEntrySchema, ValidateTransaction
+from app.schema.transaction_validation import (
+    ValidateEntrySchema, ValidateTransaction, ValidateExitTransaction
+)
 from app.services.auth_service import AuthService
 from app.services.establishment_service import EstablishmentService
 from app.services.operating_hour_service import OperatingHourService
@@ -56,7 +61,6 @@ class GetAllVehicleTypes(MethodView):
     )
     @jwt_required(False)
     @parking_manager_role_required()
-    @jwt_required(False)
     def get(self, user_id):  # pylint: disable=unused-argument
         vehicle_types = VehicleTypeService().get_all_vehicle_types()
         return set_response(200, {"code": "success", "data": vehicle_types})
@@ -75,7 +79,7 @@ class CreateParkingManagerCompanyAccount(MethodView):
         )
 
 
-@parking_manager_blp.route("/individual/account/create")
+@parking_manager_blp.route("/account/create")
 class CreateParkingManagerIndividualAccount(MethodView):
     @parking_manager_blp.response(201, ApiResponse)
     @parking_manager_blp.doc(
@@ -87,7 +91,7 @@ class CreateParkingManagerIndividualAccount(MethodView):
         },
     )
     @jwt_required(optional=True)
-    def post(self):
+    def post(self):  # pylint: disable=R0914
         check_file_size(request)
         try:
             documents_list = []
@@ -117,15 +121,33 @@ class CreateParkingManagerIndividualAccount(MethodView):
                         "file": file,
                         "filename": file.filename
                     })
-
-            form_data = json.loads(request.form.get("sign_up_data"))
+            user_data = json.loads(request.form.get("user"))
+            company_profile = json.loads(request.form.get("company_profile"))
+            address = json.loads(request.form.get("address"))
+            parking_establishment = json.loads(request.form.get("parking_establishment"))
+            operating_hour = json.loads(request.form.get("operating_hour"))
+            payment_method = json.loads(request.form.get("payment_method"))
+            form_data = {
+                "user": user_data,
+                "company_profile": company_profile,
+                "address": address,
+                "parking_establishment": parking_establishment,
+                "operating_hour": operating_hour,
+                "payment_method": payment_method,
+                "documents": documents_list
+            }
             form_data['documents'] = documents_list
         except Exception as e:  # pylint: disable=broad-exception-caught
             return set_response(
                 400, {"code": "error", "message": "Invalid JSON data", "errors": str(e)}
             )
         parking_manager_request_schema = ParkingManagerRequestSchema()
-        validated_sign_up_data = parking_manager_request_schema.load(form_data)
+        try:
+            validated_sign_up_data = parking_manager_request_schema.load(form_data)
+        except ValidationError as err:
+            return set_response(
+                422, {"code": "error", "message": "Validation error", "errors": err.messages}
+            )
         auth_service = AuthService()
         auth_service.create_new_user(validated_sign_up_data)
 
@@ -158,6 +180,34 @@ class EstablishmentEntry(MethodView):
         transaction_service = TransactionService()
         transaction_service.verify_reservation_code(
             data.get("qr_content"),data.get("payment_status")
+        )
+        return set_response(
+            200, {"code": "success", "message": "Transaction successfully verified."}
+        )
+
+@parking_manager_blp.route("/validate/exit")
+class EstablishmentExit(MethodView):
+    @jwt_required(False)
+    @parking_manager_role_required()
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="""Routes that will validate the token of the exit qr code and update
+        the status of slot to be available.""",
+        responses={
+            200: "Transaction successfully verified",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    @parking_manager_blp.arguments(ValidateExitTransaction)
+    @parking_manager_blp.response(200, ApiResponse)
+    def patch(self, data, user_id):  # pylint: disable=unused-argument
+        transaction_service = TransactionService()
+        print(data)
+        transaction_service.verify_exit_code(
+            data.get("qr_content"), data.get("payment_status"),
+            data.get("exit_time"),data.get("amount_due"), data.get("slot_id")
         )
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}
@@ -250,7 +300,7 @@ class GetScheduleHours(MethodView):
 
 @parking_manager_blp.route("/operating-hours/update")
 class UpdateScheduleHours(MethodView):
-    @parking_manager_blp.arguments(ParkingManagerRequestSchema, location="json")
+    @parking_manager_blp.arguments(UpdateParkingScheduleSchema, location="json")
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
         security=[{"Bearer": []}],
@@ -264,7 +314,11 @@ class UpdateScheduleHours(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def patch(self, data, user_id):  # pylint: disable=unused-argument
-        # OperatingHourService.update_operating_hours(data, user_id)
+        OperatingHourService.update_operating_hours(
+            manager_id=user_id,
+            is24_7=data.get("is24_7"),
+            operating_hours=data.get("operating_hour")
+        )
         return set_response(
             200,
             {
@@ -369,6 +423,53 @@ class GetTransaction(MethodView):
             {
                 "code": "success",
                 "data": transaction,
+            },
+        )
+@parking_manager_blp.route("/profile")
+class GetCompanyProfile(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get the company profile of the parking manager.",
+        responses={
+            200: "Company profile retrieved successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def get(self, user_id):
+        company_profile = ParkingManagerService.get_company_profile(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "data": company_profile,
+            },
+        )
+
+@parking_manager_blp.route("/profile/update")
+class UpdateCompanyProfile(MethodView):
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update the company profile of the parking manager.",
+        responses={
+            200: "Company profile updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def patch(self, user_id):  # pylint: disable=unused-argument
+        # ParkingManagerService.update_company_profile(user_id)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Company profile updated successfully.",
             },
         )
 

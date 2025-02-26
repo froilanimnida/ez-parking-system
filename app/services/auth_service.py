@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from os import path
 from tempfile import NamedTemporaryFile
 
-import pytz
 from flask import render_template, current_app
 
 from app.exceptions.authorization_exceptions import (
@@ -23,6 +22,7 @@ from app.models.user import AuthOperations, OTPOperations, UserRepository
 from app.tasks import send_mail
 from app.utils.bucket import R2TransactionalUpload, UploadFile
 from app.utils.security import generate_otp, generate_token, get_random_string
+from app.utils.timezone_utils import get_current_time
 
 
 class AuthService:
@@ -107,9 +107,10 @@ class UserOTPService:
             raise RequestNewOTPException("Please request for a new OTP.")
 
         expiry = datetime.fromisoformat(expiry_str)
-        current_time = datetime.now(
-            pytz.timezone('Asia/Manila')
-        ) if expiry.tzinfo else datetime.now()
+        if expiry.tzinfo is None:
+            expiry = current_app.config["STORAGE_TIMEZONE"].localize(expiry)
+
+        current_time = datetime.now(current_app.config["STORAGE_TIMEZONE"])
 
         if current_time > expiry:
             OTPOperations.delete_otp(email=email)
@@ -127,13 +128,15 @@ class UserRegistration:  # pylint: disable=R0903
 
     def create_new_user(self, sign_up_data: dict):  # pylint: disable=R0914
         """Create a new user account."""
-        now = datetime.now(pytz.timezone('Asia/Manila'))
+        now = get_current_time()
         user_data = sign_up_data.get("user", {})
         UserRepository.is_field_taken(
             "email", sign_up_data.get("user", {}).get("email"), EmailAlreadyTaken
         )
         UserRepository.is_field_taken(
-            "phone_number", sign_up_data.get("user", {}).get("phone_number"),PhoneNumberAlreadyTaken
+            "phone_number", sign_up_data.get(
+                "user", {}).get("phone_number"),
+            PhoneNumberAlreadyTaken
         )
         verification_token = generate_token()
         template = render_template(
@@ -149,7 +152,6 @@ class UserRegistration:  # pylint: disable=R0903
             "created_at": now,
         })
         user_id = UserRepository.create_user(user_data)
-        print(user_id)
         if sign_up_data.get("user", {}).get("role") == "parking_manager":
             company_profile = sign_up_data.get("company_profile", {})
             company_profile.update({"user_id": user_id, "created_at": now, "updated_at": now})
@@ -165,9 +167,6 @@ class UserRegistration:  # pylint: disable=R0903
             })
             parking_establishment_id = self.add_new_parking_establishment(parking_establishment)
 
-            # pricing_plan = sign_up_data.get("pricing_plan", {})
-            # self.add_pricing_plan(parking_establishment_id, pricing_plan)
-
             payment_method = sign_up_data.get("payment_method", {})
             payment_method.update({
                 "establishment_id": parking_establishment_id, "created_at": now, "updated_at": now
@@ -179,7 +178,6 @@ class UserRegistration:  # pylint: disable=R0903
 
             documents = sign_up_data.get("documents", [])
             self.add_establishment_documents(parking_establishment_id, documents)
-
         return send_mail(
                 sign_up_data.get("user", {}).get("email"), template, "Welcome to EZ Parking"
             )
@@ -204,8 +202,6 @@ class UserRegistration:  # pylint: disable=R0903
                 'is_enabled': bool(plan['is_enabled']),
                 'rate': float(plan['rate'])
             })
-
-        # return PricingPlanRepository.create_pricing_plan(establishment_id, pricing_plans)
 
     @staticmethod
     def add_new_company_profile(company_profile_data: dict):
@@ -267,14 +263,14 @@ class UserRegistration:  # pylint: disable=R0903
                 raise ValueError(f"Invalid document type: {doc_type}")
 
             doc_data = {
-                'establishment_id': establishment_id,
-                'document_type': doc_type_map[doc_type].lower(),
-                'bucket_path': f"establishments/{establishment_id}/{unique_filename}",
-                'filename': file.filename,
-                'mime_type': file.content_type,
-                'file_size': file.content_length if hasattr(file, 'content_length') else 0,
-                'status': 'pending',
-                'uploaded_at': datetime.now(pytz.timezone('Asia/Manila'))
+            'establishment_id': establishment_id,
+            'document_type': doc_type_map[doc_type].lower(),
+            'bucket_path': f"establishments/{establishment_id}/{unique_filename}",
+            'filename': file.filename,
+            'mime_type': file.content_type,
+            'file_size': file.content_length if hasattr(file, 'content_length') else 0,
+            'status': 'pending',
+            'uploaded_at': datetime.now(current_app.config["STORAGE_TIMEZONE"])
             }
             EstablishmentDocumentRepository.create_establishment_document(doc_data)
 
