@@ -97,8 +97,8 @@ class GetSlot(MethodView):
             401: "Unauthorized",
         },
     )
-    @parking_manager_role_required()
     @jwt_required(False)
+    @parking_manager_role_required()
     def get(self, data, user_id):  # pylint: disable=unused-argument
         slot = ParkingSlotService.get_slot(data.get("slot_uuid"))
         return set_response(200, {"slot": slot})
