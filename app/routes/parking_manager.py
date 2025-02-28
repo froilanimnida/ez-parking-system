@@ -376,6 +376,32 @@ class CreateSlot(MethodView):
             },
         )
 
+@parking_manager_blp.route("/slot/update")
+class UpdateSlot(MethodView):
+    @parking_manager_blp.arguments(UpdateSlotSchema)
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update a slot.",
+        responses={
+            200: "Slot updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            422: "Unprocessable Entity",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def patch(self, data, user_id):
+        ParkingManagerService.update_slot(data, user_id, request.remote_addr)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Slot updated successfully.",
+            },
+        )
+
 @parking_manager_blp.route('/transactions')
 class GetTransactions(MethodView):
     @parking_manager_blp.response(200, ApiResponse)

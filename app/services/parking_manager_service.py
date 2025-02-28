@@ -20,6 +20,10 @@ class ParkingManagerService:  # pylint: disable=R0903
     def create_slot(new_slot_data: dict, user_id: int, ip_address):
         """ Create a new slot """
         return SlotOperation.create_slot(user_id, new_slot_data, ip_address)
+    @staticmethod
+    def update_slot(data, user_id, ip_address):
+        """ Update existing slot """
+        return SlotOperation.update_slot(data, user_id, ip_address)
     @classmethod
     def get_company_profile(cls, user_id):
         """ Get company profile """
@@ -37,6 +41,17 @@ class SlotOperation:
             profile_id=profile_id
         ).get("establishment_id")
         return ParkingSlotRepository.get_slots(establishment_id=establishment_id)
+    @staticmethod
+    def update_slot(data, user_id, ip_address):
+        now = get_current_time()
+        ParkingSlotRepository.update_slot(data)
+        return AuditLogRepository.create_audit_log({
+            "action_type": "UPDATE",
+            "performed_by": user_id,
+            "details": f"Created new slot with slot code {data.get('slot_code')}",
+            "performed_at": now,
+            "ip_address": ip_address,
+        })
     @classmethod
     def create_slot(cls, manager_id, data, ip_address):
         """ Create a new slot """
