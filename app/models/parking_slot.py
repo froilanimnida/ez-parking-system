@@ -113,20 +113,6 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
                 return slot.slot_id
             raise SlotNotFound("Slot not found")
 
-
-    # def calculate_total_multiplier(self) -> float:
-    #     """Calculate final rate multiplier including vehicle type and slot factors"""
-    #     base_multiplier = float(self.vehicle_type.base_rate_multiplier)
-    #     slot_multiplier = float(self.slot_multiplier)  # type: ignore
-    #
-    #     # Additional multipliers based on features
-    #     feature_multipliers = {"covered": 1.2, "vip": 1.5, "ev_charging": 1.3}
-    #
-    #     feature_mult = feature_multipliers.get(self.slot_features, 1.0)  # type: ignore
-    #
-    #     return base_multiplier * slot_multiplier * feature_mult
-
-
 class ParkingSlotRepository:
     """Repository for ParkingSlot model."""
     @staticmethod
@@ -201,7 +187,6 @@ class ParkingSlotRepository:
         """
         with session_scope() as session:
             slot = None
-            print(slot_code)
             if slot_code:
                 slot = session.query(ParkingSlot).filter_by(slot_code=slot_code).join(
                     VehicleType,

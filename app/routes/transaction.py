@@ -51,8 +51,13 @@ class CreateReservation(MethodView):
         print(reservation_data, user_id)
         reservation_data.update({"user_id": user_id})
         transaction_validation = TransactionService()
-        transaction_validation.reserve_slot(reservation_data)
-        return set_response(201, {"message": "Reservation created successfully."})
+        transaction_uuid = transaction_validation.reserve_slot(reservation_data)
+        return set_response(
+            201, {
+                "message": "Reservation created successfully.",
+                "transaction_uuid": transaction_uuid
+            }
+        )
 
 
 @transactions_blp.route("/cancel")
@@ -71,9 +76,9 @@ class CancelReservation(MethodView):
             404: "Not Found",
         },
     )
-    def patch(self, data, user_id):  # pylint: disable=unused-argument
+    def patch(self, data, user_id):
         transaction_service = TransactionService()
-        transaction_service.cancel_transaction(data.get("transaction_uuid"))
+        transaction_service.cancel_transaction(data.get("transaction_uuid"), user_id)
         return set_response(200, {"message": "Reservation canceled successfully."})
 
 

@@ -122,7 +122,7 @@ class ParkingTransactionRepository:
             transaction = ParkingTransaction(**data)
             session.add(transaction)
             session.commit()
-            return transaction.transaction_id
+            return transaction.to_dict()
 
     @classmethod
     @overload
@@ -205,12 +205,13 @@ class ParkingTransactionRepository:
     ):
         """Update the status of a parking transaction."""
         with session_scope() as session:
-            session.execute(
+            transaction = session.execute(
                 update(ParkingTransaction)
                 .values(status=status)
                 .where(ParkingTransaction.uuid == transaction_uuid)
             )
             session.commit()
+            return transaction.scalar_one().to_dict()
     @classmethod
     def update_entry_exit_time(
         cls, transaction_uuid: str, entry_time = None, exit_time = None

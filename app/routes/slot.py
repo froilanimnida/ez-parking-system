@@ -51,7 +51,6 @@ class CreateSlot(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def post(self, new_slot_data, user_id):
-        print(new_slot_data)
         ParkingSlotService.create_slot(new_slot_data, user_id, request.remote_addr)
         return set_response(
             201, {"code": "success", "message": "Slot created successfully."}
