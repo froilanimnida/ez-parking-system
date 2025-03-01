@@ -130,7 +130,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
             profile_id=establishment_info.get("profile_id")
         )
         owner_user_id = company_profile.get("user_id")
-        contact_number = UserRepository.get_user(user_id=owner_user_id).get("contact_number")
+        contact_number = UserRepository.get_user(user_id=owner_user_id).get("phone_number")
         establishment_profile_id = company_profile.get("profile_id")
         address_info = AddressRepository.get_address(profile_id=establishment_profile_id)
         user_plate_number = UserRepository.get_user(

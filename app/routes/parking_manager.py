@@ -16,10 +16,10 @@ from app.exceptions.slot_lookup_exceptions import SlotNotFound, SlotAlreadyExist
 from app.routes.transaction import handle_invalid_transaction_status
 from app.schema.common_schema_validation import TransactionCommonValidationSchema
 from app.schema.parking_manager_validation import (
-    ParkingManagerRequestSchema, UpdateParkingScheduleSchema, UpdateSlotSchema
+    ParkingManagerRequestSchema, UpdateParkingScheduleSchema
 )
 from app.schema.response_schema import ApiResponse
-from app.schema.slot_validation import CreateSlotParkingManagerSchema
+from app.schema.slot_validation import CreateSlotParkingManagerSchema, UpdateSlotSchema
 from app.schema.transaction_validation import (
     ValidateEntrySchema, ValidateTransaction, ValidateExitTransaction
 )

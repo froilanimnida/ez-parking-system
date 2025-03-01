@@ -47,4 +47,5 @@ class CreateSlotParkingManagerSchema(SlotCodeValidationQuerySchema):
     price_multiplier = fields.Decimal(required=True, validate=validate.Range(min=0, max=999999))
 
 class UpdateSlotSchema(CreateSlotParkingManagerSchema):
+    """Validation schema for update slot."""
     slot_uuid = fields.Str(required=True)

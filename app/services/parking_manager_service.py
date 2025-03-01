@@ -42,9 +42,11 @@ class SlotOperation:
         ).get("establishment_id")
         return ParkingSlotRepository.get_slots(establishment_id=establishment_id)
     @staticmethod
-    def update_slot(data, user_id, ip_address):
+    def update_slot(data: dict, user_id, ip_address):
+        """ Update existing slot """
         now = get_current_time()
-        ParkingSlotRepository.update_slot(data)
+        slot_uuid = data.pop("slot_uuid")
+        ParkingSlotRepository.update_slot(data, slot_uuid)
         return AuditLogRepository.create_audit_log({
             "action_type": "UPDATE",
             "performed_by": user_id,

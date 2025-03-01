@@ -100,6 +100,7 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "base_price_per_hour": str(self.base_price_per_hour),
             "base_price_per_day": str(self.base_price_per_day),
             "base_price_per_month": str(self.base_price_per_month),
+            "price_multiplier": str(self.price_multiplier),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -246,7 +247,7 @@ class ParkingSlotRepository:
             raise SlotNotFound("Slot not found")
 
     @staticmethod
-    def update_slot(slot_data: dict) -> int:
+    def update_slot(slot_data: dict, slot_uuid: str) -> int:
         """
         Update a parking slot by the uuid of the slot.
 
@@ -258,7 +259,7 @@ class ParkingSlotRepository:
         """
         with session_scope() as session:
             result = session.query(ParkingSlot).filter(
-                ParkingSlot.uuid == slot_data.get("uuid")
+                ParkingSlot.uuid == slot_uuid
             ).update(slot_data)
             if result:
                 return result
