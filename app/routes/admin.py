@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required
 from flask_smorest import Blueprint
 
 from app.exceptions.establishment_lookup_exceptions import EstablishmentDoesNotExist
-from app.schema.ban_query_validation import BanQueryValidation
+from app.schema.ban_query_validation import BanQueryValidation, UnbanQueryValidation
 from app.schema.common_schema_validation import EstablishmentCommonValidationSchema
 from app.services.admin_service import AdminService
 from app.services.establishment_service import EstablishmentService
@@ -53,26 +53,26 @@ class BanUser(MethodView):
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],
-        description="Ban a plate number.",
+        description="Ban a user.",
         responses={
-            200: "Plate number banned.",
+            200: "User banned.",
             401: "Unauthorized",
             403: "Forbidden",
             500: "Internal Server Error",
             422: "Unprocessable",
         },
     )
-    @admin_role_required()
     @jwt_required(False)
+    @admin_role_required()
     def post(self, ban_data, admin_id):
         admin_service = AdminService()
         admin_service.ban_user(ban_data, admin_id, request.remote_addr)
-        return set_response(201, {"code": "success", "message": "Plate number banned."})
+        return set_response(201, {"code": "success", "message": "User has been banned."})
 
 
 @admin_blp.route("/unban-user")
 class UnbanUser(MethodView):
-    @admin_blp.arguments(BanQueryValidation)
+    @admin_blp.arguments(UnbanQueryValidation)
     @admin_blp.response(200, {"message": str})
     @admin_blp.doc(
         security=[{"Bearer": []}],

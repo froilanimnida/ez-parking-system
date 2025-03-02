@@ -1,5 +1,5 @@
 """ Represents the banned plates in the database."""
-
+from flask import current_app
 # pylint: disable=E1102, missing-function-docstring
 
 from sqlalchemy import Column, Integer, Text, TIMESTAMP, Boolean, ForeignKey, func
@@ -69,7 +69,7 @@ class BanUserRepository:
             session.add(ban_user)
             session.flush()
             session.refresh(ban_user)
-            return ban_user.user_id
+            return ban_user.ban_id
 
     @staticmethod
     def unban_user(user_id: int):
@@ -100,10 +100,10 @@ class BanUserRepository:
         Check if the user is banned. If the ban end date is
         in the past, delete the entry and return False.
         Otherwise, return True if the user is banned.
-
+    
         Parameters:
         user_id (int): The ID of the user to check.
-
+    
         Returns:
         bool: True if the user is currently banned, False otherwise.
         """
@@ -111,9 +111,14 @@ class BanUserRepository:
             now = get_current_time()
             ban_user = session.query(BanUser).filter(BanUser.user_id == user_id).first()
             if ban_user:
-                if ban_user.ban_end and ban_user.ban_end < now:
-                    session.delete(ban_user)
-                    session.commit()
-                    return False
+                if ban_user.ban_end:
+                    # Make sure ban_end has timezone info before comparing
+                    ban_end = ban_user.ban_end
+                    if ban_end.tzinfo is None:
+                        ban_end = current_app.config["STORAGE_TIMEZONE"].localize(ban_end)
+                    if ban_end < now:
+                        session.delete(ban_user)
+                        session.commit()
+                        return False
                 return True
             return False

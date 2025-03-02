@@ -43,20 +43,20 @@ class AdminService:
 
 class UserBanningService:
     """Service class for banning plate numbers."""
-
     @staticmethod
     def ban_user(ban_data: dict, admin_id, ip_address) -> int:
         """Ban a user."""
-        user_id = BanUserRepository.ban_user(ban_data)
-        user_email = UserRepository.get_user(user_id)['email']
+        user = UserRepository.get_user(user_uuid=ban_data.pop('uuid'))
+        ban_data.update({"user_id": user.get("user_id")})
+        BanUserRepository.ban_user(ban_data)
         ban_template = render_template(
-            '/ban.html', reason=ban_data['reason'], email=user_email
+            '/ban.html', reason=ban_data.get("reason"), email=user.get('email')
         )
-        send_mail(user_email, ban_template, 'You have been banned')
+        send_mail(user.get("email"), ban_template, 'You have been banned')
         return AuditLogRepository.create_audit_log({
             "action_type": "CREATE",
             "performed_by": admin_id,
-            "target_user": ban_data['user_id'],
+            "target_user": user.get("user_id"),
             "details": f"User with user_id {ban_data['user_id']} has been banned.",
             "performed_at": get_current_time(),
             "ip_address": ip_address
