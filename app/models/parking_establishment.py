@@ -197,7 +197,10 @@ class ParkingEstablishmentRepository:
                     (Address.street.ilike(f"%{search_term}%")) |
                     (Address.barangay.ilike(f"%{search_term}%")) |
                     (Address.province.ilike(f"%{search_term}%")) |
-                    (Address.postal_code.ilike(f"%{search_term}%"))
+                    (Address.postal_code.ilike(f"%{search_term}%")) |
+                    (ParkingEstablishment.facilities.ilike(f"%{search_term}%")) |
+                    (ParkingEstablishment.access_info.ilike(f"%{search_term}%")) |
+                    (ParkingEstablishment.nearby_landmarks.ilike(f"%{search_term}%"))
                 )
             if user_longitude is not None and user_latitude is not None:
                 query = query.order_by(
