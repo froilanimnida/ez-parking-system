@@ -149,10 +149,9 @@ class ParkingEstablishmentRepository:
     @staticmethod
     @overload
     def get_establishments(
-        establishment_name: str = None,
+        search_term: str = None,
         user_longitude: float = None,
-        user_latitude: float = None,
-        city: str = None
+        user_latitude: float = None
     ) -> list:
         """Get all parking establishments."""
     @staticmethod
@@ -161,8 +160,8 @@ class ParkingEstablishmentRepository:
         """Get all parking establishments."""
     @staticmethod
     def get_establishments(
-        verification_status: bool = None, establishment_name: str = None,
-        user_longitude: float = None, user_latitude: float = None, city: str = None
+        verification_status: bool = None, search_term: str = None,
+        user_longitude: float = None, user_latitude: float = None
     ) -> list:
         """Get parking establishments by verification status, including city from the Address table."""
         with session_scope() as session:
@@ -176,22 +175,30 @@ class ParkingEstablishmentRepository:
             query = session.query(
                 ParkingEstablishment,
                 Address.city,
+                Address.street,
+                Address.barangay,
+                Address.province,
+                Address.postal_code,
                 func.count(ParkingSlot.slot_id).label("total_slots"),
                 func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "open").label("open_slots"),
                 func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "occupied").label("occupied_slots"),
                 func.count(ParkingSlot.slot_id).filter(ParkingSlot.slot_status == "reserved").label("reserved_slots"),
-                #     add the highest and lowest price as price range
                 func.min(ParkingSlot.base_price_per_hour).label("min_price_per_hour"),
                 func.max(ParkingSlot.base_price_per_hour).label("max_price_per_hour")
             ).outerjoin(ParkingSlot).outerjoin(
                 Address, ParkingEstablishment.profile_id == Address.profile_id
-            ).group_by(ParkingEstablishment.establishment_id, Address.city).where(
+            ).group_by(ParkingEstablishment.establishment_id, Address.city, Address.street, Address.barangay, Address.province, Address.postal_code).where(
                 ParkingEstablishment.verified.is_(True)
             )
-            if establishment_name is not None:
-                query = query.filter(ParkingEstablishment.name.ilike(f"%{establishment_name}%"))
-            if city is not None:
-                query = query.filter(Address.city.ilike(f"%{city}%"))
+            if search_term is not None:
+                query = query.filter(
+                    (ParkingEstablishment.name.ilike(f"%{search_term}%")) |
+                    (Address.city.ilike(f"%{search_term}%")) |
+                    (Address.street.ilike(f"%{search_term}%")) |
+                    (Address.barangay.ilike(f"%{search_term}%")) |
+                    (Address.province.ilike(f"%{search_term}%")) |
+                    (Address.postal_code.ilike(f"%{search_term}%"))
+                )
             if user_longitude is not None and user_latitude is not None:
                 query = query.order_by(
                     ParkingEstablishment.order_by_distance(
@@ -200,12 +207,16 @@ class ParkingEstablishmentRepository:
                 )
             establishments = query.all()
             result = []
-            for establishment, city, total_slots, open_slots, occupied_slots, reserved_slots, min_price_per_hour, max_price_per_hour in establishments:
+            for establishment, city, street, barangay, province, postal_code, total_slots, open_slots, occupied_slots, reserved_slots, min_price_per_hour, max_price_per_hour in establishments:
                 if total_slots == 0:
                     continue
                 establishment_dict = establishment.to_dict()
                 establishment_dict.update({
                     "city": city,
+                    "street": street,
+                    "barangay": barangay,
+                    "province": province,
+                    "postal_code": postal_code,
                     "total_slots": total_slots,
                     "open_slots": open_slots,
                     "occupied_slots": occupied_slots,
