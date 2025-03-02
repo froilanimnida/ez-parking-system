@@ -1,5 +1,5 @@
 """ Wraps all the admin routes. """
-
+from flask import request
 # pylint: disable=missing-function-docstring, missing-class-docstring
 
 from flask.views import MethodView
@@ -66,7 +66,7 @@ class BanUser(MethodView):
     @jwt_required(False)
     def post(self, ban_data, admin_id):
         admin_service = AdminService()
-        admin_service.ban_user(ban_data, admin_id)
+        admin_service.ban_user(ban_data, admin_id, request.remote_addr)
         return set_response(201, {"code": "success", "message": "Plate number banned."})
 
 
@@ -88,9 +88,8 @@ class UnbanUser(MethodView):
     @admin_role_required()
     @jwt_required(False)
     def post(self, ban_data, admin_id):
-        # admin_service = AdminService()
-        print(ban_data, admin_id)
-        # admin_service.unban_user(ban_data, admin_id)
+        admin_service = AdminService()
+        admin_service.unban_user(ban_data, admin_id, request.remote_addr)
         return set_response(
             201, {"code": "success", "message": "User unbanned."}
         )

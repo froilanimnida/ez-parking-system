@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 from app.utils.db import session_scope
+from app.utils.timezone_utils import get_current_time
 
 
 # noinspection PyTypeChecker
@@ -93,3 +94,26 @@ class BanUserRepository:
         with session_scope() as session:
             ban_users = session.query(BanUser).all()
             return [ban_user.to_dict() for ban_user in ban_users]
+    @staticmethod
+    def check_and_update_ban_status(user_id: int) -> bool:
+        """
+        Check if the user is banned. If the ban end date is
+        in the past, delete the entry and return False.
+        Otherwise, return True if the user is banned.
+
+        Parameters:
+        user_id (int): The ID of the user to check.
+
+        Returns:
+        bool: True if the user is currently banned, False otherwise.
+        """
+        with session_scope() as session:
+            now = get_current_time()
+            ban_user = session.query(BanUser).filter(BanUser.user_id == user_id).first()
+            if ban_user:
+                if ban_user.ban_end and ban_user.ban_end < now:
+                    session.delete(ban_user)
+                    session.commit()
+                    return False
+                return True
+            return False

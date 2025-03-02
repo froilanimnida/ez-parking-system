@@ -20,8 +20,8 @@ class AdminService:
         return UserManagementService.get_user(user_id)
 
     @staticmethod
-    def ban_user(ban_data: dict, admin_id) -> int:
-        return UserBanningService.ban_user(ban_data, admin_id)
+    def ban_user(ban_data: dict, admin_id, ip_address) -> int:
+        return UserBanningService.ban_user(ban_data, admin_id, ip_address)
 
     @staticmethod
     def unban_user(user_id: int, admin_id: int, ip_address: str) -> int:
@@ -45,7 +45,7 @@ class UserBanningService:
     """Service class for banning plate numbers."""
 
     @staticmethod
-    def ban_user(ban_data: dict, admin_id) -> int:
+    def ban_user(ban_data: dict, admin_id, ip_address) -> int:
         """Ban a user."""
         user_id = BanUserRepository.ban_user(ban_data)
         user_email = UserRepository.get_user(user_id)['email']
@@ -59,7 +59,7 @@ class UserBanningService:
             "target_user": ban_data['user_id'],
             "details": f"User with user_id {ban_data['user_id']} has been banned.",
             "performed_at": get_current_time(),
-            "ip_address": ban_data['ip_address']
+            "ip_address": ip_address
         })
 
     @staticmethod

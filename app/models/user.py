@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException, BannedUserException
-from app.models.ban_user import BanUser
+from app.models.ban_user import BanUserRepository
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.db import session_scope
@@ -315,12 +315,12 @@ class AuthOperations:  # pylint: disable=R0903 disable=C0115
             ).scalar()
             if user is None:
                 raise EmailNotFoundException("Email not found.")
-            is_banned_user = session.execute(
-                select(BanUser).where(BanUser.user_id == user.user_id)
-            ).scalar()
+            is_banned_user = BanUserRepository.check_and_update_ban_status(
+                user_id=user.get("user_id")
+            )
             if user.is_verified is False:
                 raise AccountIsNotVerifiedException("Account is not verified.")
-            if is_banned_user is not None:
+            if is_banned_user:
                 raise BannedUserException("User is banned.")
             return user.to_dict()
 
