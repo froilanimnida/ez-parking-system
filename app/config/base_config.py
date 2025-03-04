@@ -48,7 +48,7 @@ class BaseConfig:  # pylint: disable=too-few-public-methods
     LOGGING_PATH = path.join(getcwd(), "logs", "authentication.log")
     IS_PRODUCTION = getenv("ENVIRONMENT", "") == "production"
 
-    FRONTEND_URL = getenv("FRONTEND_URL", "http://localhost:5000")
+    FRONTEND_URL = "https://ez-parking.expo.app"
     CELERY_BROKER_URL = getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     CELERY_RESULT_BACKEND = getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 
