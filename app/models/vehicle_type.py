@@ -83,7 +83,7 @@ class VehicleTypeRepository:  # pylint: disable=R0903
     def get_vehicle_type(vehicle_type_uuid: bytes) -> dict:
         pass
     @staticmethod
-    def get_vehicle_type(vehicle_type_id: int = None, vehicle_type_uuid: bytes = None):
+    def get_vehicle_type(vehicle_type_id: int = None, vehicle_type_uuid: str = None):
         """Get vehicle type by ID or UUID."""
         with session_scope() as session:
             if vehicle_type_id:
@@ -108,10 +108,11 @@ class VehicleTypeRepository:  # pylint: disable=R0903
             return vehicle_type.vehicle_type_id
 
     @staticmethod
-    def update_vehicle_type(vehicle_type_data: dict):
+    def update_vehicle_type(vehicle_type_data: dict, uuid):
         """Update vehicle type."""
         with session_scope() as session:
             vehicle_type = session.query(VehicleType).filter_by(
-                vehicle_type_id = vehicle_type_data["vehicle_type_id"]).update(vehicle_type_data)
+                uuid = uuid
+            )
+            vehicle_type.update(vehicle_type_data)
             session.commit()
-            return vehicle_type.vehicle_type_id
