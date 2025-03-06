@@ -14,4 +14,3 @@ class GetVehicleTypeSchema(Schema):
     vehicle_type_uuid = fields.Str(required=True)
 class UpdateVehicleTypeSchema(GetVehicleTypeSchema, CreateVehicleTypeSchema):
     """ Schema for updating a vehicle type. """
-    pass
