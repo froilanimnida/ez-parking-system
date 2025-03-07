@@ -31,6 +31,7 @@ class ParkingManagerService:  # pylint: disable=R0903
         return CompanyOperation.get_company_profile(user_id=user_id)
     @staticmethod
     def cancel_transaction(transaction_uuid: str):
+        """ Cancel a transaction """
         return ParkingTransactionService.cancel_transaction(transaction_uuid)
 
 class SlotOperation:
@@ -136,13 +137,15 @@ class ParkingEstablishmentService:  # pylint: disable=R0903
             "address": address_data
         }
 
-class ParkingTransactionService:
+class ParkingTransactionService:  # pylint: disable=R0903
+    """ Wraps all the parking transaction services """
     @staticmethod
     def cancel_transaction(transaction_uuid: str):
+        """ Cancel a transaction """
         transaction = ParkingTransactionRepository.get_transaction(
             transaction_uuid=transaction_uuid
         )
-        details = ParkingTransactionRepository.update_transaction_status(
+        ParkingTransactionRepository.update_transaction_status(
             transaction_uuid, "cancelled"
         )
         ParkingSlotRepository.change_slot_status(

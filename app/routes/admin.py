@@ -85,11 +85,11 @@ class UnbanUser(MethodView):
             422: "Unprocessable",
         },
     )
-    @admin_role_required()
     @jwt_required(False)
-    def post(self, ban_data, admin_id):
+    @admin_role_required()
+    def post(self, ban_data, admin_id): # pylint: disable=unused-argument
         admin_service = AdminService()
-        admin_service.unban_user(ban_data, admin_id, request.remote_addr)
+        admin_service.unban_user(ban_data.get("ban_id"))
         return set_response(
             201, {"code": "success", "message": "User unbanned."}
         )

@@ -72,9 +72,9 @@ class BanUserRepository:
             return ban_user.ban_id
 
     @staticmethod
-    def unban_user(user_id: int):
+    def unban_user(ban_id: int):
         with session_scope() as session:
-            session.query(BanUser).filter(BanUser.user_id == user_id).delete()
+            session.query(BanUser).filter(BanUser.ban_id == ban_id).delete()
             session.commit()
 
     @staticmethod
@@ -88,6 +88,11 @@ class BanUserRepository:
         with session_scope() as session:
             ban_user = session.query(BanUser).filter(BanUser.uuid == ban_uuid).first()
             return ban_user.to_dict()
+    @staticmethod
+    def get_ban_id(user_id: int):
+        with session_scope() as session:
+            ban_user = session.query(BanUser).filter(BanUser.user_id == user_id).first()
+            return ban_user.ban_id if ban_user else None
 
     @staticmethod
     def get_banned_users():

@@ -238,6 +238,7 @@ class ParkingSlotRepository:
 
         Parameters:
             slot_data (dict): Dictionary containing updated slot details.
+            slot_uuid (str): The UUID of the slot to be updated.
 
         Returns:
             int: The ID of the updated slot.

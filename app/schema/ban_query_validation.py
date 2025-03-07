@@ -29,4 +29,4 @@ class BanQueryValidation(Schema):
 
 class UnbanQueryValidation(Schema):
     """Validation schema for unbanning the plate numbers by the admin."""
-    uuid = fields.Str(required=True)
+    ban_id = fields.Int(required=True)

@@ -452,7 +452,7 @@ class GetTransaction(MethodView):
             },
         )
 @parking_manager_blp.route('/cancel-transaction')
-class GetTransaction(MethodView):
+class CancelTransaction(MethodView):
     @parking_manager_blp.arguments(TransactionCommonValidationSchema)
     @parking_manager_blp.response(200, ApiResponse)
     @parking_manager_blp.doc(
@@ -468,7 +468,7 @@ class GetTransaction(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def patch(self, data, user_id):  # pylint: disable=unused-argument
-        transaction = ParkingManagerService.cancel_transaction(data.get("transaction_uuid"))
+        ParkingManagerService.cancel_transaction(data.get("transaction_uuid"))
         return set_response(
             200,
             {

@@ -24,8 +24,8 @@ class AdminService:
         return UserBanningService.ban_user(ban_data, admin_id, ip_address)
 
     @staticmethod
-    def unban_user(user_id: int, admin_id: int, ip_address: str) -> int:
-        return UserBanningService.unban_user(user_id, admin_id, ip_address)
+    def unban_user(ban_id: int) -> int:
+        return UserBanningService.unban_user(ban_id)
     @staticmethod
     def get_establishments() -> list:
         """Get all parking applicants."""
@@ -63,17 +63,9 @@ class UserBanningService:
         })
 
     @staticmethod
-    def unban_user(user_id: int, admin_id: int, ip_address: str) -> int:
+    def unban_user(ban_id: int): # pylint: disable=unused-argument
         """Unban a user."""
-        BanUserRepository.unban_user(user_id)
-        return AuditLogRepository.create_audit_log({
-            "action_type": "DELETE",
-            "performed_by": admin_id,
-            "target_user": user_id,
-            "details": f"User with user_id {user_id} has been unbanned.",
-            "performed_at": get_current_time(),
-            "ip_address": ip_address
-        })
+        BanUserRepository.unban_user(ban_id)
 
 
 class ParkingManagerOperations:
@@ -119,4 +111,9 @@ class UserManagementService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_users() -> list[dict]:
         """Get all users."""
-        return UserRepository.get_all_users()
+        users = UserRepository.get_all_users()
+        for user in users:
+            ban_id = BanUserRepository.get_ban_id(user['user_id'])
+            if ban_id:
+                user['ban_id'] = ban_id
+        return users

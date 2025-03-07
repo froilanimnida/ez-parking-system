@@ -205,13 +205,14 @@ class ParkingTransactionRepository:
     ):
         """Update the status of a parking transaction."""
         with session_scope() as session:
-            transaction = session.execute(
+            session.execute(
                 update(ParkingTransaction)
                 .values(status=status)
                 .where(ParkingTransaction.uuid == transaction_uuid)
             )
             session.commit()
-            return transaction.scalar_one().to_dict()
+            transaction = session.query(ParkingTransaction).filter_by(uuid=transaction_uuid).first()
+            return transaction.to_dict() if transaction else {}
     @classmethod
     def update_entry_exit_time(
         cls, transaction_uuid: str, entry_time = None, exit_time = None
