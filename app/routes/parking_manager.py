@@ -451,6 +451,32 @@ class GetTransaction(MethodView):
                 "data": transaction,
             },
         )
+@parking_manager_blp.route('/cancel-transaction')
+class GetTransaction(MethodView):
+    @parking_manager_blp.arguments(TransactionCommonValidationSchema)
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Cancel the transaction",
+        responses={
+            200: "Transaction cancelled successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def patch(self, data, user_id):  # pylint: disable=unused-argument
+        transaction = ParkingManagerService.cancel_transaction(data.get("transaction_uuid"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Transaction cancelled successfully"
+            },
+        )
+
 @parking_manager_blp.route("/profile")
 class GetCompanyProfile(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
