@@ -8,6 +8,7 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.user import UserRepository
 from app.utils.timezone_utils import get_current_time
+from app.models.parking_transaction import ParkingTransactionRepository
 
 
 class ParkingManagerService:  # pylint: disable=R0903
