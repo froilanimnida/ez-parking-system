@@ -24,7 +24,7 @@ class AdminService:
         return UserBanningService.ban_user(ban_data, admin_id, ip_address)
 
     @staticmethod
-    def unban_user(ban_id: int) -> int:
+    def unban_user(ban_id: int):
         return UserBanningService.unban_user(ban_id)
     @staticmethod
     def get_establishments() -> list:

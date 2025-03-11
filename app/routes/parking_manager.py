@@ -204,10 +204,13 @@ class EstablishmentExit(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
     def patch(self, data, user_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService()
-        print(data)
         transaction_service.verify_exit_code(
-            data.get("qr_content"), data.get("payment_status"),
-            data.get("exit_time"),data.get("amount_due"), data.get("slot_id")
+            data.get("qr_content"),
+            data.get("payment_status"),
+            data.get("exit_time"),
+            data.get("amount_due"),
+            data.get("slot_id"),
+            data.get("overstayed_for_more_than_1_hour")
         )
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}

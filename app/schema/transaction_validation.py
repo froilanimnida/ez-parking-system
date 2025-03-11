@@ -50,3 +50,4 @@ class ValidateExitTransaction(ValidateTransaction):
     exit_time = fields.DateTime(required=True)
     amount_due = fields.Float(required=True)
     slot_id = fields.Int(required=True)
+    overstayed_for_more_than_1_hour = fields.Bool(required=True)

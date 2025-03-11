@@ -65,10 +65,10 @@ class ParkingTransaction(
         nullable=False,
     )
     user_id = Column(Integer, ForeignKey("user.user_id"), nullable=True)
-    scheduled_entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    scheduled_exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
+    scheduled_entry_time = Column(TIMESTAMP(timezone=True), nullable=True)
+    scheduled_exit_time = Column(TIMESTAMP(timezone=True), nullable=True)
+    entry_time = Column(TIMESTAMP(timezone=True), nullable=True)
+    exit_time = Column(TIMESTAMP(timezone=True), nullable=True)
     payment_status = Column(
         Enum(PaymentStatusEnum), nullable=False, server_default=text("'unpaid'::payment_status"),
     )
@@ -78,10 +78,10 @@ class ParkingTransaction(
     )
     amount_due = Column(Numeric(9, 2), nullable=True)
     created_at = Column(
-        TIMESTAMP(timezone=False), nullable=False, server_default=func.now()
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at = Column(
-        TIMESTAMP(timezone=False), nullable=False, server_default=func.now(), onupdate=func.now(),
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now(),
     )
     duration_type = Column(Enum(DurationTypeEnum), nullable=False)
     duration = Column(Integer, nullable=False)

@@ -250,7 +250,7 @@ class UserRepository:
             user_info.pop("verification_token")
             user_info.pop("verification_expiry")
             return user_info
-
+    
     @staticmethod
     def get_all_users() -> list[dict]:
         """
@@ -264,15 +264,24 @@ class UserRepository:
         during the database operation.
         """
         with session_scope() as session:
+            # Fetch all users in one efficient query
             users = session.execute(select(User)).scalars().all()
+            
+            # Define sensitive fields once (more efficient as tuple)
+            sensitive_fields = (
+                "otp_secret", "otp_expiry",
+                "verification_token", "verification_expiry"
+            )
+            
+            # Create list comprehension for better performance
             users_list = []
             for user in users:
                 user_info = user.to_dict()
-                user_info.pop("otp_secret")
-                user_info.pop("otp_expiry")
-                user_info.pop("verification_token")
-                user_info.pop("verification_expiry")
+                # Remove sensitive fields in one loop
+                for field in sensitive_fields:
+                    user_info.pop(field)
                 users_list.append(user_info)
+            
             return users_list
         
     @staticmethod
