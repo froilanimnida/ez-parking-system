@@ -54,14 +54,10 @@ class TransactionService:  # pylint: disable=too-few-public-methods
             slot_id,
             overstayed_for_more_than_1_hour
         )
-
     @staticmethod
-    def occupy_slot(parking_data):
-        """Occupies the slot for a user."""
-
-    @staticmethod
-    def release_slot(slot_data):
-        """Releases the slot for a user."""
+    def get_latest_exit_transaction(user_id):
+        """Get the latest exit transaction for a user."""
+        return Transaction.get_latest_exit_transaction(user_id)
 
     @staticmethod
     def cancel_transaction(transaction_uuid: str, user_id: int):
@@ -372,6 +368,10 @@ class Transaction:  # pylint: disable=too-few-public-methods
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
         return ParkingTransactionRepository.get_all_transactions(user_id=user_id)
+    @staticmethod
+    def get_latest_exit_transaction(user_id):
+        """Get the latest exit transaction for a user."""
+        return ParkingTransactionRepository.get_latest_exit_transaction(user_id=user_id)
     @classmethod
     def get_establishment_transaction(cls, user_id):
         """Get all the transactions for the establishment."""

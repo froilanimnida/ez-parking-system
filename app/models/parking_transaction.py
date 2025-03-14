@@ -289,6 +289,18 @@ class ParkingTransactionRepository:
                 .first()
             )
             return bool(transaction)
+    @classmethod
+    def get_latest_exit_transaction(cls, user_id):
+        """Get the latest exit transaction for a user. This is to get the date of that latest transaction that is active, if any"""
+        with session_scope() as session:
+            transaction = (
+                session.query(ParkingTransaction)
+                .filter(ParkingTransaction.user_id == user_id)
+                .filter(ParkingTransaction.status == "active")
+                .order_by(ParkingTransaction.exit_time.desc())
+                .first()
+            )
+            return transaction.to_dict() if transaction else None
 
 
 class BusinessIntelligence:
