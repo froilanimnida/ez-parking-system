@@ -269,23 +269,29 @@ class TransactionVerification:
             message=transaction_complete_template
         )
         if overstayed_for_more_than_1_hour:
-            BanUserRepository.ban_user({
-                "ban_reason": "Overstayed for more than 1 hour",
-                "user_id": user_info.get("user_id"),
-                "ban_start": datetime.now(),
-                "ban_end": datetime.now() + timedelta(days=30),
-                "is_permanent": False
-            })
-            ban_template = render_template(
-                '/ban.html',
-                reason="Overstayed for more than 1 hour",
-                email=user_info.get('email')
-            )
-            send_mail(
-                user_info.get("email"),
-                ban_template,
-                'You have been banned for overstaying'
-            )
+            warning_count = UserRepository.get_user(
+                transaction_details.get("user_id")
+            ).get("warning_count")
+            if warning_count >= 2:
+                BanUserRepository.ban_user({
+                    "ban_reason": "Overstayed for more than 1 hour for 3 times",
+                    "user_id": user_info.get("user_id"),
+                    "ban_start": datetime.now(),
+                    "ban_end": datetime.now() + timedelta(days=30),
+                    "is_permanent": False
+                })
+                ban_template = render_template(
+                    '/ban.html',
+                    reason="Overstayed for more than 1 hour for 3 times",
+                    email=user_info.get('email')
+                )
+                send_mail(
+                    user_info.get("email"),
+                    ban_template,
+                    'You have been banned for overstaying'
+                )
+            else:
+                UserRepository.increment_warning_count(user_id=transaction_details.get("user_id"))
 
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data, manager_id):

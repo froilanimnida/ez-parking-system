@@ -300,7 +300,7 @@ class ParkingTransactionRepository:
                 .order_by(ParkingTransaction.exit_time.desc())
                 .first()
             )
-            return transaction.to_dict() if transaction else None
+            return transaction.to_dict() if transaction else {}
 
 
 class BusinessIntelligence:

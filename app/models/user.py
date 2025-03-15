@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     Column, Integer, Enum, select, update, CheckConstraint, UniqueConstraint,
-    UUID, String, DateTime, Boolean, func
+    UUID, String, DateTime, Boolean, func, SmallInteger
 )
 from sqlalchemy.orm import relationship
 
@@ -50,6 +50,7 @@ class User(Base):
     verification_token = Column(String(175), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
+    warning_count = Column(SmallInteger, default=0, nullable=False)
 
     __table_args__ = (
         UniqueConstraint("email", name="user_email_key"),
@@ -117,7 +118,8 @@ class User(Base):
             "verification_token": self.verification_token,
             "verification_expiry": self.verification_expiry.isoformat()
             if self.verification_expiry else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "warning_count": self.warning_count,
         }
 
     @staticmethod
@@ -190,6 +192,23 @@ class UserRepository:
             session.execute(
                 update(User).where(User.verification_token == token)
                 .values(verification_token=None, verification_expiry=None, is_verified=True)
+            )
+    @staticmethod
+    def increment_warning_count(user_id: int):
+        """
+        Increment the warning count of a user.
+
+        Parameters:
+        user_id (int): The ID of the user to increment the warning count for.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            session.execute(
+                update(User).where(User.user_id == user_id)
+                .values(warning_count=User.warning_count + 1)
             )
 
     @staticmethod
