@@ -250,40 +250,51 @@ class UserRepository:
             user_info.pop("verification_token")
             user_info.pop("verification_expiry")
             return user_info
-    
     @staticmethod
     def get_all_users() -> list[dict]:
         """
-        Get all users in the database.
-
+        Get all users in the database with specific fields.
+    
         Returns:
         list: A list of dictionaries containing the user information.
-
+    
         Raises:
         DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
         during the database operation.
         """
         with session_scope() as session:
-            # Fetch all users in one efficient query
-            users = session.execute(select(User)).scalars().all()
-            
-            # Define sensitive fields once (more efficient as tuple)
-            sensitive_fields = (
-                "otp_secret", "otp_expiry",
-                "verification_token", "verification_expiry"
-            )
-            
-            # Create list comprehension for better performance
+            users = session.execute(
+                select(
+                    User.user_id,
+                    User.first_name,
+                    User.middle_name,
+                    User.last_name,
+                    User.suffix,
+                    User.uuid,
+                    User.email,
+                    User.phone_number,
+                    User.role,
+                    User.is_verified,
+                    User.plate_number
+                )
+            ).all()
             users_list = []
             for user in users:
-                user_info = user.to_dict()
-                # Remove sensitive fields in one loop
-                for field in sensitive_fields:
-                    user_info.pop(field)
+                user_info = {
+                    "first_name": user.first_name,
+                    "middle_name": user.middle_name,
+                    "last_name": user.last_name,
+                    "suffix": user.suffix,
+                    "uuid": str(user.uuid),
+                    "email": user.email,
+                    "phone_number": user.phone_number,
+                    "role": user.role.value,
+                    "is_verified": user.is_verified,
+                    "plate_number": user.plate_number,
+                    "ban_id": BanUserRepository.get_ban_id(user.user_id)
+                }
                 users_list.append(user_info)
-            
             return users_list
-        
     @staticmethod
     def update_user(user_id: int, update_data: dict):
         """
