@@ -284,6 +284,7 @@ class UserRepository:
         with session_scope() as session:
             users = session.execute(
                 select(
+                    User.user_id,
                     User.first_name,
                     User.middle_name,
                     User.last_name,
@@ -297,6 +298,7 @@ class UserRepository:
             users_list = []
             for user in users:
                 user_info = {
+                    "user_id": user.user_id,
                     "first_name": user.first_name,
                     "middle_name": user.middle_name,
                     "last_name": user.last_name,
