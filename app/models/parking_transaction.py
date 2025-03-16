@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Literal, Dict, Any, TypedDict, overload
 
 from sqlalchemy import (
-    Column, Enum, Integer, ForeignKey, TIMESTAMP, text, Numeric, UUID, update, func
+    Column, Enum, Integer, ForeignKey, TIMESTAMP, text, Numeric, UUID, update, func, case
 )
 from sqlalchemy.orm import relationship
 
@@ -170,11 +170,18 @@ class ParkingTransactionRepository:
                 transactions = (
                     session.query(ParkingTransaction)
                     .filter(ParkingTransaction.user_id == user_id)
-                    .join(
-                        ParkingSlot,
-                        ParkingSlot.slot_id == ParkingTransaction.slot_id
+                    .join(ParkingSlot, ParkingSlot.slot_id == ParkingTransaction.slot_id)
+                    .order_by(
+                        case(
+                            (ParkingTransaction.status == "active", 1),
+                            (ParkingTransaction.status == "reserved", 2),
+                            else_=3
+                        ),
+                        ParkingTransaction.created_at.desc()
                     )
-                ).all()
+                    .limit(10)
+                    .all()
+                )
             elif slot_id:
                 transactions = (
                     session.query(ParkingTransaction)
