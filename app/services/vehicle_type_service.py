@@ -23,6 +23,10 @@ class VehicleTypeService:  # pylint: disable=R0903
         return UpdateVehicleType.update_vehicle_type(
             vehicle_type_data, admin_id, ip_address
         )
+    @classmethod
+    def get_vehicle_type(cls, vehicle_type_id):
+        """Get vehicle type by ID."""
+        return GetVehicleType.get_vehicle_type(vehicle_type_id)
 
 
 class GetVehicleType:  # pylint: disable=R0903
@@ -32,6 +36,10 @@ class GetVehicleType:  # pylint: disable=R0903
     def get_all_vehicle_types():
         """Get all vehicle types."""
         return VehicleTypeRepository.get_all_vehicle_types()
+    @staticmethod
+    def get_vehicle_type(vehicle_type_id):
+        """Get vehicle type by ID."""
+        return VehicleTypeRepository.get_vehicle_type(vehicle_type_uuid=vehicle_type_id)
 
 
 class CreateNewVehicleType:  # pylint: disable=R0903
@@ -64,7 +72,10 @@ class UpdateVehicleType:  # pylint: disable=R0903
         vehicle_type_data.update({
             "updated_at": now,
         })
-        vehicle_type_id = VehicleTypeRepository.update_vehicle_type(vehicle_type_data)
+        vehicle_type_id = VehicleTypeRepository.update_vehicle_type(
+            vehicle_type_data,
+            vehicle_type_data.pop("vehicle_type_uuid")
+        )
         return AuditLogRepository.create_audit_log({
             "action_type": "UPDATE",
             "performed_by": user_id,

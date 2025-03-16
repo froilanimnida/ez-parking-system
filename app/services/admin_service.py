@@ -20,12 +20,12 @@ class AdminService:
         return UserManagementService.get_user(user_id)
 
     @staticmethod
-    def ban_user(ban_data: dict, admin_id) -> int:
-        return UserBanningService.ban_user(ban_data, admin_id)
+    def ban_user(ban_data: dict, admin_id, ip_address) -> int:
+        return UserBanningService.ban_user(ban_data, admin_id, ip_address)
 
     @staticmethod
-    def unban_user(user_id: int, admin_id: int, ip_address: str) -> int:
-        return UserBanningService.unban_user(user_id, admin_id, ip_address)
+    def unban_user(ban_id: int):
+        return UserBanningService.unban_user(ban_id)
     @staticmethod
     def get_establishments() -> list:
         """Get all parking applicants."""
@@ -43,37 +43,29 @@ class AdminService:
 
 class UserBanningService:
     """Service class for banning plate numbers."""
-
     @staticmethod
-    def ban_user(ban_data: dict, admin_id) -> int:
+    def ban_user(ban_data: dict, admin_id, ip_address) -> int:
         """Ban a user."""
-        user_id = BanUserRepository.ban_user(ban_data)
-        user_email = UserRepository.get_user(user_id)['email']
+        user = UserRepository.get_user(user_uuid=ban_data.pop('uuid'))
+        ban_data.update({"user_id": user.get("user_id")})
+        BanUserRepository.ban_user(ban_data)
         ban_template = render_template(
-            '/ban.html', reason=ban_data['reason'], email=user_email
+            '/ban.html', reason=ban_data.get("reason"), email=user.get('email')
         )
-        send_mail(user_email, ban_template, 'You have been banned')
+        send_mail(user.get("email"), ban_template, 'You have been banned')
         return AuditLogRepository.create_audit_log({
             "action_type": "CREATE",
             "performed_by": admin_id,
-            "target_user": ban_data['user_id'],
+            "target_user": user.get("user_id"),
             "details": f"User with user_id {ban_data['user_id']} has been banned.",
-            "performed_at": get_current_time(),
-            "ip_address": ban_data['ip_address']
-        })
-
-    @staticmethod
-    def unban_user(user_id: int, admin_id: int, ip_address: str) -> int:
-        """Unban a user."""
-        BanUserRepository.unban_user(user_id)
-        return AuditLogRepository.create_audit_log({
-            "action_type": "DELETE",
-            "performed_by": admin_id,
-            "target_user": user_id,
-            "details": f"User with user_id {user_id} has been unbanned.",
             "performed_at": get_current_time(),
             "ip_address": ip_address
         })
+
+    @staticmethod
+    def unban_user(ban_id: int): # pylint: disable=unused-argument
+        """Unban a user."""
+        BanUserRepository.unban_user(ban_id)
 
 
 class ParkingManagerOperations:
@@ -119,4 +111,9 @@ class UserManagementService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_users() -> list[dict]:
         """Get all users."""
-        return UserRepository.get_all_users()
+        users = UserRepository.get_all_users()
+        for user in users:
+            ban_id = BanUserRepository.get_ban_id(user['user_id'])
+            if ban_id:
+                user['ban_id'] = ban_id
+        return users

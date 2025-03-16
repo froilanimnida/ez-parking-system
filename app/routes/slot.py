@@ -15,7 +15,7 @@ from app.exceptions.vehicle_type_exceptions import VehicleTypeDoesNotExist
 from app.schema.common_schema_validation import SlotCommonValidationSchema
 from app.utils.role_decorator import parking_manager_role_required
 from app.schema.parking_manager_validation import (
-    CreateSlotSchema, DeleteSlotSchemaSchema, UpdateSlotSchemaSchema
+    CreateSlotSchema, DeleteSlotSchemaSchema
 )
 from app.schema.response_schema import ApiResponse
 from app.services.slot_service import ParkingSlotService
@@ -32,9 +32,6 @@ slot_blp = Blueprint(
     url_prefix="/api/v1/slot",
     description="Slot API for EZ Parking System Frontend",
 )
-
-
-
 
 
 @slot_blp.route("/create")
@@ -54,7 +51,6 @@ class CreateSlot(MethodView):
     @jwt_required(False)
     @parking_manager_role_required()
     def post(self, new_slot_data, user_id):
-        print(new_slot_data)
         ParkingSlotService.create_slot(new_slot_data, user_id, request.remote_addr)
         return set_response(
             201, {"code": "success", "message": "Slot created successfully."}
@@ -97,34 +93,11 @@ class GetSlot(MethodView):
             401: "Unauthorized",
         },
     )
-    @parking_manager_role_required()
     @jwt_required(False)
+    @parking_manager_role_required()
     def get(self, data, user_id):  # pylint: disable=unused-argument
         slot = ParkingSlotService.get_slot(data.get("slot_uuid"))
         return set_response(200, {"slot": slot})
-
-
-@slot_blp.route("/update")
-class UpdateSlot(MethodView):
-    @slot_blp.arguments(UpdateSlotSchemaSchema)
-    @slot_blp.response(200, ApiResponse)
-    @slot_blp.doc(
-        security=[{"Bearer": []}],
-        description="Update a slot.",
-        responses={
-            200: "Slot updated successfully.",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
-    @parking_manager_role_required()
-    @jwt_required(False)
-    def post(self, slot_data, user_id):
-        slot_data.update({"ip_address": request.remote_addr, "manager_id": user_id})
-        ParkingSlotService.update_slot(slot_data)
-        return set_response(
-            200, {"code": "success", "message": "Slot updated successfully."}
-        )
 
 slot_blp.register_error_handler(
     NoSlotsFoundInTheGivenSlotCode, handle_no_slots_found_in_the_given_slot_code

@@ -8,6 +8,7 @@ from app.models.parking_establishment import ParkingEstablishmentRepository
 from app.models.parking_slot import ParkingSlotRepository
 from app.models.user import UserRepository
 from app.utils.timezone_utils import get_current_time
+from app.models.parking_transaction import ParkingTransactionRepository
 
 
 class ParkingManagerService:  # pylint: disable=R0903
@@ -20,10 +21,18 @@ class ParkingManagerService:  # pylint: disable=R0903
     def create_slot(new_slot_data: dict, user_id: int, ip_address):
         """ Create a new slot """
         return SlotOperation.create_slot(user_id, new_slot_data, ip_address)
+    @staticmethod
+    def update_slot(data, user_id, ip_address):
+        """ Update existing slot """
+        return SlotOperation.update_slot(data, user_id, ip_address)
     @classmethod
     def get_company_profile(cls, user_id):
         """ Get company profile """
         return CompanyOperation.get_company_profile(user_id=user_id)
+    @staticmethod
+    def cancel_transaction(transaction_uuid: str):
+        """ Cancel a transaction """
+        return ParkingTransactionService.cancel_transaction(transaction_uuid)
 
 class SlotOperation:
     """ Wraps all the slot operations """
@@ -37,6 +46,19 @@ class SlotOperation:
             profile_id=profile_id
         ).get("establishment_id")
         return ParkingSlotRepository.get_slots(establishment_id=establishment_id)
+    @staticmethod
+    def update_slot(data: dict, user_id, ip_address):
+        """ Update existing slot """
+        now = get_current_time()
+        slot_uuid = data.pop("slot_uuid")
+        ParkingSlotRepository.update_slot(data, slot_uuid)
+        return AuditLogRepository.create_audit_log({
+            "action_type": "UPDATE",
+            "performed_by": user_id,
+            "details": f"Created new slot with slot code {data.get('slot_code')}",
+            "performed_at": now,
+            "ip_address": ip_address,
+        })
     @classmethod
     def create_slot(cls, manager_id, data, ip_address):
         """ Create a new slot """
@@ -114,3 +136,18 @@ class ParkingEstablishmentService:  # pylint: disable=R0903
             "establishment": establishment_data,
             "address": address_data
         }
+
+class ParkingTransactionService:  # pylint: disable=R0903
+    """ Wraps all the parking transaction services """
+    @staticmethod
+    def cancel_transaction(transaction_uuid: str):
+        """ Cancel a transaction """
+        transaction = ParkingTransactionRepository.get_transaction(
+            transaction_uuid=transaction_uuid
+        )
+        ParkingTransactionRepository.update_transaction_status(
+            transaction_uuid, "cancelled"
+        )
+        ParkingSlotRepository.change_slot_status(
+            slot_id=transaction.get("slot_id"), new_status="open"
+        )

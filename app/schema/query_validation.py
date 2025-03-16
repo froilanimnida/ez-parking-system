@@ -27,5 +27,4 @@ class EstablishmentQuerySchema(Schema):
     """Validation schema for establishment query parameters."""
     user_longitude = fields.Float(required=False)
     user_latitude = fields.Float(required=False)
-    city = fields.Str(required=False)
     search_term = fields.Str(required=False)

@@ -9,7 +9,9 @@ from flask_smorest import Blueprint
 
 from app.routes.admin import admin_role_required
 from app.schema.response_schema import ApiResponse
-from app.schema.vehicle_type_schema import CreateVehicleTypeSchema
+from app.schema.vehicle_type_schema import (
+    CreateVehicleTypeSchema, GetVehicleTypeSchema, UpdateVehicleTypeSchema
+)
 from app.services.vehicle_type_service import VehicleTypeService
 from app.utils.response_util import set_response
 
@@ -24,7 +26,6 @@ vehicle_type_blp = Blueprint(
 @vehicle_type_blp.route("/all")
 class GetAllVehicleTypes(MethodView):
     """Get all vehicle types."""
-
     @vehicle_type_blp.response(200, ApiResponse)
     @vehicle_type_blp.doc(
         description="Get all vehicle types",
@@ -85,13 +86,42 @@ class UpdateVehicleType(MethodView):
             401: "Unauthorized",
         },
     )
+    @vehicle_type_blp.arguments(UpdateVehicleTypeSchema)
     @jwt_required(False)
     @admin_role_required()
-    def patch(self):
+    def patch(self, in_data, admin_id):
+        VehicleTypeService.update_vehicle_type(in_data, admin_id, request.remote_addr)
         return set_response(
             200,
             {
                 "code": "success",
                 "message": "Vehicle type updated successfully.",
+            },
+        )
+
+@vehicle_type_blp.route("/get")
+class GetVehicleType(MethodView):
+    """Update a vehicle type."""
+    @vehicle_type_blp.response(200, ApiResponse)
+    @vehicle_type_blp.arguments(GetVehicleTypeSchema, location="query")
+    @vehicle_type_blp.doc(
+        security=[{"Bearer": []}],
+        description="Get a vehicle type.",
+        responses={
+            200: "Vehicle type fetched successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    @jwt_required(False)
+    @admin_role_required()
+    def get(self, data, admin_id): # pylint: disable=unused-argument
+        vehicle_type = VehicleTypeService.get_vehicle_type(data.get("vehicle_type_uuid"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Vehicle type updated successfully.",
+                "data": vehicle_type
             },
         )

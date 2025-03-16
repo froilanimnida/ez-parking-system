@@ -10,12 +10,12 @@ from uuid import uuid4
 
 from sqlalchemy import (
     Column, Integer, Enum, select, update, CheckConstraint, UniqueConstraint,
-    UUID, String, DateTime, Boolean, func
+    UUID, String, DateTime, Boolean, func, SmallInteger
 )
 from sqlalchemy.orm import relationship
 
 from app.exceptions.authorization_exceptions import EmailNotFoundException, BannedUserException
-from app.models.ban_user import BanUser
+from app.models.ban_user import BanUserRepository
 from app.models.base import Base
 from app.routes.auth import AccountIsNotVerifiedException
 from app.utils.db import session_scope
@@ -50,6 +50,7 @@ class User(Base):
     verification_token = Column(String(175), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
+    warning_count = Column(SmallInteger, default=0, nullable=False)
 
     __table_args__ = (
         UniqueConstraint("email", name="user_email_key"),
@@ -117,7 +118,8 @@ class User(Base):
             "verification_token": self.verification_token,
             "verification_expiry": self.verification_expiry.isoformat()
             if self.verification_expiry else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "warning_count": self.warning_count,
         }
 
     @staticmethod
@@ -191,6 +193,23 @@ class UserRepository:
                 update(User).where(User.verification_token == token)
                 .values(verification_token=None, verification_expiry=None, is_verified=True)
             )
+    @staticmethod
+    def increment_warning_count(user_id: int):
+        """
+        Increment the warning count of a user.
+
+        Parameters:
+        user_id (int): The ID of the user to increment the warning count for.
+
+        Raises:
+        DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
+        during the database operation.
+        """
+        with session_scope() as session:
+            session.execute(
+                update(User).where(User.user_id == user_id)
+                .values(warning_count=User.warning_count + 1)
+            )
 
     @staticmethod
     @overload
@@ -250,31 +269,48 @@ class UserRepository:
             user_info.pop("verification_token")
             user_info.pop("verification_expiry")
             return user_info
-
     @staticmethod
-    def get_all_users() -> list[dict]:
+    def get_all_users(role = "user") -> list[dict]:
         """
-        Get all users in the database.
-
+        Get all users in the database with specific fields.
+    
         Returns:
         list: A list of dictionaries containing the user information.
-
+    
         Raises:
         DataError, IntegrityError, OperationalError, DatabaseError: If there is an error
         during the database operation.
         """
         with session_scope() as session:
-            users = session.execute(select(User)).scalars().all()
+            users = session.execute(
+                select(
+                    User.user_id,
+                    User.first_name,
+                    User.middle_name,
+                    User.last_name,
+                    User.suffix,
+                    User.uuid,
+                    User.email,
+                    User.role,
+                    User.is_verified,
+                ).where(User.role == role)
+            )
             users_list = []
             for user in users:
-                user_info = user.to_dict()
-                user_info.pop("otp_secret")
-                user_info.pop("otp_expiry")
-                user_info.pop("verification_token")
-                user_info.pop("verification_expiry")
+                user_info = {
+                    "user_id": user.user_id,
+                    "first_name": user.first_name,
+                    "middle_name": user.middle_name,
+                    "last_name": user.last_name,
+                    "suffix": user.suffix,
+                    "uuid": str(user.uuid),
+                    "email": user.email,
+                    "role": user.role.value,
+                    "is_verified": user.is_verified,
+                    "ban_id": BanUserRepository.get_ban_id(user.user_id)
+                }
                 users_list.append(user_info)
             return users_list
-        
     @staticmethod
     def update_user(user_id: int, update_data: dict):
         """
@@ -315,12 +351,12 @@ class AuthOperations:  # pylint: disable=R0903 disable=C0115
             ).scalar()
             if user is None:
                 raise EmailNotFoundException("Email not found.")
-            is_banned_user = session.execute(
-                select(BanUser).where(BanUser.user_id == user.user_id)
-            ).scalar()
+            is_banned_user = BanUserRepository.check_and_update_ban_status(
+                user_id=user.user_id
+            )
             if user.is_verified is False:
                 raise AccountIsNotVerifiedException("Account is not verified.")
-            if is_banned_user is not None:
+            if is_banned_user:
                 raise BannedUserException("User is banned.")
             return user.to_dict()
 

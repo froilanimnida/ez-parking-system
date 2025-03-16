@@ -1,8 +1,16 @@
 """This module contains the services for the transaction operations."""
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+
+from datetime import datetime, timedelta
+
+from flask import render_template
+
+from app.exceptions.authorization_exceptions import BannedUserException
 from app.exceptions.qr_code_exceptions import QRCodeError, InvalidQRContent
 from app.exceptions.slot_lookup_exceptions import SlotStatusTaken
 from app.models.address import AddressRepository
+from app.models.ban_user import BanUserRepository
 from app.models.company_profile import CompanyProfileRepository
 from app.models.operating_hour import OperatingHoursRepository
 from app.models.parking_establishment import ParkingEstablishmentRepository
@@ -10,6 +18,7 @@ from app.models.parking_slot import ParkingSlotRepository, ParkingSlot
 from app.models.parking_transaction import ParkingTransactionRepository
 from app.models.payment_method import PaymentMethodRepository
 from app.models.user import UserRepository
+from app.tasks import send_mail
 from app.utils.qr_utils.generate_transaction_qr_code import QRCodeUtils
 from app.utils.timezone_utils import get_current_time
 
@@ -29,7 +38,12 @@ class TransactionService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def verify_exit_code(
-        qr_content: str, payment_status: str, exit_time: str, amount_due: float, slot_id
+        qr_content: str,
+        payment_status: str,
+        exit_time: str,
+        amount_due: float,
+        slot_id,
+        overstayed_for_more_than_1_hour: bool
     ):
         """Verifies the exit code for a user."""
         return TransactionVerification.verify_exit_transaction(
@@ -37,21 +51,18 @@ class TransactionService:  # pylint: disable=too-few-public-methods
             payment_status,
             exit_time,
             amount_due,
-            slot_id
+            slot_id,
+            overstayed_for_more_than_1_hour
         )
+    @staticmethod
+    def get_latest_exit_transaction(user_id):
+        """Get the latest exit transaction for a user."""
+        return Transaction.get_latest_exit_transaction(user_id)
 
     @staticmethod
-    def occupy_slot(parking_data):
-        """Occupies the slot for a user."""
-
-    @staticmethod
-    def release_slot(slot_data):
-        """Releases the slot for a user."""
-
-    @staticmethod
-    def cancel_transaction(transaction_uuid: str):
+    def cancel_transaction(transaction_uuid: str, user_id: int):
         """Cancels the transaction for a user."""
-        return SlotActionsService.cancel_transaction(transaction_uuid)
+        return SlotActionsService.cancel_transaction(transaction_uuid, user_id)
 
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data, user_id):
@@ -88,31 +99,70 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def reserve_slot(slot_reservation_data: dict):
         """Reserves the slot for a user."""
+        is_banned_user = BanUserRepository.check_and_update_ban_status(
+            user_id=slot_reservation_data.get("user_id")
+        )
+        if is_banned_user:
+            raise BannedUserException("User is banned.")
         now = get_current_time()
         slot_uuid = slot_reservation_data.pop("slot_uuid")
-        slot_status = ParkingSlotRepository.get_slot(slot_uuid=slot_uuid).get("slot_status")
+        slot = ParkingSlotRepository.get_slot(slot_uuid=slot_uuid)
+        slot_status = slot.get("slot_status")
+        parking_establishment = ParkingEstablishmentRepository.get_establishment(
+            establishment_id=slot.get("establishment_id")
+        )
         if slot_status in ["reserved", "occupied", "closed"]:
             raise SlotStatusTaken("Invalid slot status.")
         slot_reservation_data.update({"slot_id": ParkingSlot.get_id(slot_uuid)})
         slot_reservation_data.update({"created_at": now})
         slot_reservation_data.update({"updated_at": now})
-        ParkingTransactionRepository.create_transaction(slot_reservation_data)
-        return ParkingSlotRepository.change_slot_status(slot_uuid=slot_uuid, new_status="reserved")
+        transaction_details = ParkingTransactionRepository.create_transaction(slot_reservation_data)
+        user_email = UserRepository.get_user(
+            user_id=transaction_details.get("user_id")
+        ).get("email")
+        ParkingSlotRepository.change_slot_status(slot_uuid=slot_uuid, new_status="reserved")
+        reservation_template = render_template(
+            'transaction_confirmation.html',
+            user_name=user_email,
+            establishment_name=parking_establishment.get("name"),
+            slot_code=slot.get("slot_code"),
+            created_at=now
+        )
+        send_mail(
+            email=user_email,
+            subject="Reservation Confirmation",
+            message=reservation_template
+        )
+        return transaction_details.get("uuid")
 
     @staticmethod
     def release_slot(slot_data):
         """Releases the slot for a user."""
 
     @staticmethod
-    def cancel_transaction(transaction_uuid: str):
+    def cancel_transaction(transaction_uuid: str, user_id: int):
         """Cancels the transaction for a user."""
-        slot_id = ParkingTransactionRepository.get_transaction(
+        transaction = ParkingTransactionRepository.get_transaction(
             transaction_uuid=transaction_uuid
-        ).get("slot_id")
-        ParkingTransactionRepository.update_transaction_status(
+        )
+        details = ParkingTransactionRepository.update_transaction_status(
             transaction_uuid, "cancelled"
         )
-        return ParkingSlotRepository.change_slot_status(slot_id=slot_id, new_status="open")
+        user_info = UserRepository.get_user(user_id=user_id)
+        ParkingSlotRepository.change_slot_status(
+            slot_id=transaction.get("slot_id"), new_status="open"
+        )
+        cancel_template = render_template(
+            'transaction_cancelled.html',
+            user_name=user_info.get("email"),
+            transaction_uuid=transaction_uuid,
+            created_at=details.get("created_at")
+        )
+        return send_mail(
+            email=user_info.get("email"),
+            subject="Transaction Cancellation",
+            message=cancel_template
+        )
 
     @staticmethod
     def view_transaction(transaction_uuid: str):
@@ -130,7 +180,7 @@ class SlotActionsService:  # pylint: disable=too-few-public-methods
             profile_id=establishment_info.get("profile_id")
         )
         owner_user_id = company_profile.get("user_id")
-        contact_number = UserRepository.get_user(user_id=owner_user_id).get("contact_number")
+        contact_number = UserRepository.get_user(user_id=owner_user_id).get("phone_number")
         establishment_profile_id = company_profile.get("profile_id")
         address_info = AddressRepository.get_address(profile_id=establishment_profile_id)
         user_plate_number = UserRepository.get_user(
@@ -168,22 +218,28 @@ class TransactionVerification:
         if transaction_data.get("status") != "reserved":
             raise QRCodeError("Invalid transaction status.")
         transaction_uuid = transaction_data.get("uuid")
-        return ParkingTransactionRepository.update_transaction(transaction_uuid, update_data={
-            "payment_status": payment_status,
-            "entry_time": get_current_time(),
-            "status": "active"
-        })
+        return ParkingTransactionRepository.update_transaction(
+            transaction_uuid,
+            update_data={
+                "payment_status": payment_status,
+                "entry_time": get_current_time(),
+                "status": "active"
+            }
+        )
 
     @staticmethod
-    def verify_exit_transaction(qr_content, payment_status, exit_time, amount_due, slot_id):
+    def verify_exit_transaction(
+        qr_content, payment_status,
+        exit_time, amount_due, slot_id,
+        overstayed_for_more_than_1_hour
+    ):
         """Verifies the exit transaction for a user."""
         qr_code_utils = QRCodeUtils()
         transaction_data = qr_code_utils.verify_qr_content(qr_content)
-        print(transaction_data)
         if transaction_data.get("status") != "active":
             raise QRCodeError("Invalid transaction status.")
         ParkingSlotRepository.change_slot_status(slot_id=slot_id, new_status="open")
-        return ParkingTransactionRepository.update_transaction(
+        transaction_details = ParkingTransactionRepository.update_transaction(
             transaction_data.get("uuid"),
             update_data={
                 "payment_status": payment_status,
@@ -192,6 +248,50 @@ class TransactionVerification:
                 "amount_due": amount_due
             }
         )
+        user_info = UserRepository.get_user(user_id=transaction_details.get("user_id"))
+        slot_info = ParkingSlotRepository.get_slot(
+            slot_id=transaction_details.get("slot_id")
+        )
+        establishment_info = ParkingEstablishmentRepository.get_establishment(
+            establishment_id=slot_info.get("establishment_id")
+        )
+        transaction_complete_template = render_template(
+            'transaction_finished.html',
+            establishment_name=establishment_info.get("name"),
+            user_name=user_info.get("email"),
+            amount_paid=amount_due,
+            transaction_date=exit_time,
+            transaction_uuid=transaction_details.get("uuid")
+        )
+        send_mail(
+            email=user_info.get("email"),
+            subject="Transaction Completed",
+            message=transaction_complete_template
+        )
+        if overstayed_for_more_than_1_hour:
+            warning_count = UserRepository.get_user(
+                transaction_details.get("user_id")
+            ).get("warning_count")
+            if warning_count >= 2:
+                BanUserRepository.ban_user({
+                    "ban_reason": "Overstayed for more than 1 hour for 3 times",
+                    "user_id": user_info.get("user_id"),
+                    "ban_start": datetime.now(),
+                    "ban_end": datetime.now() + timedelta(days=30),
+                    "is_permanent": False
+                })
+                ban_template = render_template(
+                    '/ban.html',
+                    reason="Overstayed for more than 1 hour for 3 times",
+                    email=user_info.get('email')
+                )
+                send_mail(
+                    user_info.get("email"),
+                    ban_template,
+                    'You have been banned for overstaying'
+                )
+            else:
+                UserRepository.increment_warning_count(user_id=transaction_details.get("user_id"))
 
     @staticmethod
     def get_transaction_details_from_qr_code(qr_code_data, manager_id):
@@ -239,6 +339,9 @@ class TransactionFormDetails:  # pylint: disable=too-few-public-methods
             SlotStatusTaken: If slot is not available
             ValueError: If UUID format is invalid
         """
+        is_user_banned = BanUserRepository.check_and_update_ban_status(user_id=user_id)
+        if is_user_banned:
+            raise BannedUserException("User is banned.")
         status = ParkingSlotRepository().get_slot(slot_uuid=slot_uuid).get("status")
         if status in ["reserved", "occupied"]:
             raise SlotStatusTaken("Invalid slot status.")
@@ -271,6 +374,10 @@ class Transaction:  # pylint: disable=too-few-public-methods
     def get_all_user_transactions(user_id):
         """Get all the transactions for a user."""
         return ParkingTransactionRepository.get_all_transactions(user_id=user_id)
+    @staticmethod
+    def get_latest_exit_transaction(user_id):
+        """Get the latest exit transaction for a user."""
+        return ParkingTransactionRepository.get_latest_exit_transaction(user_id=user_id)
     @classmethod
     def get_establishment_transaction(cls, user_id):
         """Get all the transactions for the establishment."""

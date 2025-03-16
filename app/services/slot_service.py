@@ -62,12 +62,12 @@ class GetSlotService:
     @staticmethod
     def get_slot(slot_uuid: str):
         """Get slot by slot code."""
-        slot = ParkingSlotRepository.get_slot(slot_uuid)
+        slot = ParkingSlotRepository.get_slot(slot_uuid=slot_uuid)
         if slot is None:
             raise NoSlotsFoundInTheGivenSlotCode(
                 "No slots found."
             )
-        return {"slot_info": slot}
+        return slot
 
 
 class AddSlotService:
@@ -112,7 +112,7 @@ class UpdateSlotService:  # pylint: disable=R0903
     """Update a slot."""
     @staticmethod
     def update_slot(slot_data):
-        slot_id = ParkingSlotRepository.update_slot(slot_data)
+        slot_id = ParkingSlotRepository.update_slot(slot_data, slot_data.get("slot_uuid"))
         return AuditLogRepository.create_audit_log({
             "action_type": "UPDATE",
             "performed_by": slot_data.get("user_id"),

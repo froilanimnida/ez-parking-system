@@ -9,3 +9,8 @@ class CreateVehicleTypeSchema(Schema):
     name = fields.Str(required=True, validate=validate.Length(min=3, max=125))
     is_active = fields.Bool(required=False, missing=True)
     description = fields.Str(required=True, validate=validate.Length(min=3, max=255))
+class GetVehicleTypeSchema(Schema):
+    """ Schema for getting a vehicle type. """
+    vehicle_type_uuid = fields.Str(required=True)
+class UpdateVehicleTypeSchema(GetVehicleTypeSchema, CreateVehicleTypeSchema):
+    """ Schema for updating a vehicle type. """

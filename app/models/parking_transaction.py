@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Literal, Dict, Any, TypedDict, overload
 
 from sqlalchemy import (
-    Column, Enum, Integer, ForeignKey, TIMESTAMP, text, Numeric, UUID, update, func
+    Column, Enum, Integer, ForeignKey, TIMESTAMP, text, Numeric, UUID, update, func, case
 )
 from sqlalchemy.orm import relationship
 
@@ -65,10 +65,10 @@ class ParkingTransaction(
         nullable=False,
     )
     user_id = Column(Integer, ForeignKey("user.user_id"), nullable=True)
-    scheduled_entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    scheduled_exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    entry_time = Column(TIMESTAMP(timezone=False), nullable=True)
-    exit_time = Column(TIMESTAMP(timezone=False), nullable=True)
+    scheduled_entry_time = Column(TIMESTAMP(timezone=True), nullable=True)
+    scheduled_exit_time = Column(TIMESTAMP(timezone=True), nullable=True)
+    entry_time = Column(TIMESTAMP(timezone=True), nullable=True)
+    exit_time = Column(TIMESTAMP(timezone=True), nullable=True)
     payment_status = Column(
         Enum(PaymentStatusEnum), nullable=False, server_default=text("'unpaid'::payment_status"),
     )
@@ -78,10 +78,10 @@ class ParkingTransaction(
     )
     amount_due = Column(Numeric(9, 2), nullable=True)
     created_at = Column(
-        TIMESTAMP(timezone=False), nullable=False, server_default=func.now()
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at = Column(
-        TIMESTAMP(timezone=False), nullable=False, server_default=func.now(), onupdate=func.now(),
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now(),
     )
     duration_type = Column(Enum(DurationTypeEnum), nullable=False)
     duration = Column(Integer, nullable=False)
@@ -122,7 +122,7 @@ class ParkingTransactionRepository:
             transaction = ParkingTransaction(**data)
             session.add(transaction)
             session.commit()
-            return transaction.transaction_id
+            return transaction.to_dict()
 
     @classmethod
     @overload
@@ -170,11 +170,18 @@ class ParkingTransactionRepository:
                 transactions = (
                     session.query(ParkingTransaction)
                     .filter(ParkingTransaction.user_id == user_id)
-                    .join(
-                        ParkingSlot,
-                        ParkingSlot.slot_id == ParkingTransaction.slot_id
+                    .join(ParkingSlot, ParkingSlot.slot_id == ParkingTransaction.slot_id)
+                    .order_by(
+                        case(
+                            (ParkingTransaction.status == "active", 1),
+                            (ParkingTransaction.status == "reserved", 2),
+                            else_=3
+                        ),
+                        ParkingTransaction.created_at.desc()
                     )
-                ).all()
+                    .limit(10)
+                    .all()
+                )
             elif slot_id:
                 transactions = (
                     session.query(ParkingTransaction)
@@ -211,6 +218,8 @@ class ParkingTransactionRepository:
                 .where(ParkingTransaction.uuid == transaction_uuid)
             )
             session.commit()
+            transaction = session.query(ParkingTransaction).filter_by(uuid=transaction_uuid).first()
+            return transaction.to_dict() if transaction else {}
     @classmethod
     def update_entry_exit_time(
         cls, transaction_uuid: str, entry_time = None, exit_time = None
@@ -287,6 +296,18 @@ class ParkingTransactionRepository:
                 .first()
             )
             return bool(transaction)
+    @classmethod
+    def get_latest_exit_transaction(cls, user_id):
+        """Get the latest exit transaction for a user. This is to get the date of that latest transaction that is active, if any"""
+        with session_scope() as session:
+            transaction = (
+                session.query(ParkingTransaction)
+                .filter(ParkingTransaction.user_id == user_id)
+                .filter(ParkingTransaction.status == "active")
+                .order_by(ParkingTransaction.exit_time.desc())
+                .first()
+            )
+            return transaction.to_dict() if transaction else {}
 
 
 class BusinessIntelligence:

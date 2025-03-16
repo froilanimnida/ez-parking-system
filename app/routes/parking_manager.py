@@ -19,7 +19,7 @@ from app.schema.parking_manager_validation import (
     ParkingManagerRequestSchema, UpdateParkingScheduleSchema
 )
 from app.schema.response_schema import ApiResponse
-from app.schema.slot_validation import CreateSlotParkingManagerSchema
+from app.schema.slot_validation import CreateSlotParkingManagerSchema, UpdateSlotSchema
 from app.schema.transaction_validation import (
     ValidateEntrySchema, ValidateTransaction, ValidateExitTransaction
 )
@@ -204,10 +204,13 @@ class EstablishmentExit(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
     def patch(self, data, user_id):  # pylint: disable=unused-argument
         transaction_service = TransactionService()
-        print(data)
         transaction_service.verify_exit_code(
-            data.get("qr_content"), data.get("payment_status"),
-            data.get("exit_time"),data.get("amount_due"), data.get("slot_id")
+            data.get("qr_content"),
+            data.get("payment_status"),
+            data.get("exit_time"),
+            data.get("amount_due"),
+            data.get("slot_id"),
+            data.get("overstayed_for_more_than_1_hour")
         )
         return set_response(
             200, {"code": "success", "message": "Transaction successfully verified."}
@@ -376,6 +379,32 @@ class CreateSlot(MethodView):
             },
         )
 
+@parking_manager_blp.route("/slot/update")
+class UpdateSlot(MethodView):
+    @parking_manager_blp.arguments(UpdateSlotSchema)
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Update a slot.",
+        responses={
+            200: "Slot updated successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            422: "Unprocessable Entity",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def patch(self, data, user_id):
+        ParkingManagerService.update_slot(data, user_id, request.remote_addr)
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Slot updated successfully.",
+            },
+        )
+
 @parking_manager_blp.route('/transactions')
 class GetTransactions(MethodView):
     @parking_manager_blp.response(200, ApiResponse)
@@ -425,6 +454,32 @@ class GetTransaction(MethodView):
                 "data": transaction,
             },
         )
+@parking_manager_blp.route('/cancel-transaction')
+class CancelTransaction(MethodView):
+    @parking_manager_blp.arguments(TransactionCommonValidationSchema)
+    @parking_manager_blp.response(200, ApiResponse)
+    @parking_manager_blp.doc(
+        security=[{"Bearer": []}],
+        description="Cancel the transaction",
+        responses={
+            200: "Transaction cancelled successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    @jwt_required(False)
+    @parking_manager_role_required()
+    def patch(self, data, user_id):  # pylint: disable=unused-argument
+        ParkingManagerService.cancel_transaction(data.get("transaction_uuid"))
+        return set_response(
+            200,
+            {
+                "code": "success",
+                "message": "Transaction cancelled successfully"
+            },
+        )
+
 @parking_manager_blp.route("/profile")
 class GetCompanyProfile(MethodView):
     @parking_manager_blp.response(200, ApiResponse)

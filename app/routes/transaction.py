@@ -51,8 +51,13 @@ class CreateReservation(MethodView):
         print(reservation_data, user_id)
         reservation_data.update({"user_id": user_id})
         transaction_validation = TransactionService()
-        transaction_validation.reserve_slot(reservation_data)
-        return set_response(201, {"message": "Reservation created successfully."})
+        transaction_uuid = transaction_validation.reserve_slot(reservation_data)
+        return set_response(
+            201, {
+                "message": "Reservation created successfully.",
+                "transaction_uuid": transaction_uuid
+            }
+        )
 
 
 @transactions_blp.route("/cancel")
@@ -71,9 +76,9 @@ class CancelReservation(MethodView):
             404: "Not Found",
         },
     )
-    def patch(self, data, user_id):  # pylint: disable=unused-argument
+    def patch(self, data, user_id):
         transaction_service = TransactionService()
-        transaction_service.cancel_transaction(data.get("transaction_uuid"))
+        transaction_service.cancel_transaction(data.get("transaction_uuid"), user_id)
         return set_response(200, {"message": "Reservation canceled successfully."})
 
 
@@ -139,6 +144,24 @@ class GetAllUserTransaction(MethodView):
         transaction_service = TransactionService()
         transactions = transaction_service.get_all_user_transactions(user_id)
         return set_response(200, {"code": "success", "transactions": transactions})
+@transactions_blp.route("/latest-exit-transaction")
+class GetLatestExitTransaction(MethodView):
+    @jwt_required(False)
+    @user_role_required()
+    @transactions_blp.response(200, ApiResponse)
+    @transactions_blp.doc(
+        description="Get the latest transaction (exit) for the user.",
+        responses={
+            200: "Latest exit transaction fetched successfully.",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+    )
+    def get(self, user_id):
+        transaction_service = TransactionService()
+        transaction = transaction_service.get_latest_exit_transaction(user_id)
+        return set_response(200, {"code": "success", "transaction": transaction})
 
 
 transactions_blp.register_error_handler(InvalidQRContent, handle_invalid_qr_content)

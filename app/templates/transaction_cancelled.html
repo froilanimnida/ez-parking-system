@@ -2,7 +2,7 @@
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <title>EZ Parking Onboarding 🎉</title>
+                <title>Reservation Cancellation</title>
                 <link rel="preconnect" href="https://fonts.googleapis.com">
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -60,26 +60,26 @@
                         background-color: #4F46E5;
                         color: #ffffff;
                         text-decoration: none;
-                        border-radius: 999px;
-                        cursor: pointer;
+                        border-radius: 4px;
                     }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>Welcome to EZ Parking</h1>
+                        <h1>Reservation Cancellation</h1>
                     </div>
                     <div class="content">
-                        <p>Hi {{ user_name }},</p>
-                        <p>Thank you for signing up to EZ Parking. We are excited to have you on board. To get started you need to verify your email.</p>
-                        <p>EZ Parking is a platform that helps you find parking spaces easily. We are here to make your parking experience as smooth as possible.</p>
-                        <a class="button" target="_blank" href="{{ verification_url }}">Verify Email</a>
-                        <p>Or if the button above doesn't work, copy the link below:</p>
-                        <p>{{ verification_url }}</p>
-                        <p>Thank you for joining us. We hope you enjoy using EZ Parking.</p>
+                        <p>Dear {{ user_name }},</p>
+                        <p>This is to inform you that your reservation with the following information has been cancelled.</p>
+                        <p><strong>Cancellation Details:</strong></p>
+                        <p>
+                            <strong>Transaction ID: </strong> {{ transaction_uuid }}<br>
+                            <strong>Created at:</strong> {{ created_at }}<br>
+                        </p>
+                        <p>We apologize for any inconvenience caused.</p>
                         <p>Best regards,</p>
-                        <p style="font-weight: bold">The EZ Parking Team</p>
+                        <p>The EZ Parking Team</p>
                     </div>
                     <div class="footer">
                         <p>&copy; 2024 EZ Parking. All rights reserved.<br>123 Parking Street, City, Country</p>

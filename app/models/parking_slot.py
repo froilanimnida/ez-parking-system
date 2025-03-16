@@ -100,6 +100,7 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             "base_price_per_hour": str(self.base_price_per_hour),
             "base_price_per_day": str(self.base_price_per_day),
             "base_price_per_month": str(self.base_price_per_month),
+            "price_multiplier": str(self.price_multiplier),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -111,20 +112,6 @@ class ParkingSlot(Base):  # pylint: disable=too-few-public-methods
             if slot:
                 return slot.slot_id
             raise SlotNotFound("Slot not found")
-
-
-    # def calculate_total_multiplier(self) -> float:
-    #     """Calculate final rate multiplier including vehicle type and slot factors"""
-    #     base_multiplier = float(self.vehicle_type.base_rate_multiplier)
-    #     slot_multiplier = float(self.slot_multiplier)  # type: ignore
-    #
-    #     # Additional multipliers based on features
-    #     feature_multipliers = {"covered": 1.2, "vip": 1.5, "ev_charging": 1.3}
-    #
-    #     feature_mult = feature_multipliers.get(self.slot_features, 1.0)  # type: ignore
-    #
-    #     return base_multiplier * slot_multiplier * feature_mult
-
 
 class ParkingSlotRepository:
     """Repository for ParkingSlot model."""
@@ -200,7 +187,6 @@ class ParkingSlotRepository:
         """
         with session_scope() as session:
             slot = None
-            print(slot_code)
             if slot_code:
                 slot = session.query(ParkingSlot).filter_by(slot_code=slot_code).join(
                     VehicleType,
@@ -246,19 +232,20 @@ class ParkingSlotRepository:
             raise SlotNotFound("Slot not found")
 
     @staticmethod
-    def update_slot(slot_data: dict) -> int:
+    def update_slot(slot_data: dict, slot_uuid: str) -> int:
         """
         Update a parking slot by the uuid of the slot.
 
         Parameters:
             slot_data (dict): Dictionary containing updated slot details.
+            slot_uuid (str): The UUID of the slot to be updated.
 
         Returns:
             int: The ID of the updated slot.
         """
         with session_scope() as session:
             result = session.query(ParkingSlot).filter(
-                ParkingSlot.uuid == slot_data.get("uuid")
+                ParkingSlot.uuid == slot_uuid
             ).update(slot_data)
             if result:
                 return result
