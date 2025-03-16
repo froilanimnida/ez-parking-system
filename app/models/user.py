@@ -270,7 +270,7 @@ class UserRepository:
             user_info.pop("verification_expiry")
             return user_info
     @staticmethod
-    def get_all_users() -> list[dict]:
+    def get_all_users(role = "user") -> list[dict]:
         """
         Get all users in the database with specific fields.
     
@@ -284,19 +284,16 @@ class UserRepository:
         with session_scope() as session:
             users = session.execute(
                 select(
-                    User.user_id,
                     User.first_name,
                     User.middle_name,
                     User.last_name,
                     User.suffix,
                     User.uuid,
                     User.email,
-                    User.phone_number,
                     User.role,
                     User.is_verified,
-                    User.plate_number
                 )
-            ).all()
+            ).where(User.role == role).all()
             users_list = []
             for user in users:
                 user_info = {
@@ -306,10 +303,8 @@ class UserRepository:
                     "suffix": user.suffix,
                     "uuid": str(user.uuid),
                     "email": user.email,
-                    "phone_number": user.phone_number,
                     "role": user.role.value,
                     "is_verified": user.is_verified,
-                    "plate_number": user.plate_number,
                     "ban_id": BanUserRepository.get_ban_id(user.user_id)
                 }
                 users_list.append(user_info)
