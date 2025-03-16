@@ -292,8 +292,8 @@ class UserRepository:
                     User.email,
                     User.role,
                     User.is_verified,
-                )
-            ).where(User.role == role).all()
+                ).where(User.role == role).all()
+            )
             users_list = []
             for user in users:
                 user_info = {
